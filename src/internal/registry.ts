@@ -1,7 +1,9 @@
 import * as Equal from "@effect/data/Equal"
 import * as Option from "@effect/data/Option"
 import * as Effect from "@effect/io/Effect"
+import * as Exit from "@effect/io/Exit"
 import * as Queue from "@effect/io/Queue"
+import * as Scope from "@effect/io/Scope"
 import type * as Registry from "@effect/rx/Registry"
 import type * as Rx from "@effect/rx/Rx"
 
@@ -59,6 +61,20 @@ class RegistryImpl implements Registry.Registry {
         this.scheduleNodeRemoval(node)
       }
     }
+  }
+
+  subscribeWithPrevious: Rx.Rx.SubscribeWithPrevious = <A>(
+    rx: Rx.Rx<A>,
+    f: (prev: Option.Option<A>, value: A) => void,
+    options?: { readonly immediate?: boolean }
+  ): () => void => {
+    let prev = Option.none<A>()
+    function listener(a: A) {
+      const old = prev
+      prev = Option.some(a)
+      f(old, a)
+    }
+    return this.subscribe(rx, listener, options)
   }
 
   mount<A>(rx: Rx.Rx<A>) {
@@ -340,17 +356,23 @@ class Lifetime<A> implements Rx.Context<A> {
     this.node.invalidate()
   }
 
+  queue<A>(rx: Rx.Rx<A>): Effect.Effect<never, never, Queue.Dequeue<A>> {
+    const scope = Effect.runSync(Scope.make())
+    this.addFinalizer(() => Effect.runFork(Scope.close(scope, Exit.unit)))
+    return Scope.use(this.node.registry.queue(rx), scope)
+  }
+
   subscribe<A>(rx: Rx.Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }): void {
     this.addFinalizer(this.node.registry.subscribe(rx, f, options))
   }
 
-  //   subscribeWithPrevious<A>(rx: Rx.Rx<A>, f: (_: A) => void, options?: {
-  //     readonly immediate?: boolean
-  //   }): void {
-  //     this.finalizers.push(this.node.registry.subscribeWithPrevious(rx, f, options))
-  //   }
+  subscribeWithPrevious<A>(rx: Rx.Rx<A>, f: (prev: Option.Option<A>, value: A) => void, options?: {
+    readonly immediate?: boolean
+  }): void {
+    this.addFinalizer(this.node.registry.subscribeWithPrevious(rx, f, options))
+  }
 
   setSelf(a: A): void {
     this.node.setValue(a)
@@ -368,7 +390,7 @@ class Lifetime<A> implements Rx.Context<A> {
 
     const finalizers = this.finalizers
     this.finalizers = undefined
-    for (let i = 0; i < finalizers.length; i++) {
+    for (let i = finalizers.length - 1; i >= 0; i--) {
       finalizers[i]()
     }
   }

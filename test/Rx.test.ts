@@ -1,6 +1,9 @@
+import * as Context from "@effect/data/Context"
 import * as Effect from "@effect/io/Effect"
+import * as Layer from "@effect/io/Layer"
 import * as Queue from "@effect/io/Queue"
 import * as Registry from "@effect/rx/Registry"
+import * as Result from "@effect/rx/Result"
 import * as Rx from "@effect/rx/Rx"
 
 describe("Rx", () => {
@@ -65,4 +68,78 @@ describe("Rx", () => {
     )
     expect(r.get(counter)).toEqual(0)
   })
+
+  it("runtime", async () => {
+    const count = Rx.effect(
+      Effect.flatMap(Counter, (_) => _.get),
+      counterRuntime
+    )
+    const r = Registry.make()
+    const result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(1)
+  })
+
+  it("runtime multiple", async () => {
+    const count = Rx.effect(
+      Effect.flatMap(Counter, (_) => _.get),
+      counterRuntime
+    )
+    const timesTwo = Rx.effect(
+      Effect.gen(function*(_) {
+        const counter = yield* _(Counter)
+        const multiplier = yield* _(Multiplier)
+        yield* _(counter.inc)
+        expect(yield* _(Rx.accessResult(count))).toEqual(2)
+        return yield* _(multiplier.times(2))
+      }),
+      multiplierRuntime
+    )
+    const r = Registry.make()
+    let result = r.get(timesTwo)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(4)
+
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(2)
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(1)
+  })
 })
+
+interface Counter {
+  readonly get: Effect.Effect<never, never, number>
+  readonly inc: Effect.Effect<never, never, void>
+}
+const Counter = Context.Tag<Counter>("Counter")
+const CounterLive = Layer.sync(Counter, () => {
+  let count = 1
+  return Counter.of({
+    get: Effect.sync(() => count),
+    inc: Effect.sync(() => {
+      count++
+    })
+  })
+})
+const counterRuntime = Rx.runtime(CounterLive)
+
+interface Multiplier {
+  readonly times: (n: number) => Effect.Effect<never, never, number>
+}
+const Multiplier = Context.Tag<Multiplier>("Multiplier")
+const MultiplierLive = Layer.effect(
+  Multiplier,
+  Effect.gen(function*(_) {
+    const counter = yield* _(Counter)
+    return Multiplier.of({
+      times: (n) => Effect.map(counter.get, (_) => _ * n)
+    })
+  })
+)
+
+const multiplierRuntime = Rx.runtime(MultiplierLive, counterRuntime)

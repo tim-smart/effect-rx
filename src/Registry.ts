@@ -27,6 +27,7 @@ export interface Registry {
   readonly refresh: Rx.Rx.Refresh
   readonly set: Rx.Rx.Set
   readonly subscribe: Rx.Rx.Subscribe
+  readonly subscribeWithPrevious: Rx.Rx.SubscribeWithPrevious
   readonly queue: Rx.Rx.Queue
 }
 
