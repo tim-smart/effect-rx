@@ -35,7 +35,7 @@ class RegistryImpl implements Registry.Registry {
     )
   }
 
-  refresh = (rx: Rx.Refreshable): void => {
+  refresh = <A>(rx: Rx.Rx<A> & Rx.Refreshable): void => {
     rx.refresh((_) => this.ensureNode(rx).invalidate())
   }
 
@@ -69,7 +69,6 @@ class RegistryImpl implements Registry.Registry {
     return Effect.tap(Queue.unbounded<A>(), (queue) => {
       const offer = Effect.async<never, never, never>(() => {
         const cancel = this.subscribe(rx, (a) => {
-          console.log("offer", a)
           Queue.unsafeOffer(queue, a)
         }, constImmediate)
         return Effect.sync(cancel)
@@ -333,7 +332,7 @@ class Lifetime<A> implements Rx.Context<A> {
     return this.node.valueOption()
   }
 
-  refresh(rx: Rx.Refreshable): void {
+  refresh<A>(rx: Rx.Rx<A> & Rx.Refreshable): void {
     this.node.registry.refresh(rx)
   }
 

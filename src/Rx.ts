@@ -27,6 +27,7 @@ export interface Rx<A> extends Pipeable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
   readonly read: (ctx: Context<A>) => A
+  readonly refresh: (f: <A>(rx: Rx<A>) => void) => void
 }
 
 /**
@@ -50,7 +51,7 @@ export declare namespace Rx {
    * @since 1.0.0
    * @category models
    */
-  export type Refresh = (rx: Refreshable) => void
+  export type Refresh = <A>(rx: Rx<A> & Refreshable) => void
 
   /**
    * @since 1.0.0
@@ -85,6 +86,26 @@ export declare namespace Rx {
  * @since 1.0.0
  * @category type ids
  */
+export const RefreshableTypeId = Symbol.for("@effect/rx/Rx/Refreshable")
+
+/**
+ * @since 1.0.0
+ * @category type ids
+ */
+export type RefreshableTypeId = typeof RefreshableTypeId
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export interface Refreshable {
+  readonly [RefreshableTypeId]: RefreshableTypeId
+}
+
+/**
+ * @since 1.0.0
+ * @category type ids
+ */
 export const WriteableTypeId = Symbol.for("@effect/rx/Rx/Writeable")
 
 /**
@@ -100,27 +121,6 @@ export type WriteableTypeId = typeof WriteableTypeId
 export interface Writeable<R, W> extends Rx<R> {
   readonly [WriteableTypeId]: WriteableTypeId
   readonly write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void
-}
-
-/**
- * @since 1.0.0
- * @category type ids
- */
-export const RefreshableTypeId = Symbol.for("@effect/rx/Rx/Refreshable")
-
-/**
- * @since 1.0.0
- * @category type ids
- */
-export type RefreshableTypeId = typeof RefreshableTypeId
-
-/**
- * @since 1.0.0
- * @category models
- */
-export interface Refreshable extends Rx<any> {
-  readonly [RefreshableTypeId]: RefreshableTypeId
-  readonly refresh: (f: <A>(rx: Rx<A>) => void) => void
 }
 
 /**
@@ -157,10 +157,14 @@ const WriteableProto = {
  * @since 1.0.0
  * @category constructors
  */
-export const readable = <A>(read: (ctx: Context<A>) => A): Rx<A> => {
+export const readable = <A>(read: (ctx: Context<A>) => A, refresh?: (f: <A>(rx: Rx<A>) => void) => void): Rx<A> => {
   const rx = Object.create(RxProto)
   rx.keepAlive = false
   rx.read = read
+  rx.refreshable = false
+  rx.refresh = refresh ?? function(this: any, f: any) {
+    f(this)
+  }
   return rx
 }
 
@@ -170,12 +174,17 @@ export const readable = <A>(read: (ctx: Context<A>) => A): Rx<A> => {
  */
 export const writable = <R, W>(
   read: (ctx: Context<R>) => R,
-  write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void
+  write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void,
+  refresh?: (f: <A>(rx: Rx<A>) => void) => void
 ): Writeable<R, W> => {
   const rx = Object.create(WriteableProto)
   rx.keepAlive = false
   rx.read = read
   rx.write = write
+  rx.refreshable = false
+  rx.refresh = refresh ?? function(this: any, f: any) {
+    f(this)
+  }
   return rx
 }
 
@@ -200,8 +209,21 @@ export const state = <A>(
  * @category combinators
  */
 export const keepAlive = <A extends Rx<any>>(self: A): A => {
-  const proto = Object.getPrototypeOf(self)
-  const rx = Object.assign(Object.create(proto), self)
-  rx.keepAlive = true
-  return rx
+  return Object.assign(Object.create(Object.getPrototypeOf(self)), {
+    ...self,
+    keepAlive: true
+  })
+}
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const refreshable = <T extends Rx<any>>(
+  self: T
+): T & Refreshable => {
+  return Object.assign(Object.create(Object.getPrototypeOf(self)), {
+    ...self,
+    [RefreshableTypeId]: RefreshableTypeId
+  })
 }
