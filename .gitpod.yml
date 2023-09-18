@@ -1,0 +1,8 @@
+tasks:
+  - init: npm install -g pnpm && pnpm install && pnpm build
+github:
+  prebuilds:
+    addCheck: true
+vscode:
+  extensions:
+    - dbaeumer.vscode-eslint

@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "clean",
+      "type": "shell",
+      "command": "direnv exec . pnpm run clean",
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "build-watch",
+      "type": "shell",
+      "command": "direnv exec . pnpm run build-watch",
+      "problemMatcher": [
+        "$tsc-watch"
+      ],
+      "isBackground": true,
+      "presentation": {
+        "focus": false,
+        "panel": "shared",
+        "group": "dev",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "direnv exec . pnpm run build",
+      "problemMatcher": [],
+      "isBackground": false
+    },
+    {
+      "label": "test-watch",
+      "dependsOn": [
+        "build-watch"
+      ],
+      "type": "shell",
+      "command": "direnv exec . pnpm run test",
+      "problemMatcher": []
+    }
+  ]
+}
