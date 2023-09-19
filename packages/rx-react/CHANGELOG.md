@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.1.2
+
+### Patch Changes
+
+- [`ac91b78`](https://github.com/tim-smart/effect-rx/commit/ac91b78e5acabf3b13e01e6e53f7e56b269fa040) Thanks [@tim-smart](https://github.com/tim-smart)! - fix useRxValue
+
+- Updated dependencies [[`ac91b78`](https://github.com/tim-smart/effect-rx/commit/ac91b78e5acabf3b13e01e6e53f7e56b269fa040)]:
+  - @effect-rx/rx@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes
