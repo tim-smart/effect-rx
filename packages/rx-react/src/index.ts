@@ -5,6 +5,10 @@ import * as Registry from "@effect-rx/rx/Registry"
 import type * as Rx from "@effect-rx/rx/Rx"
 import * as React from "react"
 
+export * as Registry from "@effect-rx/rx/Registry"
+export * as Result from "@effect-rx/rx/Result"
+export * as Rx from "@effect-rx/rx/Rx"
+
 /**
  * @since 1.0.0
  * @category context
@@ -56,7 +60,27 @@ export const useSetRx = <R, W>(rx: Rx.Writeable<R, W>): (_: W) => void => {
  * @since 1.0.0
  * @category hooks
  */
-export const useRx = <R, W>(rx: Rx.Writeable<R, W>): readonly [R, (_: W) => void] => [
-  useRxValue(rx),
-  useSetRx(rx)
-]
+export const useUpdateRx = <R, W>(rx: Rx.Writeable<R, W>): (f: (_: R) => W) => void => {
+  const registry = React.useContext(RegistryContext)
+  return React.useCallback((f) => registry.set(rx, f(registry.get(rx))), [registry, rx])
+}
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
+export const useRx = <R, W>(rx: Rx.Writeable<R, W>): readonly [R, (_: W) => void] =>
+  [
+    useRxValue(rx),
+    useSetRx(rx)
+  ] as const
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
+export const useRxUpdate = <R, W>(rx: Rx.Writeable<R, W>): readonly [R, (f: (_: R) => W) => void] =>
+  [
+    useRxValue(rx),
+    useUpdateRx(rx)
+  ] as const
