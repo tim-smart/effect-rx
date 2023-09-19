@@ -4,9 +4,22 @@
     "allowJs": true,
     "baseUrl": ".",
     "paths": {
-      "@effect/rx": ["./build/esm/index.js"],
-      "@effect/rx/*": ["./build/esm/*"]
+      "@effect-rx/rx/test/*": ["./packages/rx/test/*"],
+      "@effect-rx/rx/examples/*": ["./packages/rx/examples/*"],
+      "@effect-rx/rx/*": ["./packages/rx/src/*"],
+
+      "@effect-rx/rx-react/test/*": ["./packages/rx-react/test/*"],
+      "@effect-rx/rx-react/examples/*": ["./packages/rx-react/examples/*"],
+      "@effect-rx/rx-react/*": ["./packages/rx-react/src/*"]
     }
   },
-  "include": ["./build/esm/**/*.js"]
+  "include": [
+    "./packages/rx/build/esm/**/*.js",
+    "./packages/rx/build/test/**/*.js",
+    "./packages/rx/build/examples/**/*.js",
+
+    "./packages/rx-react/build/esm/**/*.js",
+    "./packages/rx-react/build/test/**/*.js",
+    "./packages/rx-react/build/examples/**/*.js"
+  ]
 }

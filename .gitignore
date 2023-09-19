@@ -10,3 +10,4 @@ dist/
 .cache/
 .direnv/
 .idea/
+packages/*/docs

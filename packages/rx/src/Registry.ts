@@ -1,8 +1,8 @@
 /**
  * @since 1.0.0
  */
-import * as internal from "@effect/rx/internal/registry"
-import type * as Rx from "@effect/rx/Rx"
+import * as internal from "@effect-rx/rx/internal/registry"
+import type * as Rx from "@effect-rx/rx/Rx"
 
 /**
  * @since 1.0.0

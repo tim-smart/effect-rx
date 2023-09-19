@@ -1,10 +1,10 @@
+import * as Registry from "@effect-rx/rx/Registry"
+import * as Result from "@effect-rx/rx/Result"
+import * as Rx from "@effect-rx/rx/Rx"
 import * as Context from "@effect/data/Context"
 import * as Effect from "@effect/io/Effect"
 import * as Layer from "@effect/io/Layer"
 import * as Queue from "@effect/io/Queue"
-import * as Registry from "@effect/rx/Registry"
-import * as Result from "@effect/rx/Result"
-import * as Rx from "@effect/rx/Rx"
 
 describe("Rx", () => {
   it("get/set", () => {
@@ -126,7 +126,6 @@ const CounterLive = Layer.sync(Counter, () => {
     })
   })
 })
-const counterRuntime = Rx.runtime(CounterLive)
 
 interface Multiplier {
   readonly times: (n: number) => Effect.Effect<never, never, number>
@@ -142,4 +141,5 @@ const MultiplierLive = Layer.effect(
   })
 )
 
-const multiplierRuntime = Rx.runtime(MultiplierLive, counterRuntime)
+const counterRuntime: Rx.RxRuntime<never, Counter> = Rx.runtime(CounterLive)
+const multiplierRuntime: Rx.RxRuntime<never, Multiplier | Counter> = Rx.runtime(MultiplierLive, counterRuntime)

@@ -1,0 +1,9 @@
+remote_theme: mikearnaldi/just-the-docs
+search_enabled: true
+aux_links:
+  "Docs":
+    - "//effect-ts.github.io/rx"
+  "API Reference":
+    - "//effect-ts.github.io/rx/docs/rx"
+  "GitHub":
+    - "//github.com/effect-ts/rx"

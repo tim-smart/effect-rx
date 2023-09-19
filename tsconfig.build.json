@@ -1,12 +1,7 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "build/esm",
-    "declarationDir": "build/dts",
-    "tsBuildInfoFile": "build/tsbuildinfo/esm.tsbuildinfo",
-    "rootDir": "src"
-  },
-  "include": [
-    "src/**/*.ts"
+  "references": [
+    { "path": "packages/rx/tsconfig.build.json" },
+    { "path": "packages/rx-react/tsconfig.build.json" }
   ]
 }

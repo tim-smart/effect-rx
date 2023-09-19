@@ -1,0 +1,24 @@
+{
+  "exclude": ["src/internal/**/*.ts"],
+  "theme": "mikearnaldi/just-the-docs",
+  "parseCompilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "target": "es2015",
+    "lib": ["es2015"],
+    "paths": {
+      "@effect-rx/rx": ["./src/index.ts"],
+      "@effect-rx/rx/*": ["./src/*"]
+    }
+  },
+  "examplesCompilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "target": "es2015",
+    "lib": ["es2015"],
+    "paths": {
+      "@effect-rx/rx": ["./src/index.ts"],
+      "@effect-rx/rx/*": ["./src/*"]
+    }
+  }
+}

@@ -12,7 +12,7 @@
     "preserveSymlinks": true,
     "moduleResolution": "node",
     "noEmit": false,
-    "lib": ["ES2021", "DOM"],
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
     "sourceMap": true,
     "declarationMap": true,
     "strict": true,
@@ -21,7 +21,7 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "noEmitOnError": false,
-    "noErrorTruncation": false,
+    "noErrorTruncation": true,
     "allowJs": false,
     "checkJs": false,
     "forceConsistentCasingInFileNames": true,
@@ -36,19 +36,15 @@
     "incremental": true,
     "removeComments": false,
     "paths": {
-      "@effect/rx": ["./src/index.ts"],
-      "@effect/rx/test/*": ["./test/*"],
-      "@effect/rx/examples/*": ["./examples/*"],
-      "@effect/rx/*": ["./src/*"]
+      "@effect-rx/rx/test/*": ["./packages/rx/test/*"],
+      "@effect-rx/rx/examples/*": ["./packages/rx/examples/*"],
+      "@effect-rx/rx/*": ["./packages/rx/src/*"],
+
+      "@effect-rx/rx-react/test/*": ["./packages/rx-react/test/*"],
+      "@effect-rx/rx-react/examples/*": ["./packages/rx-react/examples/*"],
+      "@effect-rx/rx-react/*": ["./packages/rx-react/src/*"]
     },
-    "plugins": [
-      {
-        "name": "@effect/language-service",
-        "diagnostics": {
-          "1002": "none"
-        }
-      }
-    ]
+    "plugins": [{ "name": "@effect/language-service" }]
   },
   "include": [],
   "exclude": ["node_modules", "build", "lib"]

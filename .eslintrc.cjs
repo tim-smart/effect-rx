@@ -20,7 +20,7 @@ module.exports = {
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:@effect/eslint-plugin/recommended"
+    "plugin:@effect/recommended"
   ],
   plugins: ["deprecation", "import", "sort-destructure-keys", "simple-import-sort", "codegen"],
   rules: {

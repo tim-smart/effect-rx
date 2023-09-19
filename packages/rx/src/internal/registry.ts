@@ -1,17 +1,17 @@
+import type * as Registry from "@effect-rx/rx/Registry"
+import type * as Rx from "@effect-rx/rx/Rx"
 import * as Equal from "@effect/data/Equal"
 import * as Option from "@effect/data/Option"
 import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
 import * as Queue from "@effect/io/Queue"
 import * as Scope from "@effect/io/Scope"
-import type * as Registry from "@effect/rx/Registry"
-import type * as Rx from "@effect/rx/Rx"
 
 const constImmediate = { immediate: true }
 function constListener(_: any) {}
 
 /** @internal */
-export const TypeId: Registry.TypeId = Symbol.for("@effect/rx/Registry") as Registry.TypeId
+export const TypeId: Registry.TypeId = Symbol.for("@effect-rx/rx/Registry") as Registry.TypeId
 
 /** @internal */
 export const make = (): Registry.Registry => new RegistryImpl()
@@ -145,11 +145,13 @@ class RegistryImpl implements Registry.Registry {
 const enum NodeFlags {
   alive = 1 << 0,
   initialized = 1 << 1,
-  waitingForValue = 1 << 2,
+  waitingForValue = 1 << 2
+}
 
-  uninitialized = alive | waitingForValue,
-  stale = alive | initialized | waitingForValue,
-  valid = alive | initialized,
+const enum NodeState {
+  uninitialized = NodeFlags.alive | NodeFlags.waitingForValue,
+  stale = NodeFlags.alive | NodeFlags.initialized | NodeFlags.waitingForValue,
+  valid = NodeFlags.alive | NodeFlags.initialized,
   removed = 0
 }
 
@@ -159,7 +161,7 @@ class Node<A> {
     readonly rx: Rx.Rx<A>
   ) {}
 
-  state: NodeFlags = NodeFlags.uninitialized
+  state: NodeState = NodeState.uninitialized
   lifetime: Lifetime<A> | undefined
 
   parents: Array<Node<any>> = []
@@ -205,13 +207,13 @@ class Node<A> {
 
   setValue = (value: A): void => {
     if ((this.state & NodeFlags.initialized) === 0) {
-      this.state = NodeFlags.valid
+      this.state = NodeState.valid
       this._value = value
       this.notify()
       return
     }
 
-    this.state = NodeFlags.valid
+    this.state = NodeState.valid
     if (Equal.equals(this._value, value)) {
       return
     }
@@ -247,8 +249,8 @@ class Node<A> {
   }
 
   invalidate(): void {
-    if (this.state === NodeFlags.valid) {
-      this.state = NodeFlags.stale
+    if (this.state === NodeState.valid) {
+      this.state = NodeState.stale
       this.disposeLifetime()
     }
 
@@ -287,7 +289,7 @@ class Node<A> {
   }
 
   remove() {
-    this.state = NodeFlags.removed
+    this.state = NodeState.removed
 
     if (this.lifetime === undefined) {
       return

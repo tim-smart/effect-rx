@@ -11,7 +11,7 @@ import type * as Exit from "@effect/io/Exit"
  * @since 1.0.0
  * @category type ids
  */
-export const TypeId = Symbol.for("@effect/rx/Result")
+export const TypeId = Symbol.for("@effect-rx/rx/Result")
 
 /**
  * @since 1.0.0

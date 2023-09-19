@@ -1,6 +1,7 @@
 /**
  * @since 1.0.0
  */
+import * as Result from "@effect-rx/rx/Result"
 import * as EffectContext from "@effect/data/Context"
 import * as Equal from "@effect/data/Equal"
 import * as Hash from "@effect/data/Hash"
@@ -14,7 +15,6 @@ import * as Layer from "@effect/io/Layer"
 import type * as Queue_ from "@effect/io/Queue"
 import * as Runtime from "@effect/io/Runtime"
 import * as Scope from "@effect/io/Scope"
-import * as Result from "@effect/rx/Result"
 import * as Channel from "@effect/stream/Channel"
 import * as Sink from "@effect/stream/Sink"
 import * as Stream from "@effect/stream/Stream"
@@ -23,7 +23,7 @@ import * as Stream from "@effect/stream/Stream"
  * @since 1.0.0
  * @category type ids
  */
-export const TypeId = Symbol.for("@effect/rx/Rx")
+export const TypeId = Symbol.for("@effect-rx/rx/Rx")
 
 /**
  * @since 1.0.0
@@ -98,7 +98,7 @@ export declare namespace Rx {
  * @since 1.0.0
  * @category type ids
  */
-export const RefreshableTypeId = Symbol.for("@effect/rx/Rx/Refreshable")
+export const RefreshableTypeId = Symbol.for("@effect-rx/rx/Rx/Refreshable")
 
 /**
  * @since 1.0.0
@@ -118,7 +118,7 @@ export interface Refreshable {
  * @since 1.0.0
  * @category type ids
  */
-export const WriteableTypeId = Symbol.for("@effect/rx/Rx/Writeable")
+export const WriteableTypeId = Symbol.for("@effect-rx/rx/Rx/Writeable")
 
 /**
  * @since 1.0.0
@@ -169,7 +169,7 @@ export interface RxContext {
  * @since 1.0.0
  * @category context
  */
-export const Context = EffectContext.Tag<RxContext, Context<unknown>>("@effect/rx/Rx/Context")
+export const Context = EffectContext.Tag<RxContext, Context<unknown>>("@effect-rx/rx/Rx/Context")
 
 /**
  * @since 1.0.0

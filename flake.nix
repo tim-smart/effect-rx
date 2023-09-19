@@ -17,10 +17,6 @@
   }:
     flake-utils.lib.eachDefaultSystem (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-      corepackEnable = pkgs.runCommand "corepack-enable" {} ''
-        mkdir -p $out/bin
-        ${pkgs.nodejs-18_x}/bin/corepack enable --install-directory $out/bin
-      '';
     in {
       formatter = pkgs.alejandra;
 
@@ -28,7 +24,7 @@
         default = pkgs.mkShell {
           buildInputs = with pkgs; [
             nodejs-18_x
-            corepackEnable
+            nodePackages.pnpm
           ];
         };
       };
