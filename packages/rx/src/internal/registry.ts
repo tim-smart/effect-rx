@@ -39,18 +39,12 @@ class RegistryImpl implements Registry.Registry {
 
   subscribe: Rx.Rx.Subscribe = (rx, f, options) => {
     const node = this.ensureNode(rx)
+    if (options?.immediate) {
+      f(node.value())
+    }
     const remove = node.subscribe(function() {
       f(node._value)
     })
-
-    if (options?.immediate) {
-      if ((node.state & NodeFlags.initialized) === 0) {
-        node.value()
-      } else {
-        f(node.value())
-      }
-    }
-
     return () => {
       remove()
       if (node.canBeRemoved) {
