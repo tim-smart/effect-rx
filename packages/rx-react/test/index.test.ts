@@ -1,0 +1,3 @@
+describe("rx-react", () => {
+  test("", () => {})
+})
