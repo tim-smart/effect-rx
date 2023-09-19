@@ -4,7 +4,6 @@ import * as Rx from "@effect-rx/rx/Rx"
 import * as Context from "@effect/data/Context"
 import * as Effect from "@effect/io/Effect"
 import * as Layer from "@effect/io/Layer"
-import * as Queue from "@effect/io/Queue"
 
 describe("Rx", () => {
   it("get/set", () => {
@@ -48,24 +47,6 @@ describe("Rx", () => {
     expect(r.get(counter)).toEqual(1)
     cancel()
     await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(r.get(counter)).toEqual(0)
-  })
-
-  it("queue", async () => {
-    const counter = Rx.state(0)
-    const r = Registry.make()
-
-    await Effect.gen(function*(_) {
-      const q = yield* _(r.queue(counter))
-      expect(yield* _(Queue.take(q))).toEqual(0)
-      r.set(counter, 1)
-      expect(yield* _(Queue.take(q))).toEqual(1)
-      yield* _(Effect.yieldNow())
-      expect(r.get(counter)).toEqual(1)
-    }).pipe(
-      Effect.scoped,
-      Effect.runPromise
-    )
     expect(r.get(counter)).toEqual(0)
   })
 

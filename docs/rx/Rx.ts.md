@@ -213,14 +213,6 @@ export interface Context<A> {
       readonly immediate?: boolean
     }
   ) => void
-  readonly subscribeWithPrevious: <A>(
-    rx: Rx<A>,
-    f: (prev: Option.Option<A>, value: A) => void,
-    options?: {
-      readonly immediate?: boolean
-    }
-  ) => void
-  readonly queue: <A>(rx: Rx<A>) => Effect.Effect<never, never, Queue_.Dequeue<A>>
 }
 ```
 
