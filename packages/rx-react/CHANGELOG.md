@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.1.4
+
+### Patch Changes
+
+- [`9419ca3`](https://github.com/tim-smart/effect-rx/commit/9419ca3b03a08663a7e6b17a49cbf7b4548408a7) Thanks [@tim-smart](https://github.com/tim-smart)! - add subscribeGetter
+
+- Updated dependencies [[`9419ca3`](https://github.com/tim-smart/effect-rx/commit/9419ca3b03a08663a7e6b17a49cbf7b4548408a7)]:
+  - @effect-rx/rx@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes
