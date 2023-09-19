@@ -20,17 +20,19 @@ class RxStore<A> {
     readonly registry: Registry.Registry,
     readonly rx: Rx.Rx<A>
   ) {}
-
-  value!: A
-
+  value = this.registry.get(this.rx)
+  init = false
   subscribe = (f: () => void): () => void => {
-    this.value = this.registry.get(this.rx)
+    if (this.init === true) {
+      this.value = this.registry.get(this.rx)
+    } else {
+      this.init = true
+    }
     return this.registry.subscribe(this.rx, (a) => {
       this.value = a
       f()
     })
   }
-
   snapshot = (): A => this.value
 }
 

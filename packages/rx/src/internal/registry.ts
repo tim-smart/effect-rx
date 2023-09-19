@@ -2,10 +2,6 @@ import type * as Registry from "@effect-rx/rx/Registry"
 import type * as Rx from "@effect-rx/rx/Rx"
 import * as Equal from "@effect/data/Equal"
 import * as Option from "@effect/data/Option"
-import * as Effect from "@effect/io/Effect"
-import * as Exit from "@effect/io/Exit"
-import * as Queue from "@effect/io/Queue"
-import * as Scope from "@effect/io/Scope"
 
 const constImmediate = { immediate: true }
 function constListener(_: any) {}
@@ -63,38 +59,8 @@ class RegistryImpl implements Registry.Registry {
     }
   }
 
-  subscribeWithPrevious: Rx.Rx.SubscribeWithPrevious = <A>(
-    rx: Rx.Rx<A>,
-    f: (prev: Option.Option<A>, value: A) => void,
-    options?: { readonly immediate?: boolean }
-  ): () => void => {
-    let prev = Option.none<A>()
-    function listener(a: A) {
-      const old = prev
-      prev = Option.some(a)
-      f(old, a)
-    }
-    return this.subscribe(rx, listener, options)
-  }
-
   mount<A>(rx: Rx.Rx<A>) {
     return this.subscribe(rx, constListener, constImmediate)
-  }
-
-  queue<A>(rx: Rx.Rx<A>) {
-    return Effect.tap(Queue.unbounded<A>(), (queue) => {
-      const offer = Effect.async<never, never, never>(() => {
-        const cancel = this.subscribe(rx, (a) => {
-          Queue.unsafeOffer(queue, a)
-        }, constImmediate)
-        return Effect.sync(cancel)
-      })
-      const shutdown = Queue.shutdown(queue)
-      return Effect.zipRight(
-        Effect.addFinalizer(() => shutdown),
-        Effect.forkScoped(offer)
-      )
-    })
   }
 
   ensureNode<A>(rx: Rx.Rx<A>): Node<A> {
@@ -358,22 +324,10 @@ class Lifetime<A> implements Rx.Context<A> {
     this.node.invalidate()
   }
 
-  queue<A>(rx: Rx.Rx<A>): Effect.Effect<never, never, Queue.Dequeue<A>> {
-    const scope = Effect.runSync(Scope.make())
-    this.addFinalizer(() => Effect.runFork(Scope.close(scope, Exit.unit)))
-    return Effect.provideService(this.node.registry.queue(rx), Scope.Scope, scope)
-  }
-
   subscribe<A>(rx: Rx.Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }): void {
     this.addFinalizer(this.node.registry.subscribe(rx, f, options))
-  }
-
-  subscribeWithPrevious<A>(rx: Rx.Rx<A>, f: (prev: Option.Option<A>, value: A) => void, options?: {
-    readonly immediate?: boolean
-  }): void {
-    this.addFinalizer(this.node.registry.subscribeWithPrevious(rx, f, options))
   }
 
   setSelf(a: A): void {
