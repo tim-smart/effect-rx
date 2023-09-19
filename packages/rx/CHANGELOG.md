@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.5
+
+### Patch Changes
+
+- [`d5e5e03`](https://github.com/tim-smart/effect-rx/commit/d5e5e03d1309aead228cdb4e56e5083a7b11ef42) Thanks [@tim-smart](https://github.com/tim-smart)! - add function constructors
+
 ## 0.1.4
 
 ### Patch Changes
