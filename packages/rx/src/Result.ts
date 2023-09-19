@@ -4,7 +4,7 @@
 import * as Data from "@effect/data/Data"
 import { identity } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
-import type * as Cause from "@effect/io/Cause"
+import * as Cause from "@effect/io/Cause"
 import type * as Exit from "@effect/io/Exit"
 
 /**
@@ -182,6 +182,12 @@ export const failure = <E, A>(cause: Cause.Cause<E>): Failure<E, A> => {
   result.cause = cause
   return result
 }
+
+/**
+ * @since 1.0.0
+ * @category constructors
+ */
+export const fail = <E, A>(error: E): Failure<E, A> => failure(Cause.fail(error))
 
 /**
  * @since 1.0.0
