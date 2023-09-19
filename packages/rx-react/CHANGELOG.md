@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.1.3
+
+### Patch Changes
+
+- [`878bfba`](https://github.com/tim-smart/effect-rx/commit/878bfbae4875a7b5002847e831e3d9e5a7dbc353) Thanks [@tim-smart](https://github.com/tim-smart)! - fix react store & remove some apis
+
+- Updated dependencies [[`878bfba`](https://github.com/tim-smart/effect-rx/commit/878bfbae4875a7b5002847e831e3d9e5a7dbc353)]:
+  - @effect-rx/rx@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes
