@@ -359,7 +359,7 @@ class Lifetime<A> implements Rx.Context<A> {
   queue<A>(rx: Rx.Rx<A>): Effect.Effect<never, never, Queue.Dequeue<A>> {
     const scope = Effect.runSync(Scope.make())
     this.addFinalizer(() => Effect.runFork(Scope.close(scope, Exit.unit)))
-    return Scope.use(this.node.registry.queue(rx), scope)
+    return Effect.provideService(this.node.registry.queue(rx), Scope.Scope, scope)
   }
 
   subscribe<A>(rx: Rx.Rx<A>, f: (_: A) => void, options?: {
