@@ -2,8 +2,8 @@ remote_theme: mikearnaldi/just-the-docs
 search_enabled: true
 aux_links:
   "Docs":
-    - "//effect-ts.github.io/rx"
+    - "//tim-smart.github.io/effect-rx"
   "API Reference":
-    - "//effect-ts.github.io/rx/docs/rx"
+    - "//tim-smart.github.io/effect-rx/docs/rx"
   "GitHub":
-    - "//github.com/effect-ts/rx"
+    - "//github.com/tim-smart/effect-rx"
