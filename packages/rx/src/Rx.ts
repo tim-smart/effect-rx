@@ -12,7 +12,6 @@ import { NoSuchElementException } from "@effect/io/Cause"
 import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
 import * as Layer from "@effect/io/Layer"
-import type * as Queue_ from "@effect/io/Queue"
 import * as Runtime from "@effect/io/Runtime"
 import * as Scope from "@effect/io/Scope"
 import * as Channel from "@effect/stream/Channel"
@@ -83,15 +82,7 @@ export declare namespace Rx {
    * @since 1.0.0
    * @category models
    */
-  export type SubscribeWithPrevious = <A>(rx: Rx<A>, f: (prev: Option.Option<A>, value: A) => void, options?: {
-    readonly immediate?: boolean
-  }) => () => void
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type Queue = <A>(rx: Rx<A>) => Effect.Effect<Scope.Scope, never, Queue_.Dequeue<A>>
+  export type SubscribeGetter = <A>(rx: Rx<A>, f: () => void) => readonly [get: () => A, unmount: () => void]
 }
 
 /**

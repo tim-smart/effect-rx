@@ -59,6 +59,21 @@ class RegistryImpl implements Registry.Registry {
     }
   }
 
+  subscribeGetter = <A>(rx: Rx.Rx<A>, f: () => void): readonly [get: () => A, unmount: () => void] => {
+    const node = this.ensureNode(rx)
+    function get() {
+      return node.value()
+    }
+    const remove = node.subscribe(f)
+    const unmount = () => {
+      remove()
+      if (node.canBeRemoved) {
+        this.scheduleNodeRemoval(node)
+      }
+    }
+    return [get, unmount]
+  }
+
   mount<A>(rx: Rx.Rx<A>) {
     return this.subscribe(rx, constListener, constImmediate)
   }

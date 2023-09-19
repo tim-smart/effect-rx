@@ -15,25 +15,26 @@ export * as Rx from "@effect-rx/rx/Rx"
  */
 export const RegistryContext = React.createContext<Registry.Registry>(Registry.make())
 
-class RxStore<A> {
-  constructor(
-    readonly registry: Registry.Registry,
-    readonly rx: Rx.Rx<A>
-  ) {}
-  value = this.registry.get(this.rx)
-  init = false
-  subscribe = (f: () => void): () => void => {
-    if (this.init === true) {
-      this.value = this.registry.get(this.rx)
-    } else {
-      this.init = true
-    }
-    return this.registry.subscribe(this.rx, (a) => {
-      this.value = a
-      f()
-    })
+interface RxStore<A> {
+  readonly rx: Rx.Rx<A>
+  readonly registry: Registry.Registry
+  readonly subscribe: (f: () => void) => () => void
+  readonly snapshot: () => A
+}
+
+function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
+  let getter = function() {
+    return registry.get(rx)
   }
-  snapshot = (): A => this.value
+  function subscribe(f: () => void): () => void {
+    const [get, unmount] = registry.subscribeGetter(rx, f)
+    getter = get
+    return unmount
+  }
+  function snapshot() {
+    return getter()
+  }
+  return { rx, registry, subscribe, snapshot }
 }
 
 /**
@@ -44,7 +45,7 @@ export const useRxValue = <A>(rx: Rx.Rx<A>): A => {
   const registry = React.useContext(RegistryContext)
   const store = React.useRef<RxStore<A>>(undefined as any)
   if (store.current?.rx !== rx || store.current?.registry !== registry) {
-    store.current = new RxStore(registry, rx)
+    store.current = makeStore(registry, rx)
   }
   return React.useSyncExternalStore(store.current.subscribe, store.current.snapshot)
 }
