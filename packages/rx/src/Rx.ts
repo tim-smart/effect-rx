@@ -323,11 +323,11 @@ export const effect: {
   ): RxResult<RE | E, A>
 } = <R, E, A, RE>(
   effect: Effect.Effect<R, E, A>,
-  runtime?: RxRuntime<RE, Exclude<R, RxContext>>
+  runtime?: RxRuntime<RE, R>
 ) =>
   readable<Result.Result<E, A>>(function(ctx) {
     if (runtime !== undefined) {
-      return makeEffectRuntime(ctx, effect, runtime as any)
+      return makeEffectRuntime(ctx, effect, runtime)
     }
     return makeEffect(ctx, effect as Effect.Effect<RxContext, E, A>)
   })
@@ -362,6 +362,90 @@ export const scoped: {
 
     return makeEffect(ctx, scopedEffect)
   })
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export interface RxResultFn<E, A, Args extends Array<any>> extends Writeable<Result.Result<E, A>, Args> {}
+
+/**
+ * @since 1.0.0
+ * @category constructors
+ */
+export const fn = <A, Args extends Array<any>>(
+  initialValue: A,
+  fn: (...args: Args) => A
+) =>
+  writable<A, Args>(function(_ctx) {
+    return initialValue
+  }, function(_get, _set, setSelf, args) {
+    setSelf(fn(...args))
+  })
+
+/**
+ * @since 1.0.0
+ * @category constructors
+ */
+export const effectFn: {
+  <Args extends Array<any>, E, A>(fn: (...args: Args) => Effect.Effect<RxContext, E, A>): RxResultFn<E, A, Args>
+  <Args extends Array<any>, RR, R extends (RR | RxContext), E, A, RE>(
+    fn: (...args: Args) => Effect.Effect<R, E, A>,
+    runtime: RxRuntime<RE, RR>
+  ): RxResultFn<RE | E, A, Args>
+} = <Args extends Array<any>, R, E, A, RE>(
+  f: (...args: Args) => Effect.Effect<R, E, A>,
+  runtime?: RxRuntime<RE, R>
+) => {
+  const effectRx = state<Effect.Effect<R, E, A> | undefined>(undefined)
+  return writable<Result.Result<E, A>, Args>(function(ctx) {
+    const effect = ctx.get(effectRx)
+    if (effect === undefined) {
+      return Result.initial()
+    }
+    return runtime ? makeEffectRuntime(ctx, effect, runtime) : makeEffect(ctx, effect as Effect.Effect<RxContext, E, A>)
+  }, function(_get, set, _setSelf, args) {
+    set(effectRx, f(...args))
+  })
+}
+
+/**
+ * @since 1.0.0
+ * @category constructors
+ */
+export const scopedFn: {
+  <Args extends Array<any>, E, A>(
+    fn: (...args: Args) => Effect.Effect<RxContext | Scope.Scope, E, A>
+  ): RxResultFn<E, A, Args>
+  <Args extends Array<any>, RR, R extends (RR | RxContext | Scope.Scope), E, A, RE>(
+    fn: (...args: Args) => Effect.Effect<R, E, A>,
+    runtime: RxRuntime<RE, RR>
+  ): RxResultFn<RE | E, A, Args>
+} = <Args extends Array<any>, R, E, A, RE>(
+  f: (...args: Args) => Effect.Effect<R, E, A>,
+  runtime?: RxRuntime<RE, R>
+) => {
+  const effectRx = state<Effect.Effect<R, E, A> | undefined>(undefined)
+  return writable<Result.Result<E, A>, Args>(function(ctx) {
+    const effect = ctx.get(effectRx)
+    if (effect === undefined) {
+      return Result.initial()
+    }
+    const scope = Effect.runSync(Scope.make())
+    ctx.addFinalizer(() => Effect.runFork(Scope.close(scope, Exit.unit)))
+
+    const scopedEffect = Effect.provideService(
+      effect as Effect.Effect<Scope.Scope | RxContext, E, A>,
+      Scope.Scope,
+      scope
+    )
+    return runtime
+      ? makeEffectRuntime(ctx, scopedEffect, runtime)
+      : makeEffect(ctx, scopedEffect as Effect.Effect<RxContext, E, A>)
+  }, function(_get, set, _setSelf, args) {
+    set(effectRx, f(...args))
+  })
+}
 
 /**
  * @since 1.0.0

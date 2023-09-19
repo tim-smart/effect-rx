@@ -15,11 +15,10 @@ Added in v1.0.0
 - [context](#context)
   - [RegistryContext](#registrycontext)
 - [hooks](#hooks)
+  - [useRefreshRx](#userefreshrx)
   - [useRx](#userx)
-  - [useRxUpdate](#userxupdate)
   - [useRxValue](#userxvalue)
   - [useSetRx](#usesetrx)
-  - [useUpdateRx](#useupdaterx)
 
 ---
 
@@ -37,22 +36,24 @@ Added in v1.0.0
 
 # hooks
 
+## useRefreshRx
+
+**Signature**
+
+```ts
+export declare const useRefreshRx: <A>(rx: Rx.Rx<A> & Rx.Refreshable) => () => void
+```
+
+Added in v1.0.0
+
 ## useRx
 
 **Signature**
 
 ```ts
-export declare const useRx: <R, W>(rx: Rx.Writeable<R, W>) => readonly [R, (_: W) => void]
-```
-
-Added in v1.0.0
-
-## useRxUpdate
-
-**Signature**
-
-```ts
-export declare const useRxUpdate: <R, W>(rx: Rx.Writeable<R, W>) => readonly [R, (f: (_: R) => W) => void]
+export declare const useRx: <R, W>(
+  rx: Rx.Writeable<R, W>
+) => readonly [value: R, setOrUpdate: (_: W | ((_: R) => W)) => void]
 ```
 
 Added in v1.0.0
@@ -72,17 +73,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useSetRx: <R, W>(rx: Rx.Writeable<R, W>) => (_: W) => void
-```
-
-Added in v1.0.0
-
-## useUpdateRx
-
-**Signature**
-
-```ts
-export declare const useUpdateRx: <R, W>(rx: Rx.Writeable<R, W>) => (f: (_: R) => W) => void
+export declare const useSetRx: <R, W>(rx: Rx.Writeable<R, W>) => (_: W | ((_: R) => W)) => void
 ```
 
 Added in v1.0.0

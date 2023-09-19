@@ -91,6 +91,47 @@ describe("Rx", () => {
     assert(Result.isSuccess(result))
     expect(result.value).toEqual(1)
   })
+
+  it("effectFn", async () => {
+    const count = Rx.effectFn((n: number) => Effect.succeed(n + 1))
+    const r = Registry.make()
+    let result = r.get(count)
+    assert(Result.isInitial(result))
+    r.set(count, [1])
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(2)
+  })
+
+  it("scopedFn", async () => {
+    let finalized = 0
+    const count = Rx.scopedFn((n: number) =>
+      Effect.succeed(n + 1).pipe(
+        Effect.zipLeft(
+          Effect.addFinalizer(() =>
+            Effect.sync(() => {
+              finalized++
+            })
+          )
+        )
+      )
+    ).pipe(Rx.keepAlive)
+    const r = Registry.make()
+    let result = r.get(count)
+    assert(Result.isInitial(result))
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(finalized).toEqual(0)
+
+    r.set(count, [1])
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(2)
+
+    r.set(count, [2])
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(finalized).toEqual(1)
+  })
 })
 
 interface Counter {

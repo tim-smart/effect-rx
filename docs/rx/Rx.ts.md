@@ -20,9 +20,12 @@ Added in v1.0.0
   - [refreshable](#refreshable)
 - [constructors](#constructors)
   - [effect](#effect)
+  - [effectFn](#effectfn)
+  - [fn](#fn)
   - [readable](#readable)
   - [runtime](#runtime)
   - [scoped](#scoped)
+  - [scopedFn](#scopedfn)
   - [state](#state)
   - [writable](#writable)
 - [context](#context)
@@ -37,12 +40,12 @@ Added in v1.0.0
   - [Rx (namespace)](#rx-namespace)
     - [Get (type alias)](#get-type-alias)
     - [Mount (type alias)](#mount-type-alias)
-    - [Queue (type alias)](#queue-type-alias)
     - [Refresh (type alias)](#refresh-type-alias)
     - [Set (type alias)](#set-type-alias)
     - [Subscribe (type alias)](#subscribe-type-alias)
-    - [SubscribeWithPrevious (type alias)](#subscribewithprevious-type-alias)
+    - [SubscribeGetter (type alias)](#subscribegetter-type-alias)
   - [RxResult (interface)](#rxresult-interface)
+  - [RxResultFn (interface)](#rxresultfn-interface)
   - [RxRuntime (interface)](#rxruntime-interface)
   - [Writeable (interface)](#writeable-interface)
 - [type ids](#type-ids)
@@ -117,6 +120,32 @@ export declare const effect: {
 
 Added in v1.0.0
 
+## effectFn
+
+**Signature**
+
+```ts
+export declare const effectFn: {
+  <Args extends any[], E, A>(fn: (...args: Args) => Effect.Effect<RxContext, E, A>): RxResultFn<E, A, Args>
+  <Args extends any[], RR, R extends RxContext | RR, E, A, RE>(
+    fn: (...args: Args) => Effect.Effect<R, E, A>,
+    runtime: RxRuntime<RE, RR>
+  ): RxResultFn<E | RE, A, Args>
+}
+```
+
+Added in v1.0.0
+
+## fn
+
+**Signature**
+
+```ts
+export declare const fn: <A, Args extends any[]>(initialValue: A, fn: (...args: Args) => A) => Writeable<A, Args>
+```
+
+Added in v1.0.0
+
 ## readable
 
 **Signature**
@@ -151,6 +180,26 @@ export declare const scoped: {
     effect: Effect.Effect<R, E, A>,
     runtime: RxRuntime<RE, RR>
   ): RxResult<E | RE, A>
+}
+```
+
+Added in v1.0.0
+
+## scopedFn
+
+**Signature**
+
+```ts
+export declare const scopedFn: {
+  <Args extends any[], E, A>(fn: (...args: Args) => Effect.Effect<RxContext | Scope.Scope, E, A>): RxResultFn<
+    E,
+    A,
+    Args
+  >
+  <Args extends any[], RR, R extends RxContext | Scope.Scope | RR, E, A, RE>(
+    fn: (...args: Args) => Effect.Effect<R, E, A>,
+    runtime: RxRuntime<RE, RR>
+  ): RxResultFn<E | RE, A, Args>
 }
 ```
 
@@ -303,16 +352,6 @@ export type Mount = <A>(rx: Rx<A>) => () => void
 
 Added in v1.0.0
 
-### Queue (type alias)
-
-**Signature**
-
-```ts
-export type Queue = <A>(rx: Rx<A>) => Effect.Effect<Scope.Scope, never, Queue_.Dequeue<A>>
-```
-
-Added in v1.0.0
-
 ### Refresh (type alias)
 
 **Signature**
@@ -349,18 +388,12 @@ export type Subscribe = <A>(
 
 Added in v1.0.0
 
-### SubscribeWithPrevious (type alias)
+### SubscribeGetter (type alias)
 
 **Signature**
 
 ```ts
-export type SubscribeWithPrevious = <A>(
-  rx: Rx<A>,
-  f: (prev: Option.Option<A>, value: A) => void,
-  options?: {
-    readonly immediate?: boolean
-  }
-) => () => void
+export type SubscribeGetter = <A>(rx: Rx<A>, f: () => void) => readonly [get: () => A, unmount: () => void]
 ```
 
 Added in v1.0.0
@@ -371,6 +404,16 @@ Added in v1.0.0
 
 ```ts
 export interface RxResult<E, A> extends Rx<Result.Result<E, A>> {}
+```
+
+Added in v1.0.0
+
+## RxResultFn (interface)
+
+**Signature**
+
+```ts
+export interface RxResultFn<E, A, Args extends Array<any>> extends Writeable<Result.Result<E, A>, Args> {}
 ```
 
 Added in v1.0.0
