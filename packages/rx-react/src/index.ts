@@ -21,7 +21,7 @@ class RxStore<A> {
     readonly rx: Rx.Rx<A>
   ) {}
 
-  value = this.registry.get(this.rx)
+  value!: A
 
   subscribe = (f: () => void): () => void => {
     this.value = this.registry.get(this.rx)
@@ -41,7 +41,7 @@ class RxStore<A> {
 export const useRxValue = <A>(rx: Rx.Rx<A>): A => {
   const registry = React.useContext(RegistryContext)
   const store = React.useRef<RxStore<A>>(undefined as any)
-  if (store.current === undefined) {
+  if (store.current?.rx !== rx || store.current?.registry !== registry) {
     store.current = new RxStore(registry, rx)
   }
   return React.useSyncExternalStore(store.current.subscribe, store.current.snapshot)
