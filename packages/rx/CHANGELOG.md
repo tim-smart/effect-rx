@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.13
+
+### Patch Changes
+
+- [#16](https://github.com/tim-smart/effect-rx/pull/16) [`35e6392`](https://github.com/tim-smart/effect-rx/commit/35e6392c7ef128739cc901741429ffa2340b5427) Thanks [@tim-smart](https://github.com/tim-smart)! - add Rx.streamFn constructor
+
 ## 0.1.12
 
 ### Patch Changes
