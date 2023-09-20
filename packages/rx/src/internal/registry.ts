@@ -1,7 +1,10 @@
 import type * as Registry from "@effect-rx/rx/Registry"
+import * as Result from "@effect-rx/rx/Result"
 import type * as Rx from "@effect-rx/rx/Rx"
 import * as Equal from "@effect/data/Equal"
 import * as Option from "@effect/data/Option"
+import type { NoSuchElementException } from "@effect/io/Cause"
+import type { Exit } from "@effect/io/Exit"
 
 const constImmediate = { immediate: true }
 function constListener(_: any) {}
@@ -315,6 +318,10 @@ class Lifetime<A> implements Rx.Context {
     const parent = this.node.registry.ensureNode(rx)
     this.node.addParent(parent)
     return parent.value()
+  }
+
+  getResult<E, A>(rx: Rx.Rx<Result.Result<E, A>>): Exit<E | NoSuchElementException, A> {
+    return Result.toExit(this.get(rx))
   }
 
   once<A>(rx: Rx.Rx<A>): A {

@@ -3,8 +3,6 @@
  */
 import * as Result from "@effect-rx/rx/Result"
 import * as Chunk from "@effect/data/Chunk"
-import * as EffectContext from "@effect/data/Context"
-import * as Equal from "@effect/data/Equal"
 import { pipe } from "@effect/data/Function"
 import * as Hash from "@effect/data/Hash"
 import * as Inspectable from "@effect/data/Inspectable"
@@ -16,8 +14,6 @@ import * as Exit from "@effect/io/Exit"
 import * as Layer from "@effect/io/Layer"
 import * as Runtime from "@effect/io/Runtime"
 import * as Scope from "@effect/io/Scope"
-import * as Channel from "@effect/stream/Channel"
-import * as Sink from "@effect/stream/Sink"
 import * as Stream from "@effect/stream/Stream"
 
 /**
@@ -36,7 +32,7 @@ export type TypeId = typeof TypeId
  * @since 1.0.0
  * @category models
  */
-export interface Rx<A> extends Pipeable, Effect.Effect<RxContext, never, A> {
+export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
   readonly read: (get: Rx.Get, ctx: Context) => A
@@ -53,6 +49,12 @@ export declare namespace Rx {
    * @category models
    */
   export type Get = <A>(rx: Rx<A>) => A
+
+  /**
+   * @since 1.0.0
+   * @category models
+   */
+  export type GetResult = <E, A>(rx: Rx<Result.Result<E, A>>) => Exit.Exit<E | NoSuchElementException, A>
 
   /**
    * @since 1.0.0
@@ -134,6 +136,7 @@ export interface Writeable<R, W> extends Rx<R> {
  */
 export interface Context {
   readonly get: Rx.Get
+  readonly getResult: Rx.GetResult
   readonly once: Rx.Get
   readonly addFinalizer: (f: () => void) => void
   readonly refresh: Rx.Refresh
@@ -146,41 +149,12 @@ export interface Context {
   }) => void
 }
 
-/**
- * @since 1.0.0
- * @category context
- */
-export interface RxContext {
-  readonly _: unique symbol
-}
-
-/**
- * @since 1.0.0
- * @category context
- */
-export const Context = EffectContext.Tag<RxContext, Context>("@effect-rx/rx/Rx/Context")
-
 const RxProto = {
   [TypeId]: TypeId,
   pipe() {
     return pipeArguments(this, arguments)
   },
 
-  // Effect
-  [Effect.EffectTypeId]: undefined,
-  [Stream.StreamTypeId]: undefined,
-  [Sink.SinkTypeId]: undefined,
-  [Channel.ChannelTypeId]: undefined,
-  _tag: "Commit",
-  commit(this: Rx<unknown>) {
-    return access(this)
-  },
-  [Equal.symbol](this: Rx<any>, that: Rx<any>): boolean {
-    return this === that
-  },
-  [Hash.symbol](this: Rx<any>): number {
-    return Hash.random(this)
-  },
   toJSON(this: Rx<any>) {
     return {
       _id: "Rx",
@@ -254,17 +228,13 @@ export const state = <A>(
 
 function makeEffect<E, A>(
   ctx: Context,
-  effect: Effect.Effect<RxContext, E, A>,
+  effect: Effect.Effect<never, E, A>,
   runCallback = Effect.runCallback
 ): Result.Result<E, A> {
   const previous = ctx.self<Result.Result<E, A>>()
 
   const cancel = runCallback(
-    Effect.provideService(
-      effect as Effect.Effect<RxContext, E, A>,
-      Context,
-      ctx
-    ),
+    effect,
     function(exit) {
       ctx.setSelf(Result.fromExit(exit))
     }
@@ -279,7 +249,7 @@ function makeEffect<E, A>(
 
 function makeEffectRuntime<R, E, A, RE>(
   ctx: Context,
-  effect: Effect.Effect<R | RxContext, E, A>,
+  effect: Effect.Effect<R, E, A>,
   runtime: RxRuntime<RE, R>
 ): Result.Result<E, A> {
   const previous = ctx.self<Result.Result<E, A>>()
@@ -300,19 +270,20 @@ function makeEffectRuntime<R, E, A, RE>(
  * @category constructors
  */
 export const effect: {
-  <E, A>(effect: Effect.Effect<RxContext, E, A>): Rx<Result.Result<E, A>>
-  <RR, R extends (RR | RxContext), E, A, RE>(
-    effect: Effect.Effect<R, E, A>,
+  <E, A>(create: (get: Rx.Get, ctx: Context) => Effect.Effect<never, E, A>): Rx<Result.Result<E, A>>
+  <RR, R extends RR, E, A, RE>(
+    create: (get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
     options: { readonly runtime: RxRuntime<RE, RR> }
   ): Rx<Result.Result<RE | E, A>>
 } = <R, E, A, RE>(
-  effect: Effect.Effect<R, E, A>,
+  create: (get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) =>
-  readable<Result.Result<E, A>>(function(_get, ctx) {
+  readable<Result.Result<E, A>>(function(get, ctx) {
+    const effect = create(get, ctx)
     return options?.runtime
       ? makeEffectRuntime(ctx, effect, options.runtime)
-      : makeEffect(ctx, effect as Effect.Effect<RxContext, E, A>)
+      : makeEffect(ctx, effect as Effect.Effect<never, E, A>)
   })
 
 /**
@@ -320,21 +291,22 @@ export const effect: {
  * @category constructors
  */
 export const scoped: {
-  <E, A>(effect: Effect.Effect<Scope.Scope | RxContext, E, A>): Rx<Result.Result<E, A>>
-  <RR, R extends (RR | RxContext | Scope.Scope), E, A, RE>(
-    effect: Effect.Effect<R, E, A>,
+  <E, A>(create: (get: Rx.Get, ctx: Context) => Effect.Effect<Scope.Scope, E, A>): Rx<Result.Result<E, A>>
+  <RR, R extends (RR | Scope.Scope), E, A, RE>(
+    create: (get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
     options: { readonly runtime: RxRuntime<RE, RR> }
   ): Rx<Result.Result<RE | E, A>>
 } = <R, E, A, RE>(
-  effect: Effect.Effect<R | Scope.Scope | RxContext, E, A>,
+  create: (get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) =>
-  readable<Result.Result<E, A>>(function(_get, ctx) {
+  readable<Result.Result<E, A>>(function(get, ctx) {
+    const effect = create(get, ctx)
     const scope = Effect.runSync(Scope.make())
     ctx.addFinalizer(() => Effect.runFork(Scope.close(scope, Exit.unit)))
 
     const scopedEffect = Effect.provideService(
-      effect as Effect.Effect<Scope.Scope | RxContext, E, A>,
+      effect,
       Scope.Scope,
       scope
     )
@@ -342,54 +314,47 @@ export const scoped: {
     if (options?.runtime !== undefined) {
       return makeEffectRuntime(ctx, scopedEffect, options.runtime)
     }
-    return makeEffect(ctx, scopedEffect)
+    return makeEffect(ctx, scopedEffect as Effect.Effect<never, E, A>)
   })
 
 /**
  * @since 1.0.0
  * @category models
  */
-export interface RxResultFn<E, A, Args extends Array<any>> extends Writeable<Result.Result<E, A>, Args> {}
-
-/**
- * @since 1.0.0
- * @category constructors
- */
-export const fn = <A, Args extends Array<any>>(
-  initialValue: A,
-  fn: (...args: Args) => A
-) =>
-  writeable<A, Args>(function(_ctx) {
-    return initialValue
-  }, function(_get, _set, setSelf, args) {
-    setSelf(fn(...args))
-  })
+export interface RxResultFn<E, A, Arg> extends Writeable<Result.Result<E, A>, Arg> {}
 
 /**
  * @since 1.0.0
  * @category constructors
  */
 export const effectFn: {
-  <Args extends Array<any>, E, A>(fn: (...args: Args) => Effect.Effect<RxContext, E, A>): RxResultFn<E, A, Args>
-  <Args extends Array<any>, RR, R extends (RR | RxContext), E, A, RE>(
-    fn: (...args: Args) => Effect.Effect<R, E, A>,
+  <Arg, E, A>(fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<never, E, A>): RxResultFn<E, A, Arg>
+  <Arg, RR, R extends RR, E, A, RE>(
+    fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
     options: { readonly runtime: RxRuntime<RE, RR> }
-  ): RxResultFn<RE | E, A, Args>
-} = <Args extends Array<any>, R, E, A, RE>(
-  f: (...args: Args) => Effect.Effect<R, E, A>,
+  ): RxResultFn<RE | E, A, Arg>
+} = <Arg, R, E, A, RE>(
+  f: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) => {
-  const effectRx = state<Effect.Effect<R, E, A> | undefined>(undefined)
-  return writeable<Result.Result<E, A>, Args>(function(get, ctx) {
+  const argRx = state<[number, Arg]>([0, undefined as any])
+  const effectRx = readable<Effect.Effect<R, E, A> | undefined>(function(get, ctx) {
+    const [counter, arg] = get(argRx)
+    if (counter === 0) {
+      return undefined
+    }
+    return f(arg, get, ctx)
+  })
+  return writeable<Result.Result<E, A>, Arg>(function(get, ctx) {
     const effect = get(effectRx)
     if (effect === undefined) {
       return Result.initial()
     }
     return options?.runtime
       ? makeEffectRuntime(ctx, effect, options.runtime)
-      : makeEffect(ctx, effect as Effect.Effect<RxContext, E, A>)
-  }, function(_get, set, _setSelf, args) {
-    set(effectRx, f(...args))
+      : makeEffect(ctx, effect as Effect.Effect<never, E, A>)
+  }, function(get, set, _setSelf, arg) {
+    set(argRx, [get(argRx)[0] + 1, arg])
   })
 }
 
@@ -398,36 +363,40 @@ export const effectFn: {
  * @category constructors
  */
 export const scopedFn: {
-  <Args extends Array<any>, E, A>(
-    fn: (...args: Args) => Effect.Effect<RxContext | Scope.Scope, E, A>
-  ): RxResultFn<E, A, Args>
-  <Args extends Array<any>, RR, R extends (RR | RxContext | Scope.Scope), E, A, RE>(
-    fn: (...args: Args) => Effect.Effect<R, E, A>,
+  <Arg, E, A>(fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<Scope.Scope, E, A>): RxResultFn<E, A, Arg>
+  <Arg, RR, R extends (RR | Scope.Scope), E, A, RE>(
+    fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
     options: { readonly runtime: RxRuntime<RE, RR> }
-  ): RxResultFn<RE | E, A, Args>
-} = <Args extends Array<any>, R, E, A, RE>(
-  f: (...args: Args) => Effect.Effect<R, E, A>,
+  ): RxResultFn<RE | E, A, Arg>
+} = <Arg, R, E, A, RE>(
+  f: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) => {
-  const effectRx = state<Effect.Effect<R, E, A> | undefined>(undefined)
-  return writeable<Result.Result<E, A>, Args>(function(_get, ctx) {
-    const effect = ctx.get(effectRx)
+  const argRx = state<[number, Arg]>([0, undefined as any])
+  const effectRx = readable<Effect.Effect<R, E, A> | undefined>(function(get, ctx) {
+    const [counter, arg] = get(argRx)
+    if (counter === 0) {
+      return undefined
+    }
+    return f(arg, get, ctx)
+  })
+  return writeable<Result.Result<E, A>, Arg>(function(get, ctx) {
+    const effect = get(effectRx)
     if (effect === undefined) {
       return Result.initial()
     }
     const scope = Effect.runSync(Scope.make())
     ctx.addFinalizer(() => Effect.runFork(Scope.close(scope, Exit.unit)))
-
     const scopedEffect = Effect.provideService(
-      effect as Effect.Effect<Scope.Scope | RxContext, E, A>,
+      effect as Effect.Effect<Scope.Scope, E, A>,
       Scope.Scope,
       scope
     )
     return options?.runtime
       ? makeEffectRuntime(ctx, scopedEffect, options.runtime)
-      : makeEffect(ctx, scopedEffect as Effect.Effect<RxContext, E, A>)
-  }, function(_get, set, _setSelf, args) {
-    set(effectRx, f(...args))
+      : makeEffect(ctx, scopedEffect as Effect.Effect<never, E, A>)
+  }, function(get, set, _setSelf, arg) {
+    set(argRx, [get(argRx)[0] + 1, arg])
   })
 }
 
@@ -446,33 +415,27 @@ export const runtime: {
   <R, E, A, RR extends R, RE>(layer: Layer.Layer<R, E, A>, runtime: RxRuntime<RE, RR>): RxRuntime<E, A | RR>
 } = <R, E, A, RE>(layer: Layer.Layer<R, E, A>, runtime?: RxRuntime<RE, R>): RxRuntime<E | RE, A> => {
   if (runtime === undefined) {
-    return scoped(Layer.toRuntime(layer) as any)
+    return scoped(() => Layer.toRuntime(layer) as any)
   }
 
-  return scoped(
+  return scoped(() =>
     Effect.flatMap(
       Layer.build(layer),
       (context) => Effect.provideSomeContext(Effect.runtime<A>(), context)
-    ),
-    { runtime }
-  )
+    ), { runtime })
 }
 
 function makeStream<E, A>(
   ctx: Context,
-  stream: Stream.Stream<RxContext, E, A>,
+  stream: Stream.Stream<never, E, A>,
   runCallback = Effect.runCallback
 ): Result.Result<E | NoSuchElementException, A> {
   const previous = ctx.self<Result.Result<E | NoSuchElementException, A>>()
 
   const cancel = runCallback(
-    Effect.provideService(
-      Stream.runForEach(
-        stream,
-        (a) => Effect.sync(() => ctx.setSelf(Result.waiting(Option.some(Result.success(a)))))
-      ),
-      Context,
-      ctx
+    Stream.runForEach(
+      stream,
+      (a) => Effect.sync(() => ctx.setSelf(Result.waiting(Option.some(Result.success(a)))))
     ),
     (exit) => {
       if (exit._tag === "Failure") {
@@ -499,7 +462,7 @@ function makeStream<E, A>(
 
 function makeStreamRuntime<R, E, A, RE>(
   ctx: Context,
-  stream: Stream.Stream<R | RxContext, E, A>,
+  stream: Stream.Stream<R, E, A>,
   runtime: RxRuntime<RE, R>
 ): Result.Result<E | NoSuchElementException, A> {
   const previous = ctx.self<Result.Result<E | NoSuchElementException, A>>()
@@ -520,20 +483,23 @@ function makeStreamRuntime<R, E, A, RE>(
  * @category constructors
  */
 export const stream: {
-  <E, A>(stream: Stream.Stream<RxContext, E, A>): Rx<Result.Result<E | NoSuchElementException, A>>
-  <RR, R extends (RR | RxContext), E, A, RE>(
-    stream: Stream.Stream<R, E, A>,
+  <E, A>(
+    create: (get: Rx.Get, ctx: Context) => Stream.Stream<never, E, A>
+  ): Rx<Result.Result<E | NoSuchElementException, A>>
+  <RR, R extends RR, E, A, RE>(
+    create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
     runtime: RxRuntime<RE, RR>
   ): Rx<Result.Result<RE | E | NoSuchElementException, A>>
 } = <R, E, A, RE>(
-  stream: Stream.Stream<R, E, A>,
+  create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
   runtime?: RxRuntime<RE, R>
 ) =>
-  readable<Result.Result<E | NoSuchElementException, A>>(function(_get, ctx) {
+  readable<Result.Result<E | NoSuchElementException, A>>(function(get, ctx) {
+    const stream = create(get, ctx)
     if (runtime !== undefined) {
       return makeStreamRuntime(ctx, stream, runtime)
     }
-    return makeStream(ctx, stream as Stream.Stream<RxContext, E, A>)
+    return makeStream(ctx, stream as Stream.Stream<never, E, A>)
   })
 
 /**
@@ -541,32 +507,35 @@ export const stream: {
  * @category constructors
  */
 export const streamPull: {
-  <E, A>(stream: Stream.Stream<RxContext, E, A>, options?: {
+  <E, A>(create: (get: Rx.Get, ctx: Context) => Stream.Stream<never, E, A>, options?: {
     readonly disableAccumulation?: boolean
   }): Writeable<Result.Result<E | NoSuchElementException, Array<A>>, void>
-  <RR, R extends (RR | RxContext), E, A, RE>(
-    stream: Stream.Stream<R, E, A>,
+  <RR, R extends RR, E, A, RE>(
+    create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
     options: {
       readonly runtime: RxRuntime<RE, RR>
       readonly disableAccumulation?: boolean
     }
   ): Writeable<Result.Result<RE | E | NoSuchElementException, Array<A>>, void>
-} = <E, A>(
-  stream: Stream.Stream<RxContext, E, A>,
+} = <R, E, A>(
+  create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
   options?: {
-    readonly runtime?: RxRuntime<any, any>
+    readonly runtime?: RxRuntime<unknown, R>
     readonly disableAccumulation?: boolean
   }
 ) => {
-  stream = options?.disableAccumulation ? stream : pipe(
-    Stream.chunks(stream),
-    Stream.mapAccum(Chunk.empty<A>(), (acc, chunk) => {
-      const next = Chunk.appendAll(acc, chunk)
-      return [next, next]
-    }),
-    Stream.mapChunks(Chunk.flatten)
-  )
-  const pullRx = scoped(Stream.toPull(stream), options?.runtime as any)
+  const pullRx = scoped((get, ctx) => {
+    const stream = create(get, ctx)
+    const accStream = options?.disableAccumulation ? stream : pipe(
+      Stream.chunks(stream),
+      Stream.mapAccum(Chunk.empty<A>(), (acc, chunk) => {
+        const next = Chunk.appendAll(acc, chunk)
+        return [next, next]
+      }),
+      Stream.mapChunks(Chunk.flatten)
+    )
+    return Stream.toPull(accStream)
+  }, options?.runtime as any)
   const counter = state(0)
 
   return writeable<Result.Result<E | NoSuchElementException, Array<A>>, void>(function(get, ctx) {
@@ -599,7 +568,7 @@ export const streamPull: {
     )
     return options?.runtime
       ? makeEffectRuntime(ctx, pull, options.runtime)
-      : makeEffect(ctx, pull)
+      : makeEffect(ctx, pull as any)
   }, function(get, set, _setSelf, _) {
     set(counter, get(counter) + 1)
   }, function(refresh) {
@@ -652,38 +621,3 @@ export const refreshable = <T extends Rx<any>>(
     ...self,
     [RefreshableTypeId]: RefreshableTypeId
   })
-
-/**
- * @since 1.0.0
- * @category accessors
- */
-export const access = <A>(rx: Rx<A>): Effect.Effect<RxContext, never, A> =>
-  Effect.map(
-    Context,
-    (ctx) => ctx.get(rx)
-  )
-
-/**
- * @since 1.0.0
- * @category accessors
- */
-export const accessResult = <E, A>(
-  rx: Rx<Result.Result<E, A>>
-): Effect.Effect<RxContext, E | NoSuchElementException, A> =>
-  Effect.flatMap(
-    Context,
-    (ctx): Effect.Effect<never, E | NoSuchElementException, A> => {
-      const result = Result.noWaiting(ctx.get(rx))
-      switch (result._tag) {
-        case "Success": {
-          return Effect.succeed(result.value)
-        }
-        case "Failure": {
-          return Effect.failCause(result.cause)
-        }
-        default: {
-          return Effect.fail(NoSuchElementException())
-        }
-      }
-    }
-  )

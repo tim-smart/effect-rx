@@ -5,7 +5,7 @@ import * as Data from "@effect/data/Data"
 import { identity } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
 import * as Cause from "@effect/io/Cause"
-import type * as Exit from "@effect/io/Exit"
+import * as Exit from "@effect/io/Exit"
 
 /**
  * @since 1.0.0
@@ -226,4 +226,25 @@ export const cause = <E, A>(result: Result<E, A>): Option.Option<Cause.Cause<E>>
     return Option.some(noWaitingResult.cause)
   }
   return Option.none()
+}
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const toExit = <E, A>(
+  self: Result<E, A>
+): Exit.Exit<E | Cause.NoSuchElementException, A> => {
+  const result = noWaiting(self)
+  switch (result._tag) {
+    case "Success": {
+      return Exit.succeed(result.value)
+    }
+    case "Failure": {
+      return Exit.failCause(result.cause)
+    }
+    default: {
+      return Exit.fail(Cause.NoSuchElementException())
+    }
+  }
 }

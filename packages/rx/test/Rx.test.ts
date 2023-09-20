@@ -63,7 +63,7 @@ describe("Rx", () => {
 
   it("runtime", async () => {
     const count = Rx.effect(
-      Effect.flatMap(Counter, (_) => _.get),
+      () => Effect.flatMap(Counter, (_) => _.get),
       { runtime: counterRuntime }
     )
     const r = Registry.make()
@@ -74,17 +74,18 @@ describe("Rx", () => {
 
   it("runtime multiple", async () => {
     const count = Rx.effect(
-      Effect.flatMap(Counter, (_) => _.get),
+      () => Effect.flatMap(Counter, (_) => _.get),
       { runtime: counterRuntime }
     )
     const timesTwo = Rx.effect(
-      Effect.gen(function*(_) {
-        const counter = yield* _(Counter)
-        const multiplier = yield* _(Multiplier)
-        yield* _(counter.inc)
-        expect(yield* _(Rx.accessResult(count))).toEqual(2)
-        return yield* _(multiplier.times(2))
-      }),
+      (get, ctx) =>
+        Effect.gen(function*(_) {
+          const counter = yield* _(Counter)
+          const multiplier = yield* _(Multiplier)
+          yield* _(counter.inc)
+          expect(yield* _(ctx.getResult(count))).toEqual(2)
+          return yield* _(multiplier.times(2))
+        }),
       { runtime: multiplierRuntime }
     )
     const r = Registry.make()
@@ -108,7 +109,7 @@ describe("Rx", () => {
     const r = Registry.make()
     let result = r.get(count)
     assert(Result.isInitial(result))
-    r.set(count, [1])
+    r.set(count, 1)
     result = r.get(count)
     assert(Result.isSuccess(result))
     expect(result.value).toEqual(2)
@@ -134,18 +135,18 @@ describe("Rx", () => {
     await new Promise((resolve) => resolve(null))
     expect(finalized).toEqual(0)
 
-    r.set(count, [1])
+    r.set(count, 1)
     result = r.get(count)
     assert(Result.isSuccess(result))
     expect(result.value).toEqual(2)
 
-    r.set(count, [2])
+    r.set(count, 2)
     await new Promise((resolve) => resolve(null))
     expect(finalized).toEqual(1)
   })
 
   it("stream", async () => {
-    const count = Rx.stream(
+    const count = Rx.stream(() =>
       Stream.range(0, 3).pipe(
         Stream.tap(() => Effect.sleep(50))
       )
@@ -179,7 +180,7 @@ describe("Rx", () => {
   })
 
   it("streamPull", async () => {
-    const count = Rx.streamPull(
+    const count = Rx.streamPull(() =>
       Stream.range(0, 5, 1).pipe(
         Stream.tap(() => Effect.sleep(50))
       )

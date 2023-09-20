@@ -16,6 +16,8 @@ Added in v1.0.0
   - [cause](#cause)
   - [noWaiting](#nowaiting)
   - [value](#value)
+- [combinators](#combinators)
+  - [toExit](#toexit)
 - [constructors](#constructors)
   - [fail](#fail)
   - [failure](#failure)
@@ -72,6 +74,18 @@ Added in v1.0.0
 
 ```ts
 export declare const value: <E, A>(result: Result<E, A>) => Option.Option<A>
+```
+
+Added in v1.0.0
+
+# combinators
+
+## toExit
+
+**Signature**
+
+```ts
+export declare const toExit: <E, A>(self: Result<E, A>) => Exit.Exit<Cause.NoSuchElementException | E, A>
 ```
 
 Added in v1.0.0
