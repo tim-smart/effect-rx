@@ -609,6 +609,30 @@ export const streamPull: {
 
 /**
  * @since 1.0.0
+ * @category constructors
+ */
+export const family = <Arg, T extends Rx<any>>(
+  f: (arg: Arg) => T
+): (arg: Arg) => T => {
+  const atoms = new Map<number, WeakRef<T>>()
+  const registry = new FinalizationRegistry<number>((hash) => {
+    atoms.delete(hash)
+  })
+  return function(arg) {
+    const hash = Hash.hash(arg)
+    const atom = atoms.get(hash)?.deref()
+    if (atom !== undefined) {
+      return atom
+    }
+    const newAtom = f(arg)
+    atoms.set(hash, new WeakRef(newAtom))
+    registry.register(newAtom, hash)
+    return newAtom
+  }
+}
+
+/**
+ * @since 1.0.0
  * @category combinators
  */
 export const keepAlive = <A extends Rx<any>>(self: A): A =>

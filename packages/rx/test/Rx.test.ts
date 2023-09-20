@@ -2,6 +2,7 @@ import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
 import * as Context from "@effect/data/Context"
+import * as Hash from "@effect/data/Hash"
 import * as Option from "@effect/data/Option"
 import * as Effect from "@effect/io/Effect"
 import * as Layer from "@effect/io/Layer"
@@ -220,6 +221,29 @@ describe("Rx", () => {
     result = r.get(count)
     assert(Result.isWaiting(result))
     assert(Option.isNone(Result.value(result)))
+  })
+
+  it("family", async () => {
+    const r = Registry.make()
+
+    const count = Rx.family((n: number) => Rx.state(n))
+    const hash = Hash.hash(count(1))
+    assert.strictEqual(count(1), count(1))
+    r.set(count(1), 2)
+    assert.strictEqual(r.get(count(1)), 2)
+
+    const countKeep = Rx.family((n: number) => Rx.state(n).pipe(Rx.keepAlive))
+    assert.strictEqual(countKeep(1), countKeep(1))
+    r.get(countKeep(1))
+    const hashKeep = Hash.hash(countKeep(1))
+
+    if (global.gc) {
+      vi.useRealTimers()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      global.gc()
+      assert.notEqual(hash, Hash.hash(count(1)))
+      assert.strictEqual(hashKeep, Hash.hash(countKeep(1)))
+    }
   })
 })
 

@@ -18,7 +18,7 @@ class RegistryImpl implements Registry.Registry {
     this[TypeId] = TypeId
   }
 
-  private readonly nodes = new WeakMap<Rx.Rx<any>, Node<any>>()
+  private readonly nodes = new Map<Rx.Rx<any>, Node<any>>()
 
   get = <A>(rx: Rx.Rx<A>): A => {
     return this.ensureNode(rx).value()

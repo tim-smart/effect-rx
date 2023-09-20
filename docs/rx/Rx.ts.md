@@ -21,6 +21,7 @@ Added in v1.0.0
 - [constructors](#constructors)
   - [effect](#effect)
   - [effectFn](#effectfn)
+  - [family](#family)
   - [fn](#fn)
   - [readable](#readable)
   - [runtime](#runtime)
@@ -133,6 +134,16 @@ export declare const effectFn: {
     options: { readonly runtime: RxRuntime<RE, RR> }
   ): RxResultFn<E | RE, A, Args>
 }
+```
+
+Added in v1.0.0
+
+## family
+
+**Signature**
+
+```ts
+export declare const family: <Arg, T extends Rx<any>>(f: (arg: Arg) => T) => (arg: Arg) => T
 ```
 
 Added in v1.0.0
