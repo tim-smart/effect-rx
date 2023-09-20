@@ -246,6 +246,12 @@ describe("Rx", () => {
       assert.strictEqual(hashKeep, Hash.hash(countKeep(1)))
     }
   })
+
+  it("label", async () => {
+    expect(
+      Rx.state(0).pipe(Rx.withLabel("counter")).label![1]
+    ).toMatch(/Rx.test.ts:\d+:\d+/)
+  })
 })
 
 interface Counter {

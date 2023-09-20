@@ -3,7 +3,7 @@
  */
 import * as Result from "@effect-rx/rx/Result"
 import * as Chunk from "@effect/data/Chunk"
-import { pipe } from "@effect/data/Function"
+import { dual, pipe } from "@effect/data/Function"
 import * as Hash from "@effect/data/Hash"
 import * as Inspectable from "@effect/data/Inspectable"
 import * as Option from "@effect/data/Option"
@@ -37,6 +37,7 @@ export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly keepAlive: boolean
   readonly read: (get: Rx.Get, ctx: Context) => A
   readonly refresh: (f: <A>(rx: Rx<A>) => void) => void
+  readonly label?: readonly [name: string, stack: string]
 }
 
 /**
@@ -158,7 +159,8 @@ const RxProto = {
   toJSON(this: Rx<any>) {
     return {
       _id: "Rx",
-      keepAlive: this.keepAlive
+      keepAlive: this.keepAlive,
+      label: this.label
     }
   },
   toString() {
@@ -621,3 +623,16 @@ export const refreshable = <T extends Rx<any>>(
     ...self,
     [RefreshableTypeId]: RefreshableTypeId
   })
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const withLabel = dual<
+  (name: string) => <A extends Rx<any>>(self: A) => A,
+  <A extends Rx<any>>(self: A, name: string) => <A extends Rx<any>>(self: A) => A
+>(2, (self, name) =>
+  Object.assign(Object.create(Object.getPrototypeOf(self)), {
+    ...self,
+    label: [name, new Error().stack?.split("\n")[5] ?? ""]
+  }))

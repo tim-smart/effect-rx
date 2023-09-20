@@ -15,6 +15,7 @@ Added in v1.0.0
 - [combinators](#combinators)
   - [keepAlive](#keepalive)
   - [refreshable](#refreshable)
+  - [withLabel](#withlabel)
 - [constructors](#constructors)
   - [effect](#effect)
   - [effectFn](#effectfn)
@@ -71,6 +72,17 @@ Added in v1.0.0
 
 ```ts
 export declare const refreshable: <T extends Rx<any>>(self: T) => T & Refreshable
+```
+
+Added in v1.0.0
+
+## withLabel
+
+**Signature**
+
+```ts
+export declare const withLabel: ((name: string) => <A extends Rx<any>>(self: A) => A) &
+  (<A extends Rx<any>>(self: A, name: string) => <A extends Rx<any>>(self: A) => A)
 ```
 
 Added in v1.0.0
@@ -291,6 +303,7 @@ export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly keepAlive: boolean
   readonly read: (get: Rx.Get, ctx: Context) => A
   readonly refresh: (f: <A>(rx: Rx<A>) => void) => void
+  readonly label?: readonly [name: string, stack: string]
 }
 ```
 
