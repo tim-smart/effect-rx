@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.7
+
+### Patch Changes
+
+- [`5b3b31e`](https://github.com/tim-smart/effect-rx/commit/5b3b31e73b402e634e03d1d13b228ac1413ee671) Thanks [@tim-smart](https://github.com/tim-smart)! - fix Stream signatures
+
 ## 0.1.6
 
 ### Patch Changes
