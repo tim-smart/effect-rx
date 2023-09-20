@@ -104,6 +104,74 @@ describe("Rx", () => {
     expect(result.value).toEqual(1)
   })
 
+  it("readable derived state", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    const addOne = Rx.readable((get) => get(state) + 1)
+    expect(r.get(state)).toEqual(1)
+    expect(r.get(addOne)).toEqual(2)
+    r.set(state, 2)
+    expect(r.get(state)).toEqual(2)
+    expect(r.get(addOne)).toEqual(3)
+  })
+
+  it("readable multiple dependencies", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    const derived = Rx.readable((get) => get(state) + get(state2))
+    expect(r.get(derived)).toEqual("1a")
+    r.set(state, 2)
+    r.set(state2, "b")
+    expect(r.get(derived)).toEqual("2b")
+  })
+
+  it("derived state from derived state", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    const derived = Rx.readable((get) => get(state) + 1)
+    const derived2 = Rx.readable((get) => get(derived) + 1)
+    expect(r.get(derived)).toEqual(2)
+    expect(r.get(derived2)).toEqual(3)
+    r.set(state, 2)
+    expect(r.get(derived)).toEqual(3)
+    expect(r.get(derived2)).toEqual(4)
+  })
+
+  it("doesn't compute readables that have no subscribers", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    let count = 0
+    const derived = Rx.readable((get) => {
+      count++
+      return get(state) + 1
+    })
+    expect(count).toEqual(0)
+    expect(r.get(derived)).toEqual(2)
+    expect(count).toEqual(1)
+    await new Promise((resolve) => resolve(null))
+    r.set(state, 2)
+    expect(count).toEqual(1)
+  })
+
+  it("batching", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    let count = 0
+    const derived = Rx.readable((get) => {
+      count++
+      return get(state) + get(state2)
+    })
+    expect(r.get(derived)).toEqual("1a")
+    expect(count).toEqual(1)
+    r.batch((reg) => {
+      reg.set(state, 2)
+      reg.set(state2, "b")
+    })
+    expect(count).toEqual(2)
+  })
+
   it("effectFn", async () => {
     const count = Rx.effectFn((n: number) => Effect.succeed(n + 1))
     const r = Registry.make()

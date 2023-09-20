@@ -23,6 +23,35 @@ class RegistryImpl implements Registry.Registry {
 
   private readonly nodes = new Map<Rx.Rx<any>, Node<any>>()
 
+  batch = (f: (registry: Registry.Registry) => void) => {
+    const batchRegistry = new RegistryImpl()
+    const batchModified = new Map<Rx.Writable<any, any>, any>()
+    batchRegistry.get = <A>(rx: Rx.Rx<A>): A => {
+      if (batchRegistry.nodes.has(rx)) {
+        return batchRegistry.ensureNode(rx).value()
+      } else {
+        const value = this.ensureNode(rx)._value ?? this.get(rx)
+        batchRegistry.ensureNode(rx).setValue(value)
+        return value
+      }
+    }
+    const batchSet = batchRegistry.set
+    batchRegistry.set = <R, W>(rx: Rx.Writable<R, W>, value: W): void => {
+      batchModified.set(rx, value)
+      batchSet(rx, value)
+    }
+
+    f(batchRegistry)
+
+    const invalidated = new Set<Node<any>>()
+    batchModified.forEach((value, rx) => {
+      const node = this.ensureNode(rx)
+      node.setValue(batchRegistry.get(rx), true)
+      node.children.forEach((child) => invalidated.add(child))
+    })
+    invalidated.forEach((node) => node.invalidate())
+  }
+
   get = <A>(rx: Rx.Rx<A>): A => {
     return this.ensureNode(rx).value()
   }
@@ -189,7 +218,7 @@ class Node<A> {
     return Option.some(this._value)
   }
 
-  setValue = (value: A): void => {
+  setValue = (value: A, batch = false): void => {
     if ((this.state & NodeFlags.initialized) === 0) {
       this.state = NodeState.valid
       this._value = value
@@ -203,7 +232,9 @@ class Node<A> {
     }
 
     this._value = value
-    this.invalidateChildren()
+    if (!batch) {
+      this.invalidateChildren()
+    }
     this.notify()
   }
 
