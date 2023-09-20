@@ -226,7 +226,7 @@ Added in v1.0.0
 ```ts
 export declare const stream: {
   <E, A>(stream: Stream.Stream<RxContext, E, A>): Rx<Result.Result<E | NoSuchElementException, A>>
-  <RR, R extends RxContext | RR, E, A, RE>(stream: Effect.Effect<R, E, A>, runtime: RxRuntime<RE, RR>): Rx<
+  <RR, R extends RxContext | RR, E, A, RE>(stream: Stream.Stream<R, E, A>, runtime: RxRuntime<RE, RR>): Rx<
     Result.Result<E | RE | NoSuchElementException, A>
   >
 }
@@ -245,7 +245,7 @@ export declare const streamPull: {
     void
   >
   <RR, R extends RxContext | RR, E, A, RE>(
-    stream: Effect.Effect<R, E, A>,
+    stream: Stream.Stream<R, E, A>,
     options: { readonly runtime: RxRuntime<RE, RR>; readonly disableAccumulation?: boolean | undefined }
   ): Writeable<Result.Result<NoSuchElementException | E | RE, A[]>, void>
 }

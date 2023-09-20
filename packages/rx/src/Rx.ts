@@ -522,7 +522,7 @@ function makeStreamRuntime<R, E, A, RE>(
 export const stream: {
   <E, A>(stream: Stream.Stream<RxContext, E, A>): Rx<Result.Result<E | NoSuchElementException, A>>
   <RR, R extends (RR | RxContext), E, A, RE>(
-    stream: Effect.Effect<R, E, A>,
+    stream: Stream.Stream<R, E, A>,
     runtime: RxRuntime<RE, RR>
   ): Rx<Result.Result<RE | E | NoSuchElementException, A>>
 } = <R, E, A, RE>(
@@ -545,7 +545,7 @@ export const streamPull: {
     readonly disableAccumulation?: boolean
   }): Writeable<Result.Result<E | NoSuchElementException, Array<A>>, void>
   <RR, R extends (RR | RxContext), E, A, RE>(
-    stream: Effect.Effect<R, E, A>,
+    stream: Stream.Stream<R, E, A>,
     options: {
       readonly runtime: RxRuntime<RE, RR>
       readonly disableAccumulation?: boolean
