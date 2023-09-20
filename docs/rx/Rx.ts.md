@@ -27,13 +27,13 @@ Added in v1.0.0
   - [scoped](#scoped)
   - [scopedFn](#scopedfn)
   - [state](#state)
-  - [writable](#writable)
+  - [stream](#stream)
+  - [streamPull](#streampull)
+  - [writeable](#writeable)
 - [context](#context)
   - [Context](#context-1)
   - [Context (interface)](#context-interface)
   - [RxContext (interface)](#rxcontext-interface)
-  - [context](#context-2)
-  - [contextResult](#contextresult)
 - [models](#models)
   - [Refreshable (interface)](#refreshable-interface)
   - [Rx (interface)](#rx-interface)
@@ -44,7 +44,6 @@ Added in v1.0.0
     - [Set (type alias)](#set-type-alias)
     - [Subscribe (type alias)](#subscribe-type-alias)
     - [SubscribeGetter (type alias)](#subscribegetter-type-alias)
-  - [RxResult (interface)](#rxresult-interface)
   - [RxResultFn (interface)](#rxresultfn-interface)
   - [RxRuntime (interface)](#rxruntime-interface)
   - [Writeable (interface)](#writeable-interface)
@@ -75,7 +74,9 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const accessResult: <E, A>(rx: RxResult<E, A>) => Effect.Effect<RxContext, E | NoSuchElementException, A>
+export declare const accessResult: <E, A>(
+  rx: Rx<Result.Result<E, A>>
+) => Effect.Effect<RxContext, NoSuchElementException | E, A>
 ```
 
 Added in v1.0.0
@@ -110,11 +111,11 @@ Added in v1.0.0
 
 ```ts
 export declare const effect: {
-  <E, A>(effect: Effect.Effect<RxContext, E, A>): RxResult<E, A>
-  <RR, R extends RxContext | RR, E, A, RE>(effect: Effect.Effect<R, E, A>, runtime: RxRuntime<RE, RR>): RxResult<
-    E | RE,
-    A
-  >
+  <E, A>(effect: Effect.Effect<RxContext, E, A>): Rx<Result.Result<E, A>>
+  <RR, R extends RR | RxContext, E, A, RE>(
+    effect: Effect.Effect<R, E, A>,
+    options: { readonly runtime: RxRuntime<RE, RR> }
+  ): Rx<Result.Result<E | RE, A>>
 }
 ```
 
@@ -129,7 +130,7 @@ export declare const effectFn: {
   <Args extends any[], E, A>(fn: (...args: Args) => Effect.Effect<RxContext, E, A>): RxResultFn<E, A, Args>
   <Args extends any[], RR, R extends RxContext | RR, E, A, RE>(
     fn: (...args: Args) => Effect.Effect<R, E, A>,
-    runtime: RxRuntime<RE, RR>
+    options: { readonly runtime: RxRuntime<RE, RR> }
   ): RxResultFn<E | RE, A, Args>
 }
 ```
@@ -151,7 +152,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const readable: <A>(read: (ctx: Context<A>) => A, refresh?: (f: <A>(rx: Rx<A>) => void) => void) => Rx<A>
+export declare const readable: <A>(
+  read: (get: Rx.Get, ctx: Context) => A,
+  refresh?: (f: <A>(rx: Rx<A>) => void) => void
+) => Rx<A>
 ```
 
 Added in v1.0.0
@@ -175,11 +179,11 @@ Added in v1.0.0
 
 ```ts
 export declare const scoped: {
-  <E, A>(effect: Effect.Effect<RxContext | Scope.Scope, E, A>): RxResult<E, A>
+  <E, A>(effect: Effect.Effect<RxContext | Scope.Scope, E, A>): Rx<Result.Result<E, A>>
   <RR, R extends RxContext | RR | Scope.Scope, E, A, RE>(
     effect: Effect.Effect<R, E, A>,
-    runtime: RxRuntime<RE, RR>
-  ): RxResult<E | RE, A>
+    options: { readonly runtime: RxRuntime<RE, RR> }
+  ): Rx<Result.Result<E | RE, A>>
 }
 ```
 
@@ -198,7 +202,7 @@ export declare const scopedFn: {
   >
   <Args extends any[], RR, R extends RxContext | Scope.Scope | RR, E, A, RE>(
     fn: (...args: Args) => Effect.Effect<R, E, A>,
-    runtime: RxRuntime<RE, RR>
+    options: { readonly runtime: RxRuntime<RE, RR> }
   ): RxResultFn<E | RE, A, Args>
 }
 ```
@@ -215,13 +219,47 @@ export declare const state: <A>(initialValue: A) => Writeable<A, A>
 
 Added in v1.0.0
 
-## writable
+## stream
 
 **Signature**
 
 ```ts
-export declare const writable: <R, W>(
-  read: (ctx: Context<R>) => R,
+export declare const stream: {
+  <E, A>(stream: Stream.Stream<RxContext, E, A>): Rx<Result.Result<E | NoSuchElementException, A>>
+  <RR, R extends RxContext | RR, E, A, RE>(stream: Effect.Effect<R, E, A>, runtime: RxRuntime<RE, RR>): Rx<
+    Result.Result<E | RE | NoSuchElementException, A>
+  >
+}
+```
+
+Added in v1.0.0
+
+## streamPull
+
+**Signature**
+
+```ts
+export declare const streamPull: {
+  <E, A>(stream: Stream.Stream<RxContext, E, A>, options?: { readonly disableAccumulation?: boolean }): Writeable<
+    Result.Result<NoSuchElementException | E, A[]>,
+    void
+  >
+  <RR, R extends RxContext | RR, E, A, RE>(
+    stream: Effect.Effect<R, E, A>,
+    options: { readonly runtime: RxRuntime<RE, RR>; readonly disableAccumulation?: boolean | undefined }
+  ): Writeable<Result.Result<NoSuchElementException | E | RE, A[]>, void>
+}
+```
+
+Added in v1.0.0
+
+## writeable
+
+**Signature**
+
+```ts
+export declare const writeable: <R, W>(
+  read: (get: Rx.Get, ctx: Context) => R,
   write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void,
   refresh?: (f: <A>(rx: Rx<A>) => void) => void
 ) => Writeable<R, W>
@@ -236,7 +274,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const Context: EffectContext.Tag<RxContext, Context<unknown>>
+export declare const Context: EffectContext.Tag<RxContext, Context>
 ```
 
 Added in v1.0.0
@@ -246,14 +284,14 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface Context<A> {
+export interface Context {
   readonly get: Rx.Get
   readonly once: Rx.Get
   readonly addFinalizer: (f: () => void) => void
   readonly refresh: Rx.Refresh
   readonly refreshSelf: () => void
-  readonly self: () => Option.Option<A>
-  readonly setSelf: (a: A) => void
+  readonly self: <A>() => Option.Option<A>
+  readonly setSelf: <A>(a: A) => void
   readonly set: Rx.Set
   readonly subscribe: <A>(
     rx: Rx<A>,
@@ -275,26 +313,6 @@ Added in v1.0.0
 export interface RxContext {
   readonly _: unique symbol
 }
-```
-
-Added in v1.0.0
-
-## context
-
-**Signature**
-
-```ts
-export declare const context: <A>() => Effect.Effect<RxContext, never, Context<A>>
-```
-
-Added in v1.0.0
-
-## contextResult
-
-**Signature**
-
-```ts
-export declare const contextResult: <E, A>() => Effect.Effect<RxContext, never, Context<Result.Result<E, A>>>
 ```
 
 Added in v1.0.0
@@ -321,7 +339,7 @@ Added in v1.0.0
 export interface Rx<A> extends Pipeable, Effect.Effect<RxContext, never, A> {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
-  readonly read: (ctx: Context<A>) => A
+  readonly read: (get: Rx.Get, ctx: Context) => A
   readonly refresh: (f: <A>(rx: Rx<A>) => void) => void
 }
 ```
@@ -394,16 +412,6 @@ Added in v1.0.0
 
 ```ts
 export type SubscribeGetter = <A>(rx: Rx<A>, f: () => void) => readonly [get: () => A, unmount: () => void]
-```
-
-Added in v1.0.0
-
-## RxResult (interface)
-
-**Signature**
-
-```ts
-export interface RxResult<E, A> extends Rx<Result.Result<E, A>> {}
 ```
 
 Added in v1.0.0

@@ -17,6 +17,7 @@ Added in v1.0.0
   - [noWaiting](#nowaiting)
   - [value](#value)
 - [constructors](#constructors)
+  - [fail](#fail)
   - [failure](#failure)
   - [fromExit](#fromexit)
   - [initial](#initial)
@@ -76,6 +77,16 @@ export declare const value: <E, A>(result: Result<E, A>) => Option.Option<A>
 Added in v1.0.0
 
 # constructors
+
+## fail
+
+**Signature**
+
+```ts
+export declare const fail: <E, A>(error: E) => Failure<E, A>
+```
+
+Added in v1.0.0
 
 ## failure
 

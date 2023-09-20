@@ -34,7 +34,7 @@ class RegistryImpl implements Registry.Registry {
   }
 
   refresh = <A>(rx: Rx.Rx<A> & Rx.Refreshable): void => {
-    rx.refresh((_) => this.ensureNode(rx).invalidate())
+    rx.refresh((rx) => this.ensureNode(rx).invalidate())
   }
 
   subscribe: Rx.Rx.Subscribe = (rx, f, options) => {
@@ -153,7 +153,7 @@ class Node<A> {
   value(): A {
     if ((this.state & NodeFlags.waitingForValue) !== 0) {
       this.lifetime = new Lifetime(this)
-      const value = this.rx.read(this.lifetime)
+      const value = this.rx.read(this.lifetime.get, this.lifetime)
       if ((this.state & NodeFlags.waitingForValue) !== 0) {
         this.setValue(value)
       }
@@ -298,7 +298,7 @@ class Node<A> {
   }
 }
 
-class Lifetime<A> implements Rx.Context<A> {
+class Lifetime<A> implements Rx.Context {
   constructor(
     readonly node: Node<A>
   ) {}
@@ -311,7 +311,7 @@ class Lifetime<A> implements Rx.Context<A> {
     this.finalizers.push(f)
   }
 
-  get<A>(rx: Rx.Rx<A>): A {
+  get = <A>(rx: Rx.Rx<A>): A => {
     const parent = this.node.registry.ensureNode(rx)
     this.node.addParent(parent)
     return parent.value()
@@ -321,8 +321,8 @@ class Lifetime<A> implements Rx.Context<A> {
     return this.node.registry.get(rx)
   }
 
-  self(): Option.Option<A> {
-    return this.node.valueOption()
+  self<A>(): Option.Option<A> {
+    return this.node.valueOption() as any
   }
 
   refresh<A>(rx: Rx.Rx<A> & Rx.Refreshable): void {
@@ -339,8 +339,8 @@ class Lifetime<A> implements Rx.Context<A> {
     this.addFinalizer(this.node.registry.subscribe(rx, f, options))
   }
 
-  setSelf(a: A): void {
-    this.node.setValue(a)
+  setSelf<A>(a: A): void {
+    this.node.setValue(a as any)
   }
 
   set<R, W>(rx: Rx.Writeable<R, W>, value: W): void {
