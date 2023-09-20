@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.8
+
+### Patch Changes
+
+- [`c8d1905`](https://github.com/tim-smart/effect-rx/commit/c8d19058ddaa542f7a36037093f15db60cca74ca) Thanks [@tim-smart](https://github.com/tim-smart)! - Rx.family
+
 ## 0.1.7
 
 ### Patch Changes
