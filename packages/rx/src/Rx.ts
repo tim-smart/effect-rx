@@ -35,7 +35,7 @@ export type TypeId = typeof TypeId
 export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
-  readonly read: (get: Rx.Get, ctx: Context) => A
+  readonly read: Rx.Read<A>
   readonly refresh: (f: <A>(rx: Rx<A>) => void) => void
   readonly label?: readonly [name: string, stack: string]
 }
@@ -45,6 +45,27 @@ export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
  * @category models
  */
 export declare namespace Rx {
+  /**
+   * @since 1.0.0
+   * @category models
+   */
+  export type Read<A> = (
+    get: Rx.Get,
+    ctx: Context
+  ) => A
+
+  /**
+   * @since 1.0.0
+   * @category models
+   */
+  export type Write<R, W> = (
+    get: Rx.Get,
+    set: Rx.Set,
+    setSelf: (_: R) => void,
+    refreshSelf: () => void,
+    value: W
+  ) => void
+
   /**
    * @since 1.0.0
    * @category models
@@ -128,7 +149,7 @@ export type WritableTypeId = typeof WritableTypeId
  */
 export interface Writable<R, W> extends Rx<R> {
   readonly [WritableTypeId]: WritableTypeId
-  readonly write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void
+  readonly write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, refreshSelf: () => void, value: W) => void
 }
 
 /**
@@ -185,7 +206,7 @@ function defaultRefresh(this: Rx<any>, f: any) {
  * @category constructors
  */
 export const readable = <A>(
-  read: (get: Rx.Get, ctx: Context) => A,
+  read: Rx.Read<A>,
   refresh: (f: <A>(rx: Rx<A>) => void) => void = defaultRefresh
 ): Rx<A> => {
   const rx = Object.create(RxProto)
@@ -200,8 +221,8 @@ export const readable = <A>(
  * @category constructors
  */
 export const writable = <R, W>(
-  read: (get: Rx.Get, ctx: Context) => R,
-  write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void,
+  read: Rx.Read<R>,
+  write: Rx.Write<R, W>,
   refresh: (f: <A>(rx: Rx<A>) => void) => void = defaultRefresh
 ): Writable<R, W> => {
   const rx = Object.create(WritableProto)
@@ -223,7 +244,7 @@ export const state = <A>(
     function(_ctx) {
       return initialValue
     },
-    function(_get, _set, setSelf, value) {
+    function(_get, _set, setSelf, _refreshSelf, value) {
       setSelf(value)
     }
   )
@@ -246,7 +267,7 @@ function makeEffect<E, A>(
   if (previous._tag === "Some") {
     return Result.waitingFrom(previous)
   }
-  return Result.waiting(Option.none())
+  return Result.waiting(Result.initial())
 }
 
 function makeEffectRuntime<R, E, A, RE>(
@@ -272,13 +293,13 @@ function makeEffectRuntime<R, E, A, RE>(
  * @category constructors
  */
 export const effect: {
-  <E, A>(create: (get: Rx.Get, ctx: Context) => Effect.Effect<never, E, A>): Rx<Result.Result<E, A>>
+  <E, A>(create: Rx.Read<Effect.Effect<never, E, A>>): Rx<Result.Result<E, A>>
   <RR, R extends RR, E, A, RE>(
-    create: (get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+    create: Rx.Read<Effect.Effect<R, E, A>>,
     options: { readonly runtime: RxRuntime<RE, RR> }
   ): Rx<Result.Result<RE | E, A>>
 } = <R, E, A, RE>(
-  create: (get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+  create: Rx.Read<Effect.Effect<R, E, A>>,
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) =>
   readable<Result.Result<E, A>>(function(get, ctx) {
@@ -293,13 +314,13 @@ export const effect: {
  * @category constructors
  */
 export const scoped: {
-  <E, A>(create: (get: Rx.Get, ctx: Context) => Effect.Effect<Scope.Scope, E, A>): Rx<Result.Result<E, A>>
+  <E, A>(create: Rx.Read<Effect.Effect<Scope.Scope, E, A>>): Rx<Result.Result<E, A>>
   <RR, R extends (RR | Scope.Scope), E, A, RE>(
-    create: (get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+    create: Rx.Read<Effect.Effect<R, E, A>>,
     options: { readonly runtime: RxRuntime<RE, RR> }
   ): Rx<Result.Result<RE | E, A>>
 } = <R, E, A, RE>(
-  create: (get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+  create: Rx.Read<Effect.Effect<R, E, A>>,
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) =>
   readable<Result.Result<E, A>>(function(get, ctx) {
@@ -355,7 +376,7 @@ export const effectFn: {
     return options?.runtime
       ? makeEffectRuntime(ctx, effect, options.runtime)
       : makeEffect(ctx, effect as Effect.Effect<never, E, A>)
-  }, function(get, set, _setSelf, arg) {
+  }, function(get, set, _setSelf, _refreshSelf, arg) {
     set(argRx, [get(argRx)[0] + 1, arg])
   })
 }
@@ -397,7 +418,7 @@ export const scopedFn: {
     return options?.runtime
       ? makeEffectRuntime(ctx, scopedEffect, options.runtime)
       : makeEffect(ctx, scopedEffect as Effect.Effect<never, E, A>)
-  }, function(get, set, _setSelf, arg) {
+  }, function(get, set, _setSelf, _refreshSelf, arg) {
     set(argRx, [get(argRx)[0] + 1, arg])
   })
 }
@@ -437,7 +458,7 @@ function makeStream<E, A>(
   const cancel = runCallback(
     Stream.runForEach(
       stream,
-      (a) => Effect.sync(() => ctx.setSelf(Result.waiting(Option.some(Result.success(a)))))
+      (a) => Effect.sync(() => ctx.setSelf(Result.waiting(Result.success(a))))
     ),
     (exit) => {
       if (exit._tag === "Failure") {
@@ -486,20 +507,20 @@ function makeStreamRuntime<R, E, A, RE>(
  */
 export const stream: {
   <E, A>(
-    create: (get: Rx.Get, ctx: Context) => Stream.Stream<never, E, A>
+    create: Rx.Read<Stream.Stream<never, E, A>>
   ): Rx<Result.Result<E | NoSuchElementException, A>>
   <RR, R extends RR, E, A, RE>(
-    create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
-    runtime: RxRuntime<RE, RR>
+    create: Rx.Read<Stream.Stream<R, E, A>>,
+    options: { readonly runtime: RxRuntime<RE, RR> }
   ): Rx<Result.Result<RE | E | NoSuchElementException, A>>
 } = <R, E, A, RE>(
-  create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
-  runtime?: RxRuntime<RE, R>
+  create: Rx.Read<Stream.Stream<R, E, A>>,
+  options?: { readonly runtime?: RxRuntime<RE, R> }
 ) =>
   readable<Result.Result<E | NoSuchElementException, A>>(function(get, ctx) {
     const stream = create(get, ctx)
-    if (runtime !== undefined) {
-      return makeStreamRuntime(ctx, stream, runtime)
+    if (options?.runtime !== undefined) {
+      return makeStreamRuntime(ctx, stream, options.runtime)
     }
     return makeStream(ctx, stream as Stream.Stream<never, E, A>)
   })
@@ -509,18 +530,18 @@ export const stream: {
  * @category constructors
  */
 export const streamPull: {
-  <E, A>(create: (get: Rx.Get, ctx: Context) => Stream.Stream<never, E, A>, options?: {
+  <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: {
     readonly disableAccumulation?: boolean
   }): Writable<Result.Result<E | NoSuchElementException, Array<A>>, void>
   <RR, R extends RR, E, A, RE>(
-    create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
+    create: Rx.Read<Stream.Stream<R, E, A>>,
     options: {
       readonly runtime: RxRuntime<RE, RR>
       readonly disableAccumulation?: boolean
     }
   ): Writable<Result.Result<RE | E | NoSuchElementException, Array<A>>, void>
 } = <R, E, A>(
-  create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
+  create: Rx.Read<Stream.Stream<R, E, A>>,
   options?: {
     readonly runtime?: RxRuntime<unknown, R>
     readonly disableAccumulation?: boolean
@@ -538,7 +559,6 @@ export const streamPull: {
     )
     return Stream.toPull(accStream)
   }, options?.runtime as any)
-  const counter = state(0)
 
   return writable<Result.Result<E | NoSuchElementException, Array<A>>, void>(function(get, ctx) {
     const previous = ctx.self<Result.Result<E | NoSuchElementException, Array<A>>>()
@@ -549,7 +569,6 @@ export const streamPull: {
       }
       return pullResult as any
     }
-    get(counter)
     const pull = pipe(
       pullResult.value,
       Effect.map((_) => Chunk.toReadonlyArray(_) as Array<A>),
@@ -571,8 +590,8 @@ export const streamPull: {
     return options?.runtime
       ? makeEffectRuntime(ctx, pull, options.runtime)
       : makeEffect(ctx, pull as any)
-  }, function(get, set, _setSelf, _) {
-    set(counter, get(counter) + 1)
+  }, function(_get, _set, _setSelf, refreshSelf, _) {
+    refreshSelf()
   }, function(refresh) {
     refresh(pullRx)
   })

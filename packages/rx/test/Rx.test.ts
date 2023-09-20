@@ -78,7 +78,7 @@ describe("Rx", () => {
       { runtime: counterRuntime }
     )
     const timesTwo = Rx.effect(
-      (get, ctx) =>
+      (_get, ctx) =>
         Effect.gen(function*(_) {
           const counter = yield* _(Counter)
           const multiplier = yield* _(Multiplier)
@@ -159,9 +159,8 @@ describe("Rx", () => {
     await vi.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isWaiting(result))
-    assert(Option.isSome(result.previous))
-    assert(Result.isSuccess(result.previous.value))
-    assert.deepEqual(result.previous.value.value, 0)
+    assert(Result.isSuccess(result.previous))
+    assert.deepEqual(result.previous.value, 0)
 
     await vi.advanceTimersByTimeAsync(50)
     result = r.get(count)

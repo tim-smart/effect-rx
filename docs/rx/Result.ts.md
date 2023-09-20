@@ -147,7 +147,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const waiting: <E, A>(previous: Option.Option<Success<E, A> | Failure<E, A>>) => Waiting<E, A>
+export declare const waiting: <E, A>(previous: Initial<E, A> | Success<E, A> | Failure<E, A>) => Waiting<E, A>
 ```
 
 Added in v1.0.0
@@ -248,7 +248,7 @@ Added in v1.0.0
 ```ts
 export interface Waiting<E, A> extends Result.Variance<E, A> {
   readonly _tag: 'Waiting'
-  readonly previous: Option.Option<Success<E, A> | Failure<E, A>>
+  readonly previous: Initial<E, A> | Success<E, A> | Failure<E, A>
 }
 ```
 

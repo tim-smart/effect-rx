@@ -37,10 +37,12 @@ Added in v1.0.0
     - [Get (type alias)](#get-type-alias)
     - [GetResult (type alias)](#getresult-type-alias)
     - [Mount (type alias)](#mount-type-alias)
+    - [Read (type alias)](#read-type-alias)
     - [Refresh (type alias)](#refresh-type-alias)
     - [Set (type alias)](#set-type-alias)
     - [Subscribe (type alias)](#subscribe-type-alias)
     - [SubscribeGetter (type alias)](#subscribegetter-type-alias)
+    - [Write (type alias)](#write-type-alias)
   - [RxResultFn (interface)](#rxresultfn-interface)
   - [RxRuntime (interface)](#rxruntime-interface)
   - [Writable (interface)](#writable-interface)
@@ -95,9 +97,9 @@ Added in v1.0.0
 
 ```ts
 export declare const effect: {
-  <E, A>(create: (get: Rx.Get, ctx: Context) => Effect.Effect<never, E, A>): Rx<Result.Result<E, A>>
+  <E, A>(create: Rx.Read<Effect.Effect<never, E, A>>): Rx<Result.Result<E, A>>
   <RR, R extends RR, E, A, RE>(
-    create: (get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+    create: Rx.Read<Effect.Effect<R, E, A>>,
     options: { readonly runtime: RxRuntime<RE, RR> }
   ): Rx<Result.Result<E | RE, A>>
 }
@@ -136,10 +138,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const readable: <A>(
-  read: (get: Rx.Get, ctx: Context) => A,
-  refresh?: (f: <A>(rx: Rx<A>) => void) => void
-) => Rx<A>
+export declare const readable: <A>(read: Rx.Read<A>, refresh?: (f: <A>(rx: Rx<A>) => void) => void) => Rx<A>
 ```
 
 Added in v1.0.0
@@ -163,9 +162,9 @@ Added in v1.0.0
 
 ```ts
 export declare const scoped: {
-  <E, A>(create: (get: Rx.Get, ctx: Context) => Effect.Effect<Scope.Scope, E, A>): Rx<Result.Result<E, A>>
+  <E, A>(create: Rx.Read<Effect.Effect<Scope.Scope, E, A>>): Rx<Result.Result<E, A>>
   <RR, R extends RR | Scope.Scope, E, A, RE>(
-    create: (get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+    create: Rx.Read<Effect.Effect<R, E, A>>,
     options: { readonly runtime: RxRuntime<RE, RR> }
   ): Rx<Result.Result<E | RE, A>>
 }
@@ -205,12 +204,10 @@ Added in v1.0.0
 
 ```ts
 export declare const stream: {
-  <E, A>(create: (get: Rx.Get, ctx: Context) => Stream.Stream<never, E, A>): Rx<
-    Result.Result<E | NoSuchElementException, A>
-  >
+  <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>): Rx<Result.Result<E | NoSuchElementException, A>>
   <RR, R extends RR, E, A, RE>(
-    create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
-    runtime: RxRuntime<RE, RR>
+    create: Rx.Read<Stream.Stream<R, E, A>>,
+    options: { readonly runtime: RxRuntime<RE, RR> }
   ): Rx<Result.Result<E | RE | NoSuchElementException, A>>
 }
 ```
@@ -223,12 +220,12 @@ Added in v1.0.0
 
 ```ts
 export declare const streamPull: {
-  <E, A>(
-    create: (get: Rx.Get, ctx: Context) => Stream.Stream<never, E, A>,
-    options?: { readonly disableAccumulation?: boolean }
-  ): Writable<Result.Result<NoSuchElementException | E, A[]>, void>
+  <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: { readonly disableAccumulation?: boolean }): Writable<
+    Result.Result<NoSuchElementException | E, A[]>,
+    void
+  >
   <RR, R extends RR, E, A, RE>(
-    create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
+    create: Rx.Read<Stream.Stream<R, E, A>>,
     options: { readonly runtime: RxRuntime<RE, RR>; readonly disableAccumulation?: boolean | undefined }
   ): Writable<Result.Result<NoSuchElementException | E | RE, A[]>, void>
 }
@@ -242,8 +239,8 @@ Added in v1.0.0
 
 ```ts
 export declare const writable: <R, W>(
-  read: (get: Rx.Get, ctx: Context) => R,
-  write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void,
+  read: Rx.Read<R>,
+  write: Rx.Write<R, W>,
   refresh?: (f: <A>(rx: Rx<A>) => void) => void
 ) => Writable<R, W>
 ```
@@ -301,7 +298,7 @@ Added in v1.0.0
 export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
-  readonly read: (get: Rx.Get, ctx: Context) => A
+  readonly read: Rx.Read<A>
   readonly refresh: (f: <A>(rx: Rx<A>) => void) => void
   readonly label?: readonly [name: string, stack: string]
 }
@@ -339,6 +336,16 @@ Added in v1.0.0
 
 ```ts
 export type Mount = <A>(rx: Rx<A>) => () => void
+```
+
+Added in v1.0.0
+
+### Read (type alias)
+
+**Signature**
+
+```ts
+export type Read<A> = (get: Rx.Get, ctx: Context) => A
 ```
 
 Added in v1.0.0
@@ -389,6 +396,16 @@ export type SubscribeGetter = <A>(rx: Rx<A>, f: () => void) => readonly [get: ()
 
 Added in v1.0.0
 
+### Write (type alias)
+
+**Signature**
+
+```ts
+export type Write<R, W> = (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, refreshSelf: () => void, value: W) => void
+```
+
+Added in v1.0.0
+
 ## RxResultFn (interface)
 
 **Signature**
@@ -416,7 +433,7 @@ Added in v1.0.0
 ```ts
 export interface Writable<R, W> extends Rx<R> {
   readonly [WritableTypeId]: WritableTypeId
-  readonly write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void
+  readonly write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, refreshSelf: () => void, value: W) => void
 }
 ```
 

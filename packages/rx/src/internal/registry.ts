@@ -28,19 +28,21 @@ class RegistryImpl implements Registry.Registry {
   }
 
   set = <R, W>(rx: Rx.Writable<R, W>, value: W): void => {
+    const node = this.ensureNode(rx)
     rx.write(
       this.get,
       this.set,
-      this.ensureNode(rx).setValue,
+      node.setValue,
+      node.invalidate,
       value
     )
   }
 
-  refresh = <A>(rx: Rx.Rx<A> & Rx.Refreshable): void => {
-    rx.refresh((rx) => this.ensureNode(rx).invalidate())
+  refresh<A>(rx: Rx.Rx<A> & Rx.Refreshable): void {
+    rx.refresh(this.invalidateRx)
   }
 
-  subscribe: Rx.Rx.Subscribe = (rx, f, options) => {
+  subscribe<A>(rx: Rx.Rx<A>, f: (_: A) => void, options?: { readonly immediate?: boolean }): () => void {
     const node = this.ensureNode(rx)
     if (options?.immediate) {
       f(node.value())
@@ -56,7 +58,7 @@ class RegistryImpl implements Registry.Registry {
     }
   }
 
-  subscribeGetter = <A>(rx: Rx.Rx<A>, f: () => void): readonly [get: () => A, unmount: () => void] => {
+  subscribeGetter<A>(rx: Rx.Rx<A>, f: () => void): readonly [get: () => A, unmount: () => void] {
     const node = this.ensureNode(rx)
     function get() {
       return node.value()
@@ -89,6 +91,10 @@ class RegistryImpl implements Registry.Registry {
       this.scheduleRxRemoval(rx)
     }
     return new Node(this, rx)
+  }
+
+  invalidateRx = <A>(rx: Rx.Rx<A>): void => {
+    this.ensureNode(rx).invalidate()
   }
 
   scheduleRxRemoval(rx: Rx.Rx<any>): void {
@@ -226,7 +232,7 @@ class Node<A> {
     }
   }
 
-  invalidate(): void {
+  invalidate = (): void => {
     if (this.state === NodeState.valid) {
       this.state = NodeState.stale
       this.disposeLifetime()

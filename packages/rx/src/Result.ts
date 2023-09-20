@@ -76,17 +76,16 @@ export const fromExit = <E, A>(exit: Exit.Exit<E, A>): Success<E, A> | Failure<E
  */
 export const waitingFrom = <E, A>(previous: Option.Option<Result<E, A>>): Waiting<E, A> => {
   if (previous._tag === "None") {
-    return waiting(Option.none())
+    return waiting(constInitial)
   }
 
   switch (previous.value._tag) {
-    case "Initial":
-      return waiting(Option.none())
     case "Waiting":
       return previous.value
+    case "Initial":
     case "Success":
     case "Failure":
-      return waiting(Option.some(previous.value))
+      return waiting(previous.value)
   }
 }
 
@@ -111,7 +110,7 @@ const constInitial: Initial<never, never> = Object.assign(Object.create(ResultPr
  */
 export interface Waiting<E, A> extends Result.Variance<E, A> {
   readonly _tag: "Waiting"
-  readonly previous: Option.Option<Success<E, A> | Failure<E, A>>
+  readonly previous: Initial<E, A> | Success<E, A> | Failure<E, A>
 }
 
 /**
@@ -124,7 +123,7 @@ export const isWaiting = <E, A>(result: Result<E, A>): result is Waiting<E, A> =
  * @since 1.0.0
  * @category constructors
  */
-export const waiting = <E, A>(previous: Option.Option<Success<E, A> | Failure<E, A>>): Waiting<E, A> => {
+export const waiting = <E, A>(previous: Initial<E, A> | Success<E, A> | Failure<E, A>): Waiting<E, A> => {
   const result = Object.create(ResultProto)
   result._tag = "Waiting"
   result.previous = previous
@@ -200,7 +199,7 @@ export const noWaiting = <E, A>(result: Result<E, A>): NoWaiting<E, A> => {
     case "Failure":
       return result
     case "Waiting":
-      return result.previous._tag === "None" ? constInitial : result.previous.value
+      return result.previous
   }
 }
 
