@@ -2,6 +2,7 @@ import type * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import type * as Rx from "@effect-rx/rx/Rx"
 import * as Equal from "@effect/data/Equal"
+import { globalValue } from "@effect/data/GlobalValue"
 import * as Option from "@effect/data/Option"
 import type { NoSuchElementException } from "@effect/io/Cause"
 import type { Exit } from "@effect/io/Exit"
@@ -12,9 +13,17 @@ function constListener(_: any) {}
 /** @internal */
 export const TypeId: Registry.TypeId = Symbol.for("@effect-rx/rx/Registry") as Registry.TypeId
 
+const batchState = globalValue(Symbol.for("@effect-rx/rx/batch"), () => {
+  return {
+    batch: false,
+    batchDepth: 0,
+    notify: new Set<() => void>(),
+    affected: new Set<Node<any>>()
+  }
+})
+
 /** @internal */
 export const make = (): Registry.Registry => new RegistryImpl()
-
 class RegistryImpl implements Registry.Registry {
   readonly [TypeId]: Registry.TypeId
   constructor() {
@@ -23,33 +32,17 @@ class RegistryImpl implements Registry.Registry {
 
   private readonly nodes = new Map<Rx.Rx<any>, Node<any>>()
 
-  batch = (f: (registry: Registry.Registry) => void) => {
-    const batchRegistry = new RegistryImpl()
-    const batchModified = new Map<Rx.Writable<any, any>, any>()
-    batchRegistry.get = <A>(rx: Rx.Rx<A>): A => {
-      if (batchRegistry.nodes.has(rx)) {
-        return batchRegistry.ensureNode(rx).value()
-      } else {
-        const value = this.ensureNode(rx)._value ?? this.get(rx)
-        batchRegistry.ensureNode(rx).setValue(value)
-        return value
-      }
+  batch = (f: () => void): void => {
+    batchState.batchDepth++
+    batchState.batch = true
+    f()
+    batchState.batchDepth--
+    if (batchState.batchDepth === 0) {
+      batchState.batch = false
+      batchState.notify.forEach((listener) => listener())
+      batchState.affected.forEach((node) => node.invalidate())
+      batchState.affected.clear()
     }
-    const batchSet = batchRegistry.set
-    batchRegistry.set = <R, W>(rx: Rx.Writable<R, W>, value: W): void => {
-      batchModified.set(rx, value)
-      batchSet(rx, value)
-    }
-
-    f(batchRegistry)
-
-    const invalidated = new Set<Node<any>>()
-    batchModified.forEach((value, rx) => {
-      const node = this.ensureNode(rx)
-      node.setValue(batchRegistry.get(rx), true)
-      node.children.forEach((child) => invalidated.add(child))
-    })
-    invalidated.forEach((node) => node.invalidate())
   }
 
   get = <A>(rx: Rx.Rx<A>): A => {
@@ -218,10 +211,11 @@ class Node<A> {
     return Option.some(this._value)
   }
 
-  setValue = (value: A, batch = false): void => {
+  setValue = (value: A): void => {
     if ((this.state & NodeFlags.initialized) === 0) {
       this.state = NodeState.valid
       this._value = value
+
       this.notify()
       return
     }
@@ -232,9 +226,7 @@ class Node<A> {
     }
 
     this._value = value
-    if (!batch) {
-      this.invalidateChildren()
-    }
+    this.invalidateChildren()
     this.notify()
   }
 
@@ -269,8 +261,12 @@ class Node<A> {
       this.disposeLifetime()
     }
 
-    // rebuild
-    this.value()
+    if (batchState.batch) {
+      batchState.affected.add(this)
+    } else {
+      // rebuild
+      this.value()
+    }
   }
 
   invalidateChildren(): void {
@@ -286,8 +282,12 @@ class Node<A> {
   }
 
   notify(): void {
-    for (let i = 0; i < this.listeners.length; i++) {
-      this.listeners[i]()
+    if (batchState.batch) {
+      this.listeners.forEach((listener) => batchState.notify.add(listener))
+    } else {
+      for (let i = 0; i < this.listeners.length; i++) {
+        this.listeners[i]()
+      }
     }
   }
 

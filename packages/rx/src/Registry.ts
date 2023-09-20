@@ -23,10 +23,10 @@ export type TypeId = typeof TypeId
 export interface Registry {
   readonly [TypeId]: TypeId
   readonly get: Rx.Rx.Get
-  readonly batch: (f: (registry: Registry) => void) => void
   readonly mount: Rx.Rx.Mount
   readonly refresh: Rx.Rx.Refresh
   readonly set: Rx.Rx.Set
+  readonly batch: (f: () => void) => void
   readonly subscribe: Rx.Rx.Subscribe
   readonly subscribeGetter: Rx.Rx.SubscribeGetter
 }

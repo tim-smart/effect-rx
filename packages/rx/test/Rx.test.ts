@@ -165,11 +165,73 @@ describe("Rx", () => {
     })
     expect(r.get(derived)).toEqual("1a")
     expect(count).toEqual(1)
-    r.batch((reg) => {
-      reg.set(state, 2)
-      reg.set(state2, "b")
+    r.batch(() => {
+      r.set(state, 2)
+      r.set(state2, "b")
     })
     expect(count).toEqual(2)
+    expect(r.get(derived)).toEqual("2b")
+  })
+
+  it("nested batch", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    let count = 0
+    const derived = Rx.readable((get) => {
+      count++
+      return get(state) + get(state2)
+    })
+    expect(r.get(derived)).toEqual("1a")
+    expect(count).toEqual(1)
+    r.batch(() => {
+      r.set(state, 2)
+      r.batch(() => {
+        r.set(state2, "b")
+      })
+    })
+    expect(count).toEqual(2)
+    expect(r.get(derived)).toEqual("2b")
+  })
+
+  it("read correct updated state in batch", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    let count = 0
+    const derived = Rx.readable((get) => {
+      count++
+      return get(state) + get(state2)
+    })
+    expect(r.get(derived)).toEqual("1a")
+    expect(count).toEqual(1)
+    r.batch(() => {
+      r.set(state, 2)
+      expect(r.get(derived)).toEqual("2a")
+      r.set(state2, "b")
+    })
+    expect(count).toEqual(3)
+    expect(r.get(derived)).toEqual("2b")
+  })
+
+  it("notifies liseners after batch commit", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    let count = 0
+    const derived = Rx.readable((get) => {
+      return get(state) + get(state2)
+    })
+    r.subscribe(derived, () => {
+      count++
+    }, { immediate: true })
+    r.batch(() => {
+      r.set(state, 2)
+      expect(r.get(derived)).toEqual("2a")
+      r.set(state2, "b")
+    })
+    expect(count).toEqual(2)
+    expect(r.get(derived)).toEqual("2b")
   })
 
   it("effectFn", async () => {
