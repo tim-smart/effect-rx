@@ -154,7 +154,8 @@ describe("Rx", () => {
     const r = Registry.make()
     const unmount = r.mount(count)
     let result = r.get(count)
-    assert(Result.isInitial(result))
+    assert(Result.isWaiting(result))
+    assert(Result.isInitial(result.previous))
 
     await vi.advanceTimersByTimeAsync(50)
     result = r.get(count)
@@ -171,6 +172,58 @@ describe("Rx", () => {
     result = r.get(count)
     assert(Result.isSuccess(result))
     assert.deepEqual(Result.value(result), Option.some(2))
+
+    unmount()
+    await new Promise((resolve) => resolve(null))
+    result = r.get(count)
+    assert(Result.isWaiting(result))
+    assert(Result.isInitial(result.previous))
+  })
+
+  it("streamFn", async () => {
+    const count = Rx.streamFn((start: number) =>
+      Stream.range(start, start + 2).pipe(
+        Stream.tap(() => Effect.sleep(50))
+      )
+    )
+    const r = Registry.make()
+    const unmount = r.mount(count)
+    let result = r.get(count)
+    assert.strictEqual(result._tag, "Initial")
+
+    await vi.advanceTimersByTimeAsync(50)
+    result = r.get(count)
+    assert.strictEqual(result._tag, "Initial")
+
+    r.set(count, 1)
+    result = r.get(count)
+    assert(Result.isWaiting(result))
+    assert.strictEqual(result.previous._tag, "Initial")
+
+    await vi.advanceTimersByTimeAsync(50)
+    result = r.get(count)
+    assert(Result.isWaiting(result))
+    assert.deepEqual(Result.value(result), Option.some(1))
+
+    await vi.advanceTimersByTimeAsync(50)
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    assert.deepEqual(Result.value(result), Option.some(2))
+
+    r.set(count, 5)
+    result = r.get(count)
+    assert(Result.isWaiting(result))
+    assert.deepEqual(Result.value(result), Option.some(2))
+
+    await vi.advanceTimersByTimeAsync(50)
+    result = r.get(count)
+    assert(Result.isWaiting(result))
+    assert.deepEqual(Result.value(result), Option.some(5))
+
+    await vi.advanceTimersByTimeAsync(50)
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    assert.deepEqual(Result.value(result), Option.some(6))
 
     unmount()
     await new Promise((resolve) => resolve(null))

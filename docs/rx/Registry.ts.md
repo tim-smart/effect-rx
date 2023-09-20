@@ -45,7 +45,7 @@ export interface Registry {
   readonly [TypeId]: TypeId
   readonly get: Rx.Rx.Get
   readonly mount: Rx.Rx.Mount
-  readonly refresh: Rx.Rx.Refresh
+  readonly refresh: Rx.Rx.RefreshRx
   readonly set: Rx.Rx.Set
   readonly subscribe: Rx.Rx.Subscribe
   readonly subscribeGetter: Rx.Rx.SubscribeGetter
