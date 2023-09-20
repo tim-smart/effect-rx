@@ -56,6 +56,8 @@ Added in v1.0.0
   - [TypeId (type alias)](#typeid-type-alias)
   - [WritableTypeId](#writabletypeid)
   - [WritableTypeId (type alias)](#writabletypeid-type-alias)
+- [utils](#utils)
+  - [batch](#batch)
 
 ---
 
@@ -532,6 +534,18 @@ Added in v1.0.0
 
 ```ts
 export type WritableTypeId = typeof WritableTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## batch
+
+**Signature**
+
+```ts
+export declare const batch: (f: () => void) => void
 ```
 
 Added in v1.0.0

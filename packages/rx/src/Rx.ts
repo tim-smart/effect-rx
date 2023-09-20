@@ -1,6 +1,7 @@
 /**
  * @since 1.0.0
  */
+import * as internalRegistry from "@effect-rx/rx/internal/registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Chunk from "@effect/data/Chunk"
 import { dual, pipe } from "@effect/data/Function"
@@ -700,3 +701,8 @@ export const withLabel = dual<
     ...self,
     label: [name, new Error().stack?.split("\n")[5] ?? ""]
   }))
+
+/**
+ * @since 1.0.0
+ */
+export const batch: (f: () => void) => void = internalRegistry.batch

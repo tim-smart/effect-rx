@@ -2,6 +2,7 @@ import type * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import type * as Rx from "@effect-rx/rx/Rx"
 import * as Equal from "@effect/data/Equal"
+import { globalValue } from "@effect/data/GlobalValue"
 import * as Option from "@effect/data/Option"
 import type { NoSuchElementException } from "@effect/io/Cause"
 import type { Exit } from "@effect/io/Exit"
@@ -11,6 +12,60 @@ function constListener(_: any) {}
 
 /** @internal */
 export const TypeId: Registry.TypeId = Symbol.for("@effect-rx/rx/Registry") as Registry.TypeId
+
+/** @internal */
+export const enum BatchPhase {
+  disabled,
+  collect,
+  rebuild,
+  notify
+}
+
+/** @internal */
+export const batchState = globalValue("@effect-rx/rx/Registry/batchState", () => ({
+  phase: BatchPhase.disabled,
+  depth: 0,
+  stale: new Set<Node<any>>(),
+  valid: new Set<Node<any>>()
+}))
+
+/** @internal */
+export function batch(f: () => void): void {
+  batchState.phase = BatchPhase.collect
+  batchState.depth++
+  try {
+    f()
+    if (batchState.depth === 1) {
+      batchState.phase = BatchPhase.rebuild
+      for (const node of batchState.stale) {
+        node.value()
+      }
+      batchState.phase = BatchPhase.notify
+      for (const node of batchState.valid) {
+        node.notify()
+      }
+    }
+  } finally {
+    batchState.depth--
+    if (batchState.depth === 0) {
+      batchState.phase = BatchPhase.disabled
+      batchState.stale.clear()
+      batchState.valid.clear()
+    }
+  }
+}
+
+function batchAddValid(node: Node<any>) {
+  batchState.valid.add(node)
+  batchState.stale.delete(node)
+}
+
+function batchAddStale(node: Node<any>) {
+  if (batchState.valid.has(node)) {
+    return
+  }
+  batchState.stale.add(node)
+}
 
 /** @internal */
 export const make = (): Registry.Registry => new RegistryImpl()
@@ -193,7 +248,13 @@ class Node<A> {
     if ((this.state & NodeFlags.initialized) === 0) {
       this.state = NodeState.valid
       this._value = value
-      this.notify()
+
+      if (batchState.phase === BatchPhase.disabled) {
+        this.notify()
+      } else if (batchState.phase !== BatchPhase.notify) {
+        batchAddValid(this)
+      }
+
       return
     }
 
@@ -204,7 +265,12 @@ class Node<A> {
 
     this._value = value
     this.invalidateChildren()
-    this.notify()
+
+    if (batchState.phase === BatchPhase.disabled) {
+      this.notify()
+    } else if (batchState.phase !== BatchPhase.notify) {
+      batchAddValid(this)
+    }
   }
 
   addParent(parent: Node<any>): void {
@@ -238,8 +304,12 @@ class Node<A> {
       this.disposeLifetime()
     }
 
-    // rebuild
-    this.value()
+    if (batchState.phase === BatchPhase.collect) {
+      batchAddStale(this)
+      this.invalidateChildren()
+    } else {
+      this.value()
+    }
   }
 
   invalidateChildren(): void {
@@ -249,8 +319,16 @@ class Node<A> {
 
     const children = this.children
     this.children = []
-    for (let i = 0; i < children.length; i++) {
-      children[i].invalidate()
+    if (batchState.phase === BatchPhase.rebuild) {
+      for (let i = 0; i < children.length; i++) {
+        if (batchState.stale.has(children[i]) === false) {
+          children[i].invalidate()
+        }
+      }
+    } else {
+      for (let i = 0; i < children.length; i++) {
+        children[i].invalidate()
+      }
     }
   }
 

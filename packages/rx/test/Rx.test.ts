@@ -304,6 +304,88 @@ describe("Rx", () => {
       Rx.state(0).pipe(Rx.withLabel("counter")).label![1]
     ).toMatch(/Rx.test.ts:\d+:\d+/)
   })
+
+  it("batching", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    let count = 0
+    const derived = Rx.readable((get) => {
+      count++
+      return get(state) + get(state2)
+    })
+    expect(r.get(derived)).toEqual("1a")
+    expect(count).toEqual(1)
+    Rx.batch(() => {
+      r.set(state, 2)
+      r.set(state2, "b")
+    })
+    expect(count).toEqual(2)
+    expect(r.get(derived)).toEqual("2b")
+  })
+
+  it("nested batch", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    let count = 0
+    const derived = Rx.readable((get) => {
+      count++
+      return get(state) + get(state2)
+    })
+    expect(r.get(derived)).toEqual("1a")
+    expect(count).toEqual(1)
+    Rx.batch(() => {
+      r.set(state, 2)
+      Rx.batch(() => {
+        r.set(state2, "b")
+      })
+    })
+    expect(count).toEqual(2)
+    expect(r.get(derived)).toEqual("2b")
+  })
+
+  it("read correct updated state in batch", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    let count = 0
+    const derived = Rx.readable((get) => {
+      count++
+      return get(state) + get(state2)
+    })
+    expect(r.get(derived)).toEqual("1a")
+    expect(count).toEqual(1)
+    Rx.batch(() => {
+      r.set(state, 2)
+      expect(r.get(derived)).toEqual("2a")
+      r.set(state2, "b")
+    })
+    expect(count).toEqual(2)
+    expect(r.get(derived)).toEqual("2b")
+    expect(count).toEqual(3)
+  })
+
+  it("notifies listeners after batch commit", async () => {
+    const r = Registry.make()
+    const state = Rx.state(1).pipe(Rx.keepAlive)
+    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    let count = 0
+    const derived = Rx.readable((get) => {
+      return get(state) + get(state2)
+    })
+    r.subscribe(derived, () => {
+      count++
+    })
+    Rx.batch(() => {
+      r.get(derived)
+      r.set(state, 2)
+      r.get(derived)
+      r.set(state2, "b")
+    })
+    expect(count).toEqual(1)
+    expect(r.get(derived)).toEqual("2b")
+  })
 })
 
 interface Counter {
