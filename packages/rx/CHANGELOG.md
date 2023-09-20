@@ -1,5 +1,13 @@
 # @effect-rx/rx
 
+## 0.1.9
+
+### Patch Changes
+
+- [`d64c8d0`](https://github.com/tim-smart/effect-rx/commit/d64c8d0f9504b44098c0198c1f01a4ead25c3af3) Thanks [@tim-smart](https://github.com/tim-smart)! - remove rx context via Effect context
+
+- [`d64c8d0`](https://github.com/tim-smart/effect-rx/commit/d64c8d0f9504b44098c0198c1f01a4ead25c3af3) Thanks [@tim-smart](https://github.com/tim-smart)! - add Context.getResult
+
 ## 0.1.8
 
 ### Patch Changes
