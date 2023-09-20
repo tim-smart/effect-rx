@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.11
+
+### Patch Changes
+
+- [`789701c`](https://github.com/tim-smart/effect-rx/commit/789701c28b9a9e4dcee0651d3e637ab9b99258b6) Thanks [@tim-smart](https://github.com/tim-smart)! - fix Writable typo
+
 ## 0.1.10
 
 ### Patch Changes
