@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.12
+
+### Patch Changes
+
+- [`7726b27`](https://github.com/tim-smart/effect-rx/commit/7726b270b52e60cea958b1de4ce2a62a38549a9d) Thanks [@tim-smart](https://github.com/tim-smart)! - api cleanup
+
 ## 0.1.11
 
 ### Patch Changes
