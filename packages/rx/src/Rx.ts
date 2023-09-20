@@ -36,7 +36,7 @@ export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
   readonly read: Rx.Read<A>
-  readonly refresh: (f: <A>(rx: Rx<A>) => void) => void
+  readonly refresh: Rx.Refresh
   readonly label?: readonly [name: string, stack: string]
 }
 
@@ -58,6 +58,16 @@ export declare namespace Rx {
    * @since 1.0.0
    * @category models
    */
+  export type ReadFn<Arg, A> = (
+    arg: Arg,
+    get: Rx.Get,
+    ctx: Context
+  ) => A
+
+  /**
+   * @since 1.0.0
+   * @category models
+   */
   export type Write<R, W> = (
     get: Rx.Get,
     set: Rx.Set,
@@ -65,6 +75,12 @@ export declare namespace Rx {
     refreshSelf: () => void,
     value: W
   ) => void
+
+  /**
+   * @since 1.0.0
+   * @category models
+   */
+  export type Refresh = (f: <A>(rx: Rx<A>) => void) => void
 
   /**
    * @since 1.0.0
@@ -88,7 +104,7 @@ export declare namespace Rx {
    * @since 1.0.0
    * @category models
    */
-  export type Refresh = <A>(rx: Rx<A> & Refreshable) => void
+  export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => void
 
   /**
    * @since 1.0.0
@@ -161,7 +177,7 @@ export interface Context {
   readonly getResult: Rx.GetResult
   readonly once: Rx.Get
   readonly addFinalizer: (f: () => void) => void
-  readonly refresh: Rx.Refresh
+  readonly refresh: Rx.RefreshRx
   readonly refreshSelf: () => void
   readonly self: <A>() => Option.Option<A>
   readonly setSelf: <A>(a: A) => void
@@ -207,7 +223,7 @@ function defaultRefresh(this: Rx<any>, f: any) {
  */
 export const readable = <A>(
   read: Rx.Read<A>,
-  refresh: (f: <A>(rx: Rx<A>) => void) => void = defaultRefresh
+  refresh: Rx.Refresh = defaultRefresh
 ): Rx<A> => {
   const rx = Object.create(RxProto)
   rx.keepAlive = false
@@ -223,7 +239,7 @@ export const readable = <A>(
 export const writable = <R, W>(
   read: Rx.Read<R>,
   write: Rx.Write<R, W>,
-  refresh: (f: <A>(rx: Rx<A>) => void) => void = defaultRefresh
+  refresh: Rx.Refresh = defaultRefresh
 ): Writable<R, W> => {
   const rx = Object.create(WritableProto)
   rx.keepAlive = false
@@ -233,6 +249,10 @@ export const writable = <R, W>(
   return rx
 }
 
+function constSetSelf<A>(_get: Rx.Get, _set: Rx.Set, setSelf: (_: A) => void, _refreshSelf: () => void, value: A) {
+  setSelf(value)
+}
+
 /**
  * @since 1.0.0
  * @category constructors
@@ -240,14 +260,9 @@ export const writable = <R, W>(
 export const state = <A>(
   initialValue: A
 ): Writable<A, A> =>
-  writable(
-    function(_ctx) {
-      return initialValue
-    },
-    function(_get, _set, setSelf, _refreshSelf, value) {
-      setSelf(value)
-    }
-  )
+  writable(function(_get, _ctx) {
+    return initialValue
+  }, constSetSelf)
 
 function makeEffect<E, A>(
   ctx: Context,
@@ -288,6 +303,23 @@ function makeEffectRuntime<R, E, A, RE>(
   return makeEffect(ctx, effect as any, Runtime.runCallback(runtimeResult.value))
 }
 
+function makeScoped<R, E, A, RE>(
+  ctx: Context,
+  effect: Effect.Effect<R, E, A>,
+  options?: { readonly runtime?: RxRuntime<RE, R> }
+) {
+  const scope = Effect.runSync(Scope.make())
+  ctx.addFinalizer(() => Effect.runFork(Scope.close(scope, Exit.unit)))
+  const scopedEffect = Effect.provideService(
+    effect,
+    Scope.Scope,
+    scope
+  )
+  return options?.runtime
+    ? makeEffectRuntime(ctx, scopedEffect, options.runtime)
+    : makeEffect(ctx, scopedEffect as Effect.Effect<never, E, A>)
+}
+
 /**
  * @since 1.0.0
  * @category constructors
@@ -324,20 +356,7 @@ export const scoped: {
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) =>
   readable<Result.Result<E, A>>(function(get, ctx) {
-    const effect = create(get, ctx)
-    const scope = Effect.runSync(Scope.make())
-    ctx.addFinalizer(() => Effect.runFork(Scope.close(scope, Exit.unit)))
-
-    const scopedEffect = Effect.provideService(
-      effect,
-      Scope.Scope,
-      scope
-    )
-
-    if (options?.runtime !== undefined) {
-      return makeEffectRuntime(ctx, scopedEffect, options.runtime)
-    }
-    return makeEffect(ctx, scopedEffect as Effect.Effect<never, E, A>)
+    return makeScoped(ctx, create(get, ctx), options)
   })
 
 /**
@@ -351,13 +370,13 @@ export interface RxResultFn<E, A, Arg> extends Writable<Result.Result<E, A>, Arg
  * @category constructors
  */
 export const effectFn: {
-  <Arg, E, A>(fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<never, E, A>): RxResultFn<E, A, Arg>
+  <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<never, E, A>>): RxResultFn<E, A, Arg>
   <Arg, RR, R extends RR, E, A, RE>(
-    fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+    fn: Rx.ReadFn<Arg, Effect.Effect<R, E, A>>,
     options: { readonly runtime: RxRuntime<RE, RR> }
   ): RxResultFn<RE | E, A, Arg>
 } = <Arg, R, E, A, RE>(
-  f: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+  f: Rx.ReadFn<Arg, Effect.Effect<R, E, A>>,
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) => {
   const argRx = state<[number, Arg]>([0, undefined as any])
@@ -408,16 +427,7 @@ export const scopedFn: {
     if (effect === undefined) {
       return Result.initial()
     }
-    const scope = Effect.runSync(Scope.make())
-    ctx.addFinalizer(() => Effect.runFork(Scope.close(scope, Exit.unit)))
-    const scopedEffect = Effect.provideService(
-      effect as Effect.Effect<Scope.Scope, E, A>,
-      Scope.Scope,
-      scope
-    )
-    return options?.runtime
-      ? makeEffectRuntime(ctx, scopedEffect, options.runtime)
-      : makeEffect(ctx, scopedEffect as Effect.Effect<never, E, A>)
+    return makeScoped(ctx, effect, options)
   }, function(get, set, _setSelf, _refreshSelf, arg) {
     set(argRx, [get(argRx)[0] + 1, arg])
   })
@@ -480,7 +490,7 @@ function makeStream<E, A>(
   if (previous._tag === "Some") {
     return Result.waitingFrom(previous)
   }
-  return Result.initial()
+  return Result.waiting(Result.initial())
 }
 
 function makeStreamRuntime<R, E, A, RE>(
@@ -519,11 +529,45 @@ export const stream: {
 ) =>
   readable<Result.Result<E | NoSuchElementException, A>>(function(get, ctx) {
     const stream = create(get, ctx)
-    if (options?.runtime !== undefined) {
-      return makeStreamRuntime(ctx, stream, options.runtime)
-    }
-    return makeStream(ctx, stream as Stream.Stream<never, E, A>)
+    return options?.runtime
+      ? makeStreamRuntime(ctx, stream, options.runtime)
+      : makeStream(ctx, stream as Stream.Stream<never, E, A>)
   })
+
+/**
+ * @since 1.0.0
+ * @category constructors
+ */
+export const streamFn: {
+  <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<never, E, A>>): RxResultFn<E | NoSuchElementException, A, Arg>
+  <Arg, RR, R extends RR, E, A, RE>(
+    fn: Rx.ReadFn<Arg, Stream.Stream<R, E, A>>,
+    options: { readonly runtime: RxRuntime<RE, RR> }
+  ): RxResultFn<RE | E | NoSuchElementException, A, Arg>
+} = <Arg, R, E, A, RE>(
+  f: Rx.ReadFn<Arg, Stream.Stream<R, E, A>>,
+  options?: { readonly runtime?: RxRuntime<RE, R> }
+) => {
+  const argRx = state<[number, Arg]>([0, undefined as any])
+  const streamRx = readable<Stream.Stream<R, E, A> | undefined>(function(get, ctx) {
+    const [counter, arg] = get(argRx)
+    if (counter === 0) {
+      return undefined
+    }
+    return f(arg, get, ctx)
+  })
+  return writable<Result.Result<E | NoSuchElementException, A>, Arg>(function(get, ctx) {
+    const stream = get(streamRx)
+    if (stream === undefined) {
+      return Result.initial()
+    }
+    return options?.runtime
+      ? makeStreamRuntime(ctx, stream, options.runtime)
+      : makeStream(ctx, stream as Stream.Stream<never, E, A>)
+  }, function(get, set, _setSelf, _refreshSelf, arg) {
+    set(argRx, [get(argRx)[0] + 1, arg])
+  })
+}
 
 /**
  * @since 1.0.0
@@ -549,15 +593,16 @@ export const streamPull: {
 ) => {
   const pullRx = scoped((get, ctx) => {
     const stream = create(get, ctx)
-    const accStream = options?.disableAccumulation ? stream : pipe(
-      Stream.chunks(stream),
-      Stream.mapAccum(Chunk.empty<A>(), (acc, chunk) => {
-        const next = Chunk.appendAll(acc, chunk)
-        return [next, next]
-      }),
-      Stream.mapChunks(Chunk.flatten)
+    return Stream.toPull(
+      options?.disableAccumulation ? stream : pipe(
+        Stream.chunks(stream),
+        Stream.mapAccum(Chunk.empty<A>(), (acc, chunk) => {
+          const next = Chunk.appendAll(acc, chunk)
+          return [next, next]
+        }),
+        Stream.mapChunks(Chunk.flatten)
+      )
     )
-    return Stream.toPull(accStream)
   }, options?.runtime as any)
 
   return writable<Result.Result<E | NoSuchElementException, Array<A>>, void>(function(get, ctx) {

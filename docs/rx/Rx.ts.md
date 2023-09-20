@@ -26,6 +26,7 @@ Added in v1.0.0
   - [scopedFn](#scopedfn)
   - [state](#state)
   - [stream](#stream)
+  - [streamFn](#streamfn)
   - [streamPull](#streampull)
   - [writable](#writable)
 - [context](#context)
@@ -38,7 +39,9 @@ Added in v1.0.0
     - [GetResult (type alias)](#getresult-type-alias)
     - [Mount (type alias)](#mount-type-alias)
     - [Read (type alias)](#read-type-alias)
+    - [ReadFn (type alias)](#readfn-type-alias)
     - [Refresh (type alias)](#refresh-type-alias)
+    - [RefreshRx (type alias)](#refreshrx-type-alias)
     - [Set (type alias)](#set-type-alias)
     - [Subscribe (type alias)](#subscribe-type-alias)
     - [SubscribeGetter (type alias)](#subscribegetter-type-alias)
@@ -113,9 +116,9 @@ Added in v1.0.0
 
 ```ts
 export declare const effectFn: {
-  <Arg, E, A>(fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<never, E, A>): RxResultFn<E, A, Arg>
+  <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<never, E, A>>): RxResultFn<E, A, Arg>
   <Arg, RR, R extends RR, E, A, RE>(
-    fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+    fn: Rx.ReadFn<Arg, Effect.Effect<R, E, A>>,
     options: { readonly runtime: RxRuntime<RE, RR> }
   ): RxResultFn<E | RE, A, Arg>
 }
@@ -138,7 +141,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const readable: <A>(read: Rx.Read<A>, refresh?: (f: <A>(rx: Rx<A>) => void) => void) => Rx<A>
+export declare const readable: <A>(read: Rx.Read<A>, refresh?: Rx.Refresh) => Rx<A>
 ```
 
 Added in v1.0.0
@@ -214,6 +217,22 @@ export declare const stream: {
 
 Added in v1.0.0
 
+## streamFn
+
+**Signature**
+
+```ts
+export declare const streamFn: {
+  <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<never, E, A>>): RxResultFn<NoSuchElementException | E, A, Arg>
+  <Arg, RR, R extends RR, E, A, RE>(
+    fn: Rx.ReadFn<Arg, Stream.Stream<R, E, A>>,
+    options: { readonly runtime: RxRuntime<RE, RR> }
+  ): RxResultFn<NoSuchElementException | E | RE, A, Arg>
+}
+```
+
+Added in v1.0.0
+
 ## streamPull
 
 **Signature**
@@ -238,11 +257,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const writable: <R, W>(
-  read: Rx.Read<R>,
-  write: Rx.Write<R, W>,
-  refresh?: (f: <A>(rx: Rx<A>) => void) => void
-) => Writable<R, W>
+export declare const writable: <R, W>(read: Rx.Read<R>, write: Rx.Write<R, W>, refresh?: Rx.Refresh) => Writable<R, W>
 ```
 
 Added in v1.0.0
@@ -259,7 +274,7 @@ export interface Context {
   readonly getResult: Rx.GetResult
   readonly once: Rx.Get
   readonly addFinalizer: (f: () => void) => void
-  readonly refresh: Rx.Refresh
+  readonly refresh: Rx.RefreshRx
   readonly refreshSelf: () => void
   readonly self: <A>() => Option.Option<A>
   readonly setSelf: <A>(a: A) => void
@@ -299,7 +314,7 @@ export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
   readonly read: Rx.Read<A>
-  readonly refresh: (f: <A>(rx: Rx<A>) => void) => void
+  readonly refresh: Rx.Refresh
   readonly label?: readonly [name: string, stack: string]
 }
 ```
@@ -350,12 +365,32 @@ export type Read<A> = (get: Rx.Get, ctx: Context) => A
 
 Added in v1.0.0
 
+### ReadFn (type alias)
+
+**Signature**
+
+```ts
+export type ReadFn<Arg, A> = (arg: Arg, get: Rx.Get, ctx: Context) => A
+```
+
+Added in v1.0.0
+
 ### Refresh (type alias)
 
 **Signature**
 
 ```ts
-export type Refresh = <A>(rx: Rx<A> & Refreshable) => void
+export type Refresh = (f: <A>(rx: Rx<A>) => void) => void
+```
+
+Added in v1.0.0
+
+### RefreshRx (type alias)
+
+**Signature**
+
+```ts
+export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => void
 ```
 
 Added in v1.0.0
