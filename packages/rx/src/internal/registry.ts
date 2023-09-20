@@ -27,7 +27,7 @@ class RegistryImpl implements Registry.Registry {
     return this.ensureNode(rx).value()
   }
 
-  set = <R, W>(rx: Rx.Writeable<R, W>, value: W): void => {
+  set = <R, W>(rx: Rx.Writable<R, W>, value: W): void => {
     rx.write(
       this.get,
       this.set,
@@ -350,7 +350,7 @@ class Lifetime<A> implements Rx.Context {
     this.node.setValue(a as any)
   }
 
-  set<R, W>(rx: Rx.Writeable<R, W>, value: W): void {
+  set<R, W>(rx: Rx.Writable<R, W>, value: W): void {
     this.node.registry.set(rx, value)
   }
 

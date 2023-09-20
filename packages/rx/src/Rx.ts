@@ -61,7 +61,7 @@ export declare namespace Rx {
    * @since 1.0.0
    * @category models
    */
-  export type Set = <R, W>(rx: Writeable<R, W>, value: W) => void
+  export type Set = <R, W>(rx: Writable<R, W>, value: W) => void
 
   /**
    * @since 1.0.0
@@ -114,20 +114,20 @@ export interface Refreshable {
  * @since 1.0.0
  * @category type ids
  */
-export const WriteableTypeId = Symbol.for("@effect-rx/rx/Rx/Writeable")
+export const WritableTypeId = Symbol.for("@effect-rx/rx/Rx/Writable")
 
 /**
  * @since 1.0.0
  * @category type ids
  */
-export type WriteableTypeId = typeof WriteableTypeId
+export type WritableTypeId = typeof WritableTypeId
 
 /**
  * @since 1.0.0
  * @category models
  */
-export interface Writeable<R, W> extends Rx<R> {
-  readonly [WriteableTypeId]: WriteableTypeId
+export interface Writable<R, W> extends Rx<R> {
+  readonly [WritableTypeId]: WritableTypeId
   readonly write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void
 }
 
@@ -171,9 +171,9 @@ const RxProto = {
   }
 } as const
 
-const WriteableProto = {
+const WritableProto = {
   ...RxProto,
-  [WriteableTypeId]: WriteableTypeId
+  [WritableTypeId]: WritableTypeId
 } as const
 
 function defaultRefresh(this: Rx<any>, f: any) {
@@ -199,12 +199,12 @@ export const readable = <A>(
  * @since 1.0.0
  * @category constructors
  */
-export const writeable = <R, W>(
+export const writable = <R, W>(
   read: (get: Rx.Get, ctx: Context) => R,
   write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void,
   refresh: (f: <A>(rx: Rx<A>) => void) => void = defaultRefresh
-): Writeable<R, W> => {
-  const rx = Object.create(WriteableProto)
+): Writable<R, W> => {
+  const rx = Object.create(WritableProto)
   rx.keepAlive = false
   rx.read = read
   rx.write = write
@@ -218,8 +218,8 @@ export const writeable = <R, W>(
  */
 export const state = <A>(
   initialValue: A
-): Writeable<A, A> =>
-  writeable(
+): Writable<A, A> =>
+  writable(
     function(_ctx) {
       return initialValue
     },
@@ -323,7 +323,7 @@ export const scoped: {
  * @since 1.0.0
  * @category models
  */
-export interface RxResultFn<E, A, Arg> extends Writeable<Result.Result<E, A>, Arg> {}
+export interface RxResultFn<E, A, Arg> extends Writable<Result.Result<E, A>, Arg> {}
 
 /**
  * @since 1.0.0
@@ -347,7 +347,7 @@ export const effectFn: {
     }
     return f(arg, get, ctx)
   })
-  return writeable<Result.Result<E, A>, Arg>(function(get, ctx) {
+  return writable<Result.Result<E, A>, Arg>(function(get, ctx) {
     const effect = get(effectRx)
     if (effect === undefined) {
       return Result.initial()
@@ -382,7 +382,7 @@ export const scopedFn: {
     }
     return f(arg, get, ctx)
   })
-  return writeable<Result.Result<E, A>, Arg>(function(get, ctx) {
+  return writable<Result.Result<E, A>, Arg>(function(get, ctx) {
     const effect = get(effectRx)
     if (effect === undefined) {
       return Result.initial()
@@ -511,14 +511,14 @@ export const stream: {
 export const streamPull: {
   <E, A>(create: (get: Rx.Get, ctx: Context) => Stream.Stream<never, E, A>, options?: {
     readonly disableAccumulation?: boolean
-  }): Writeable<Result.Result<E | NoSuchElementException, Array<A>>, void>
+  }): Writable<Result.Result<E | NoSuchElementException, Array<A>>, void>
   <RR, R extends RR, E, A, RE>(
     create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
     options: {
       readonly runtime: RxRuntime<RE, RR>
       readonly disableAccumulation?: boolean
     }
-  ): Writeable<Result.Result<RE | E | NoSuchElementException, Array<A>>, void>
+  ): Writable<Result.Result<RE | E | NoSuchElementException, Array<A>>, void>
 } = <R, E, A>(
   create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
   options?: {
@@ -540,7 +540,7 @@ export const streamPull: {
   }, options?.runtime as any)
   const counter = state(0)
 
-  return writeable<Result.Result<E | NoSuchElementException, Array<A>>, void>(function(get, ctx) {
+  return writable<Result.Result<E | NoSuchElementException, Array<A>>, void>(function(get, ctx) {
     const previous = ctx.self<Result.Result<E | NoSuchElementException, Array<A>>>()
     const pullResult = get(pullRx)
     if (pullResult._tag !== "Success") {

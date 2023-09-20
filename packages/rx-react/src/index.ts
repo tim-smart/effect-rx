@@ -54,7 +54,7 @@ export const useRxValue = <A>(rx: Rx.Rx<A>): A => {
  * @since 1.0.0
  * @category hooks
  */
-export const useSetRx = <R, W>(rx: Rx.Writeable<R, W>): (_: W | ((_: R) => W)) => void => {
+export const useSetRx = <R, W>(rx: Rx.Writable<R, W>): (_: W | ((_: R) => W)) => void => {
   const registry = React.useContext(RegistryContext)
   return React.useCallback((value) => {
     if (typeof value === "function") {
@@ -81,7 +81,7 @@ export const useRefreshRx = <A>(rx: Rx.Rx<A> & Rx.Refreshable): () => void => {
  * @since 1.0.0
  * @category hooks
  */
-export const useRx = <R, W>(rx: Rx.Writeable<R, W>): readonly [value: R, setOrUpdate: (_: W | ((_: R) => W)) => void] =>
+export const useRx = <R, W>(rx: Rx.Writable<R, W>): readonly [value: R, setOrUpdate: (_: W | ((_: R) => W)) => void] =>
   [
     useRxValue(rx),
     useSetRx(rx)

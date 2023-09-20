@@ -27,7 +27,7 @@ Added in v1.0.0
   - [state](#state)
   - [stream](#stream)
   - [streamPull](#streampull)
-  - [writeable](#writeable)
+  - [writable](#writable)
 - [context](#context)
   - [Context (interface)](#context-interface)
 - [models](#models)
@@ -43,14 +43,14 @@ Added in v1.0.0
     - [SubscribeGetter (type alias)](#subscribegetter-type-alias)
   - [RxResultFn (interface)](#rxresultfn-interface)
   - [RxRuntime (interface)](#rxruntime-interface)
-  - [Writeable (interface)](#writeable-interface)
+  - [Writable (interface)](#writable-interface)
 - [type ids](#type-ids)
   - [RefreshableTypeId](#refreshabletypeid)
   - [RefreshableTypeId (type alias)](#refreshabletypeid-type-alias)
   - [TypeId](#typeid)
   - [TypeId (type alias)](#typeid-type-alias)
-  - [WriteableTypeId](#writeabletypeid)
-  - [WriteableTypeId (type alias)](#writeabletypeid-type-alias)
+  - [WritableTypeId](#writabletypeid)
+  - [WritableTypeId (type alias)](#writabletypeid-type-alias)
 
 ---
 
@@ -194,7 +194,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const state: <A>(initialValue: A) => Writeable<A, A>
+export declare const state: <A>(initialValue: A) => Writable<A, A>
 ```
 
 Added in v1.0.0
@@ -226,26 +226,26 @@ export declare const streamPull: {
   <E, A>(
     create: (get: Rx.Get, ctx: Context) => Stream.Stream<never, E, A>,
     options?: { readonly disableAccumulation?: boolean }
-  ): Writeable<Result.Result<NoSuchElementException | E, A[]>, void>
+  ): Writable<Result.Result<NoSuchElementException | E, A[]>, void>
   <RR, R extends RR, E, A, RE>(
     create: (get: Rx.Get, ctx: Context) => Stream.Stream<R, E, A>,
     options: { readonly runtime: RxRuntime<RE, RR>; readonly disableAccumulation?: boolean | undefined }
-  ): Writeable<Result.Result<NoSuchElementException | E | RE, A[]>, void>
+  ): Writable<Result.Result<NoSuchElementException | E | RE, A[]>, void>
 }
 ```
 
 Added in v1.0.0
 
-## writeable
+## writable
 
 **Signature**
 
 ```ts
-export declare const writeable: <R, W>(
+export declare const writable: <R, W>(
   read: (get: Rx.Get, ctx: Context) => R,
   write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void,
   refresh?: (f: <A>(rx: Rx<A>) => void) => void
-) => Writeable<R, W>
+) => Writable<R, W>
 ```
 
 Added in v1.0.0
@@ -358,7 +358,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type Set = <R, W>(rx: Writeable<R, W>, value: W) => void
+export type Set = <R, W>(rx: Writable<R, W>, value: W) => void
 ```
 
 Added in v1.0.0
@@ -394,7 +394,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface RxResultFn<E, A, Arg> extends Writeable<Result.Result<E, A>, Arg> {}
+export interface RxResultFn<E, A, Arg> extends Writable<Result.Result<E, A>, Arg> {}
 ```
 
 Added in v1.0.0
@@ -409,13 +409,13 @@ export interface RxRuntime<E, A> extends Rx<Result.Result<E, Runtime.Runtime<A>>
 
 Added in v1.0.0
 
-## Writeable (interface)
+## Writable (interface)
 
 **Signature**
 
 ```ts
-export interface Writeable<R, W> extends Rx<R> {
-  readonly [WriteableTypeId]: WriteableTypeId
+export interface Writable<R, W> extends Rx<R> {
+  readonly [WritableTypeId]: WritableTypeId
   readonly write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, value: W) => void
 }
 ```
@@ -464,22 +464,22 @@ export type TypeId = typeof TypeId
 
 Added in v1.0.0
 
-## WriteableTypeId
+## WritableTypeId
 
 **Signature**
 
 ```ts
-export declare const WriteableTypeId: typeof WriteableTypeId
+export declare const WritableTypeId: typeof WritableTypeId
 ```
 
 Added in v1.0.0
 
-## WriteableTypeId (type alias)
+## WritableTypeId (type alias)
 
 **Signature**
 
 ```ts
-export type WriteableTypeId = typeof WriteableTypeId
+export type WritableTypeId = typeof WritableTypeId
 ```
 
 Added in v1.0.0

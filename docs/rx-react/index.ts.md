@@ -52,7 +52,7 @@ Added in v1.0.0
 
 ```ts
 export declare const useRx: <R, W>(
-  rx: Rx.Writeable<R, W>
+  rx: Rx.Writable<R, W>
 ) => readonly [value: R, setOrUpdate: (_: W | ((_: R) => W)) => void]
 ```
 
@@ -73,7 +73,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useSetRx: <R, W>(rx: Rx.Writeable<R, W>) => (_: W | ((_: R) => W)) => void
+export declare const useSetRx: <R, W>(rx: Rx.Writable<R, W>) => (_: W | ((_: R) => W)) => void
 ```
 
 Added in v1.0.0
