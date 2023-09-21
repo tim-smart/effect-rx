@@ -2,7 +2,10 @@
  * @since 1.0.0
  */
 import * as Registry from "@effect-rx/rx/Registry"
-import type * as Rx from "@effect-rx/rx/Rx"
+import * as Result from "@effect-rx/rx/Result"
+import * as Rx from "@effect-rx/rx/Rx"
+import { globalValue } from "@effect/data/GlobalValue"
+import * as Cause from "@effect/io/Cause"
 import * as React from "react"
 
 export * as Registry from "@effect-rx/rx/Registry"
@@ -86,3 +89,111 @@ export const useRx = <R, W>(rx: Rx.Writable<R, W>): readonly [value: R, setOrUpd
     useRxValue(rx),
     useSetRx(rx)
   ] as const
+
+type SuspenseResult<E, A> =
+  | {
+    readonly _tag: "Suspended"
+    readonly promise: Promise<void>
+  }
+  | {
+    readonly _tag: "Value"
+    readonly isWaiting: boolean
+    readonly value: Result.Success<E, A> | Result.Failure<E, A>
+  }
+
+const suspenseCache = globalValue("@effect-rx/rx-react/suspenseCache", () => new Map<Rx.Rx<any>, () => void>())
+const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
+  Rx.readable((get, ctx): SuspenseResult<any, any> => {
+    const result = get(rx)
+    const value = Result.noWaiting(result)
+    if (value._tag === "Initial") {
+      return {
+        _tag: "Suspended",
+        promise: new Promise<void>((resolve) => {
+          ctx.addFinalizer(() => {
+            resolve()
+            const unmount = suspenseCache.get(rx)
+            if (unmount) {
+              unmount()
+              suspenseCache.delete(rx)
+            }
+          })
+        })
+      } as const
+    }
+    const isWaiting = Result.isWaiting(result)
+    return { _tag: "Value", isWaiting, value } as const
+  })
+)
+const suspenseRxWaiting = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
+  Rx.readable((get, ctx): SuspenseResult<any, any> => {
+    const result = get(rx)
+    if (result._tag === "Waiting" || result._tag === "Initial") {
+      return {
+        _tag: "Suspended",
+        promise: new Promise<void>((resolve) => {
+          ctx.addFinalizer(() => {
+            resolve()
+            const unmount = suspenseCache.get(rx)
+            if (unmount) {
+              unmount()
+              suspenseCache.delete(rx)
+            }
+          })
+        })
+      } as const
+    }
+    return { _tag: "Value", isWaiting: false, value: result } as const
+  })
+)
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
+export const useRxSuspense = <E, A>(
+  rx: Rx.Rx<Result.Result<E, A>>,
+  options?: { readonly suspendOnWaiting?: boolean }
+): {
+  readonly isWaiting: boolean
+  readonly value: Result.Success<E, A> | Result.Failure<E, A>
+} => {
+  const registry = React.useContext(RegistryContext)
+  const resultRx = options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)
+  const result = useRxValue(resultRx)
+  if (result._tag === "Suspended") {
+    if (!suspenseCache.has(resultRx)) {
+      suspenseCache.set(resultRx, registry.mount(resultRx))
+    }
+    throw result.promise
+  }
+  return result
+}
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
+export const useRxSuspenseSuccess = <E, A>(
+  rx: Rx.Rx<Result.Result<E, A>>,
+  options?: { readonly suspendOnWaiting?: boolean }
+): {
+  readonly isWaiting: boolean
+  readonly value: A
+} => {
+  const registry = React.useContext(RegistryContext)
+  const resultRx = options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)
+  const result = useRxValue(resultRx)
+  if (result._tag === "Suspended") {
+    if (!suspenseCache.has(resultRx)) {
+      suspenseCache.set(resultRx, registry.mount(resultRx))
+    }
+    throw result.promise
+  } else if (result.value._tag === "Failure") {
+    throw Cause.squash(result.value.cause)
+  }
+  return {
+    isWaiting: result.isWaiting,
+    value: result.value.value
+  }
+}
