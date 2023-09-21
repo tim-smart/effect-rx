@@ -155,8 +155,11 @@ Added in v1.0.0
 
 ```ts
 export declare const runtime: {
-  <E, A>(layer: Layer.Layer<never, E, A>): RxRuntime<E, A>
-  <R, E, A, RR extends R, RE>(layer: Layer.Layer<R, E, A>, runtime: RxRuntime<RE, RR>): RxRuntime<E, A | RR>
+  <E, A>(layer: Layer.Layer<never, E, A>, options?: { readonly autoDispose?: boolean }): RxRuntime<E, A>
+  <R, E, A, RR extends R, RE>(
+    layer: Layer.Layer<R, E, A>,
+    options?: { readonly autoDispose?: boolean | undefined; readonly runtime: RxRuntime<RE, RR> } | undefined
+  ): RxRuntime<E, A | RR>
 }
 ```
 

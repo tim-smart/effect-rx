@@ -422,5 +422,10 @@ const MultiplierLive = Layer.effect(
   })
 )
 
-const counterRuntime: Rx.RxRuntime<never, Counter> = Rx.runtime(CounterLive)
-const multiplierRuntime: Rx.RxRuntime<never, Multiplier | Counter> = Rx.runtime(MultiplierLive, counterRuntime)
+const counterRuntime = Rx.runtime(CounterLive, {
+  autoDispose: true
+})
+const multiplierRuntime = Rx.runtime(MultiplierLive, {
+  runtime: counterRuntime,
+  autoDispose: true
+})

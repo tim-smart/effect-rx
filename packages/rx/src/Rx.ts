@@ -440,18 +440,26 @@ export interface RxRuntime<E, A> extends Rx<Result.Result<E, Runtime.Runtime<A>>
  * @category constructors
  */
 export const runtime: {
-  <E, A>(layer: Layer.Layer<never, E, A>): RxRuntime<E, A>
-  <R, E, A, RR extends R, RE>(layer: Layer.Layer<R, E, A>, runtime: RxRuntime<RE, RR>): RxRuntime<E, A | RR>
-} = <R, E, A, RE>(layer: Layer.Layer<R, E, A>, runtime?: RxRuntime<RE, R>): RxRuntime<E | RE, A> => {
-  if (runtime === undefined) {
-    return scoped(() => Layer.toRuntime(layer) as any)
-  }
+  <E, A>(layer: Layer.Layer<never, E, A>, options?: {
+    readonly autoDispose?: boolean
+  }): RxRuntime<E, A>
+  <R, E, A, RR extends R, RE>(layer: Layer.Layer<R, E, A>, options?: {
+    readonly autoDispose?: boolean
+    readonly runtime: RxRuntime<RE, RR>
+  }): RxRuntime<E, A | RR>
+} = <R, E, A, RE>(layer: Layer.Layer<R, E, A>, options?: {
+  readonly autoDispose?: boolean
+  readonly runtime?: RxRuntime<RE, R>
+}): RxRuntime<E | RE, A> => {
+  const rx = options?.runtime
+    ? scoped(() =>
+      Effect.flatMap(
+        Layer.build(layer),
+        (context) => Effect.provideSomeContext(Effect.runtime<A>(), context)
+      ), { runtime: options.runtime })
+    : scoped(() => Layer.toRuntime(layer) as Effect.Effect<Scope.Scope, E, Runtime.Runtime<A>>)
 
-  return scoped(() =>
-    Effect.flatMap(
-      Layer.build(layer),
-      (context) => Effect.provideSomeContext(Effect.runtime<A>(), context)
-    ), { runtime })
+  return options?.autoDispose ? rx : keepAlive(rx)
 }
 
 function makeStream<E, A>(
