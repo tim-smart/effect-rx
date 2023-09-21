@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.1.21
+
+### Patch Changes
+
+- [`22164a2`](https://github.com/tim-smart/effect-rx/commit/22164a218a1bf404af72c326bec260e0c01a528f) Thanks [@tim-smart](https://github.com/tim-smart)! - refactor context apis
+
+- Updated dependencies [[`4045106`](https://github.com/tim-smart/effect-rx/commit/40451061518c2dc96d5c52265945283afd2395df), [`22164a2`](https://github.com/tim-smart/effect-rx/commit/22164a218a1bf404af72c326bec260e0c01a528f)]:
+  - @effect-rx/rx@0.1.17
+
 ## 0.1.20
 
 ### Patch Changes
