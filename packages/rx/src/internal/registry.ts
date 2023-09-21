@@ -312,49 +312,81 @@ interface Lifetime<A> extends Rx.Context {
   readonly dispose: () => void
 }
 
+const disposedError = (rx: Rx.Rx<any>): Error => new Error(`Cannot use context of disposed Rx: ${rx}`)
+
 const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
   addFinalizer(this: Lifetime<any>, f: () => void): void {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
     this.finalizers ??= []
     this.finalizers.push(f)
   },
 
   get<A>(this: Lifetime<any>, rx: Rx.Rx<A>): A {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
     const parent = this.node.registry.ensureNode(rx)
     this.node.addParent(parent)
     return parent.value()
   },
 
   result<E, A>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<E, A>>): Exit<E | NoSuchElementException, A> {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
     return Result.toExit(this.get(rx))
   },
 
   once<A>(this: Lifetime<any>, rx: Rx.Rx<A>): A {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
     return this.node.registry.get(rx)
   },
 
   self<A>(this: Lifetime<any>): Option.Option<A> {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
     return this.node.valueOption() as any
   },
 
   refresh<A>(this: Lifetime<any>, rx: Rx.Rx<A> & Rx.Refreshable): void {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
     this.node.registry.refresh(rx)
   },
 
   refreshSelf(this: Lifetime<any>): void {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
     this.node.invalidate()
   },
 
   subscribe<A>(this: Lifetime<any>, rx: Rx.Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }): void {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
     this.addFinalizer(this.node.registry.subscribe(rx, f, options))
   },
 
   setSelf<A>(this: Lifetime<any>, a: A): void {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
     this.node.setValue(a as any)
   },
 
   set<R, W>(this: Lifetime<any>, rx: Rx.Writable<R, W>, value: W): void {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
     this.node.registry.set(rx, value)
   },
 
@@ -374,6 +406,9 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
 
 const makeLifetime = <A>(node: Node<A>): Lifetime<A> => {
   function get<A>(rx: Rx.Rx<A>): A {
+    if (get.disposed) {
+      throw disposedError(rx)
+    }
     const parent = node.registry.ensureNode(rx)
     node.addParent(parent)
     return parent.value()
