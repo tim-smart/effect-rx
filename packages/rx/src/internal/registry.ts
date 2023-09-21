@@ -2,6 +2,7 @@ import type * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import type * as Rx from "@effect-rx/rx/Rx"
 import * as Equal from "@effect/data/Equal"
+import { globalValue } from "@effect/data/GlobalValue"
 import * as Option from "@effect/data/Option"
 import type { NoSuchElementException } from "@effect/io/Cause"
 import type { Exit } from "@effect/io/Exit"
@@ -193,7 +194,11 @@ class Node<A> {
     if ((this.state & NodeFlags.initialized) === 0) {
       this.state = NodeState.valid
       this._value = value
-      this.notify()
+
+      if (batchState.phase !== BatchPhase.collect) {
+        this.notify()
+      }
+
       return
     }
 
@@ -204,7 +209,10 @@ class Node<A> {
 
     this._value = value
     this.invalidateChildren()
-    this.notify()
+
+    if (batchState.phase !== BatchPhase.collect) {
+      this.notify()
+    }
   }
 
   addParent(parent: Node<any>): void {
@@ -238,8 +246,12 @@ class Node<A> {
       this.disposeLifetime()
     }
 
-    // rebuild
-    this.value()
+    if (batchState.phase === BatchPhase.collect) {
+      batchState.stale.push(this)
+      this.invalidateChildren()
+    } else {
+      this.value()
+    }
   }
 
   invalidateChildren(): void {
@@ -371,5 +383,62 @@ class Lifetime<A> implements Rx.Context {
     for (let i = finalizers.length - 1; i >= 0; i--) {
       finalizers[i]()
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// batching
+// -----------------------------------------------------------------------------
+
+/** @internal */
+export const enum BatchPhase {
+  disabled,
+  collect,
+  commit
+}
+
+/** @internal */
+export const batchState = globalValue("@effect-rx/rx/Registry/batchState", () => ({
+  phase: BatchPhase.disabled,
+  depth: 0,
+  stale: [] as Array<Node<any>>
+}))
+
+/** @internal */
+export function batch(f: () => void): void {
+  batchState.phase = BatchPhase.collect
+  batchState.depth++
+  try {
+    f()
+    if (batchState.depth === 1) {
+      batchState.phase = BatchPhase.commit
+      for (let i = 0; i < batchState.stale.length; i++) {
+        batchRebuildNode(batchState.stale[i])
+      }
+    }
+  } finally {
+    batchState.depth--
+    if (batchState.depth === 0) {
+      batchState.phase = BatchPhase.disabled
+      batchState.stale = []
+    }
+  }
+}
+
+function batchRebuildNode(node: Node<any>) {
+  if (node.state === NodeState.valid) {
+    return
+  }
+
+  for (let i = 0; i < node.parents.length; i++) {
+    const parent = node.parents[i]
+    if (parent.state !== NodeState.valid) {
+      batchRebuildNode(parent)
+    }
+  }
+
+  // @ts-ignore
+  if (node.state !== NodeState.valid) {
+    node.value()
   }
 }
