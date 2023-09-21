@@ -14,60 +14,6 @@ function constListener(_: any) {}
 export const TypeId: Registry.TypeId = Symbol.for("@effect-rx/rx/Registry") as Registry.TypeId
 
 /** @internal */
-export const enum BatchPhase {
-  disabled,
-  collect,
-  rebuild,
-  notify
-}
-
-/** @internal */
-export const batchState = globalValue("@effect-rx/rx/Registry/batchState", () => ({
-  phase: BatchPhase.disabled,
-  depth: 0,
-  stale: new Set<Node<any>>(),
-  valid: new Set<Node<any>>()
-}))
-
-/** @internal */
-export function batch(f: () => void): void {
-  batchState.phase = BatchPhase.collect
-  batchState.depth++
-  try {
-    f()
-    if (batchState.depth === 1) {
-      batchState.phase = BatchPhase.rebuild
-      for (const node of batchState.stale) {
-        node.value()
-      }
-      batchState.phase = BatchPhase.notify
-      for (const node of batchState.valid) {
-        node.notify()
-      }
-    }
-  } finally {
-    batchState.depth--
-    if (batchState.depth === 0) {
-      batchState.phase = BatchPhase.disabled
-      batchState.stale.clear()
-      batchState.valid.clear()
-    }
-  }
-}
-
-function batchAddValid(node: Node<any>) {
-  batchState.valid.add(node)
-  batchState.stale.delete(node)
-}
-
-function batchAddStale(node: Node<any>) {
-  if (batchState.valid.has(node)) {
-    return
-  }
-  batchState.stale.add(node)
-}
-
-/** @internal */
 export const make = (): Registry.Registry => new RegistryImpl()
 
 class RegistryImpl implements Registry.Registry {
@@ -249,10 +195,8 @@ class Node<A> {
       this.state = NodeState.valid
       this._value = value
 
-      if (batchState.phase === BatchPhase.disabled) {
+      if (batchState.phase !== BatchPhase.collect) {
         this.notify()
-      } else if (batchState.phase !== BatchPhase.notify) {
-        batchAddValid(this)
       }
 
       return
@@ -266,10 +210,8 @@ class Node<A> {
     this._value = value
     this.invalidateChildren()
 
-    if (batchState.phase === BatchPhase.disabled) {
+    if (batchState.phase !== BatchPhase.collect) {
       this.notify()
-    } else if (batchState.phase !== BatchPhase.notify) {
-      batchAddValid(this)
     }
   }
 
@@ -305,7 +247,7 @@ class Node<A> {
     }
 
     if (batchState.phase === BatchPhase.collect) {
-      batchAddStale(this)
+      batchState.stale.push(this)
       this.invalidateChildren()
     } else {
       this.value()
@@ -319,16 +261,8 @@ class Node<A> {
 
     const children = this.children
     this.children = []
-    if (batchState.phase === BatchPhase.rebuild) {
-      for (let i = 0; i < children.length; i++) {
-        if (batchState.stale.has(children[i]) === false) {
-          children[i].invalidate()
-        }
-      }
-    } else {
-      for (let i = 0; i < children.length; i++) {
-        children[i].invalidate()
-      }
+    for (let i = 0; i < children.length; i++) {
+      children[i].invalidate()
     }
   }
 
@@ -449,5 +383,62 @@ class Lifetime<A> implements Rx.Context {
     for (let i = finalizers.length - 1; i >= 0; i--) {
       finalizers[i]()
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// batching
+// -----------------------------------------------------------------------------
+
+/** @internal */
+export const enum BatchPhase {
+  disabled,
+  collect,
+  commit
+}
+
+/** @internal */
+export const batchState = globalValue("@effect-rx/rx/Registry/batchState", () => ({
+  phase: BatchPhase.disabled,
+  depth: 0,
+  stale: [] as Array<Node<any>>
+}))
+
+/** @internal */
+export function batch(f: () => void): void {
+  batchState.phase = BatchPhase.collect
+  batchState.depth++
+  try {
+    f()
+    if (batchState.depth === 1) {
+      batchState.phase = BatchPhase.commit
+      for (let i = 0; i < batchState.stale.length; i++) {
+        batchRebuildNode(batchState.stale[i])
+      }
+    }
+  } finally {
+    batchState.depth--
+    if (batchState.depth === 0) {
+      batchState.phase = BatchPhase.disabled
+      batchState.stale = []
+    }
+  }
+}
+
+function batchRebuildNode(node: Node<any>) {
+  if (node.state === NodeState.valid) {
+    return
+  }
+
+  for (let i = 0; i < node.parents.length; i++) {
+    const parent = node.parents[i]
+    if (parent.state !== NodeState.valid) {
+      batchRebuildNode(parent)
+    }
+  }
+
+  // @ts-ignore
+  if (node.state !== NodeState.valid) {
+    node.value()
   }
 }

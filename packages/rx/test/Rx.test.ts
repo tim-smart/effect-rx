@@ -361,7 +361,7 @@ describe("Rx", () => {
       expect(r.get(derived)).toEqual("2a")
       r.set(state2, "b")
     })
-    expect(count).toEqual(2)
+    expect(count).toEqual(3)
     expect(r.get(derived)).toEqual("2b")
     expect(count).toEqual(3)
   })
