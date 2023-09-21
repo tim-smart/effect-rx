@@ -159,7 +159,7 @@ export const useRxSuspense = <E, A>(
     if (!suspenseCache.has(resultRx)) {
       const unmount = registry.mount(resultRx)
       suspenseCache.set(resultRx, unmount)
-      suspenseRegistry.register(resultRx, unmount, resultRx)
+      suspenseRegistry.register(result.promise, unmount, resultRx)
     }
     throw result.promise
   } else if (suspenseCache.has(resultRx)) {
