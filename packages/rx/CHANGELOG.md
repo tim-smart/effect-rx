@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.14
+
+### Patch Changes
+
+- [#15](https://github.com/tim-smart/effect-rx/pull/15) [`c5b58d9`](https://github.com/tim-smart/effect-rx/commit/c5b58d957f863fe27214af57762221ccea3ffc4d) Thanks [@tim-smart](https://github.com/tim-smart)! - Rx.batch api
+
 ## 0.1.13
 
 ### Patch Changes
