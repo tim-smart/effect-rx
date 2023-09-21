@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.19
+
+### Patch Changes
+
+- [`902835e`](https://github.com/tim-smart/effect-rx/commit/902835ee4957b325357b3970e284a6a22f497a9c) Thanks [@tim-smart](https://github.com/tim-smart)! - prevent use of context after dispose
+
 ## 0.1.18
 
 ### Patch Changes
