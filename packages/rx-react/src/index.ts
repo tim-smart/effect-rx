@@ -110,13 +110,13 @@ const suspenseRegistry = new FinalizationRegistry((unmount: () => void) => {
 })
 
 const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
-  Rx.readable((get, ctx): SuspenseResult<any, any> => {
+  Rx.readable((get): SuspenseResult<any, any> => {
     const result = get(rx)
     const value = Result.noWaiting(result)
     if (value._tag === "Initial") {
       return {
         _tag: "Suspended",
-        promise: new Promise<void>((resolve) => ctx.addFinalizer(resolve))
+        promise: new Promise<void>((resolve) => get.addFinalizer(resolve))
       } as const
     }
     const isWaiting = Result.isWaiting(result)
@@ -125,12 +125,12 @@ const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
 )
 
 const suspenseRxWaiting = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
-  Rx.readable((get, ctx): SuspenseResult<any, any> => {
+  Rx.readable((get): SuspenseResult<any, any> => {
     const result = get(rx)
     if (result._tag === "Waiting" || result._tag === "Initial") {
       return {
         _tag: "Suspended",
-        promise: new Promise<void>((resolve) => ctx.addFinalizer(resolve))
+        promise: new Promise<void>((resolve) => get.addFinalizer(resolve))
       } as const
     }
     return { _tag: "Value", isWaiting: false, value: result } as const

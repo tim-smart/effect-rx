@@ -78,12 +78,12 @@ describe("Rx", () => {
       { runtime: counterRuntime }
     )
     const timesTwo = Rx.effect(
-      (_get, ctx) =>
+      (get) =>
         Effect.gen(function*(_) {
           const counter = yield* _(Counter)
           const multiplier = yield* _(Multiplier)
           yield* _(counter.inc)
-          expect(yield* _(ctx.getResult(count))).toEqual(2)
+          expect(yield* _(get.result(count))).toEqual(2)
           return yield* _(multiplier.times(2))
         }),
       { runtime: multiplierRuntime }

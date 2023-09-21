@@ -31,6 +31,7 @@ Added in v1.0.0
   - [writable](#writable)
 - [context](#context)
   - [Context (interface)](#context-interface)
+  - [WriteContext (interface)](#writecontext-interface)
 - [models](#models)
   - [Refreshable (interface)](#refreshable-interface)
   - [Rx (interface)](#rx-interface)
@@ -44,7 +45,6 @@ Added in v1.0.0
     - [RefreshRx (type alias)](#refreshrx-type-alias)
     - [Set (type alias)](#set-type-alias)
     - [Subscribe (type alias)](#subscribe-type-alias)
-    - [SubscribeGetter (type alias)](#subscribegetter-type-alias)
     - [Write (type alias)](#write-type-alias)
   - [RxResultFn (interface)](#rxresultfn-interface)
   - [RxRuntime (interface)](#rxruntime-interface)
@@ -184,9 +184,9 @@ Added in v1.0.0
 
 ```ts
 export declare const scopedFn: {
-  <Arg, E, A>(fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<Scope.Scope, E, A>): RxResultFn<E, A, Arg>
+  <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope, E, A>>): RxResultFn<E, A, Arg>
   <Arg, RR, R extends Scope.Scope | RR, E, A, RE>(
-    fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+    fn: Rx.ReadFn<Arg, Effect.Effect<R, E, A>>,
     options: { readonly runtime: RxRuntime<RE, RR> }
   ): RxResultFn<E | RE, A, Arg>
 }
@@ -273,8 +273,9 @@ Added in v1.0.0
 
 ```ts
 export interface Context {
+  <A>(rx: Rx<A>): A
   readonly get: Rx.Get
-  readonly getResult: Rx.GetResult
+  readonly result: Rx.GetResult
   readonly once: Rx.Get
   readonly addFinalizer: (f: () => void) => void
   readonly refresh: Rx.RefreshRx
@@ -289,6 +290,21 @@ export interface Context {
       readonly immediate?: boolean
     }
   ) => void
+}
+```
+
+Added in v1.0.0
+
+## WriteContext (interface)
+
+**Signature**
+
+```ts
+export interface WriteContext<A> {
+  readonly get: Rx.Get
+  readonly refreshSelf: () => void
+  readonly setSelf: (a: A) => void
+  readonly set: Rx.Set
 }
 ```
 
@@ -363,7 +379,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type Read<A> = (get: Rx.Get, ctx: Context) => A
+export type Read<A> = (ctx: Context) => A
 ```
 
 Added in v1.0.0
@@ -373,7 +389,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type ReadFn<Arg, A> = (arg: Arg, get: Rx.Get, ctx: Context) => A
+export type ReadFn<Arg, A> = (arg: Arg, ctx: Context) => A
 ```
 
 Added in v1.0.0
@@ -424,22 +440,12 @@ export type Subscribe = <A>(
 
 Added in v1.0.0
 
-### SubscribeGetter (type alias)
-
-**Signature**
-
-```ts
-export type SubscribeGetter = <A>(rx: Rx<A>, f: () => void) => readonly [get: () => A, unmount: () => void]
-```
-
-Added in v1.0.0
-
 ### Write (type alias)
 
 **Signature**
 
 ```ts
-export type Write<R, W> = (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, refreshSelf: () => void, value: W) => void
+export type Write<R, W> = (ctx: WriteContext<R>, value: W) => void
 ```
 
 Added in v1.0.0
@@ -487,7 +493,7 @@ Added in v1.0.0
 ```ts
 export interface Writable<R, W> extends Rx<R> {
   readonly [WritableTypeId]: WritableTypeId
-  readonly write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, refreshSelf: () => void, value: W) => void
+  readonly write: Rx.Write<R, W>
 }
 ```
 

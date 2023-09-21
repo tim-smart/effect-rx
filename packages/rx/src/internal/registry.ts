@@ -24,19 +24,12 @@ class RegistryImpl implements Registry.Registry {
 
   private readonly nodes = new Map<Rx.Rx<any>, Node<any>>()
 
-  get = <A>(rx: Rx.Rx<A>): A => {
+  get<A>(rx: Rx.Rx<A>): A {
     return this.ensureNode(rx).value()
   }
 
-  set = <R, W>(rx: Rx.Writable<R, W>, value: W): void => {
-    const node = this.ensureNode(rx)
-    rx.write(
-      this.get,
-      this.set,
-      node.setValue,
-      node.invalidate,
-      value
-    )
+  set<R, W>(rx: Rx.Writable<R, W>, value: W): void {
+    rx.write(this.ensureNode(rx).writeContext, value)
   }
 
   refresh<A>(rx: Rx.Rx<A> & Rx.Refreshable): void {
@@ -57,21 +50,6 @@ class RegistryImpl implements Registry.Registry {
         this.scheduleNodeRemoval(node)
       }
     }
-  }
-
-  subscribeGetter<A>(rx: Rx.Rx<A>, f: () => void): readonly [get: () => A, unmount: () => void] {
-    const node = this.ensureNode(rx)
-    function get() {
-      return node.value()
-    }
-    const remove = node.subscribe(f)
-    const unmount = () => {
-      remove()
-      if (node.canBeRemoved) {
-        this.scheduleNodeRemoval(node)
-      }
-    }
-    return [get, unmount]
   }
 
   mount<A>(rx: Rx.Rx<A>) {
@@ -148,6 +126,7 @@ class Node<A> {
 
   state: NodeState = NodeState.uninitialized
   lifetime: Lifetime<A> | undefined
+  writeContext = new WriteContextImpl(this.registry, this)
 
   parents: Array<Node<any>> = []
   previousParents: Array<Node<any>> | undefined
@@ -162,8 +141,8 @@ class Node<A> {
   _value: A = undefined as any
   value(): A {
     if ((this.state & NodeFlags.waitingForValue) !== 0) {
-      this.lifetime = new Lifetime(this)
-      const value = this.rx.read(this.lifetime.get, this.lifetime)
+      this.lifetime = makeLifetime(this)
+      const value = this.rx.read(this.lifetime)
       if ((this.state & NodeFlags.waitingForValue) !== 0) {
         this.setValue(value)
       }
@@ -190,7 +169,7 @@ class Node<A> {
     return Option.some(this._value)
   }
 
-  setValue = (value: A): void => {
+  setValue(value: A): void {
     if ((this.state & NodeFlags.initialized) === 0) {
       this.state = NodeState.valid
       this._value = value
@@ -240,7 +219,7 @@ class Node<A> {
     }
   }
 
-  invalidate = (): void => {
+  invalidate(): void {
     if (this.state === NodeState.valid) {
       this.state = NodeState.stale
       this.disposeLifetime()
@@ -319,60 +298,60 @@ class Node<A> {
   }
 }
 
-class Lifetime<A> implements Rx.Context {
-  constructor(
-    readonly node: Node<A>
-  ) {}
-
+interface Lifetime<A> extends Rx.Context {
+  readonly node: Node<A>
   finalizers: Array<() => void> | undefined
-  disposed = false
+  disposed: boolean
+  readonly dispose: () => void
+}
 
-  addFinalizer(f: () => void): void {
+const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
+  addFinalizer(this: Lifetime<any>, f: () => void): void {
     this.finalizers ??= []
     this.finalizers.push(f)
-  }
+  },
 
-  get = <A>(rx: Rx.Rx<A>): A => {
+  get<A>(this: Lifetime<any>, rx: Rx.Rx<A>): A {
     const parent = this.node.registry.ensureNode(rx)
     this.node.addParent(parent)
     return parent.value()
-  }
+  },
 
-  getResult<E, A>(rx: Rx.Rx<Result.Result<E, A>>): Exit<E | NoSuchElementException, A> {
+  result<E, A>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<E, A>>): Exit<E | NoSuchElementException, A> {
     return Result.toExit(this.get(rx))
-  }
+  },
 
-  once<A>(rx: Rx.Rx<A>): A {
+  once<A>(this: Lifetime<any>, rx: Rx.Rx<A>): A {
     return this.node.registry.get(rx)
-  }
+  },
 
-  self<A>(): Option.Option<A> {
+  self<A>(this: Lifetime<any>): Option.Option<A> {
     return this.node.valueOption() as any
-  }
+  },
 
-  refresh<A>(rx: Rx.Rx<A> & Rx.Refreshable): void {
+  refresh<A>(this: Lifetime<any>, rx: Rx.Rx<A> & Rx.Refreshable): void {
     this.node.registry.refresh(rx)
-  }
+  },
 
-  refreshSelf(): void {
+  refreshSelf(this: Lifetime<any>): void {
     this.node.invalidate()
-  }
+  },
 
-  subscribe<A>(rx: Rx.Rx<A>, f: (_: A) => void, options?: {
+  subscribe<A>(this: Lifetime<any>, rx: Rx.Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }): void {
     this.addFinalizer(this.node.registry.subscribe(rx, f, options))
-  }
+  },
 
-  setSelf<A>(a: A): void {
+  setSelf<A>(this: Lifetime<any>, a: A): void {
     this.node.setValue(a as any)
-  }
+  },
 
-  set<R, W>(rx: Rx.Writable<R, W>, value: W): void {
+  set<R, W>(this: Lifetime<any>, rx: Rx.Writable<R, W>, value: W): void {
     this.node.registry.set(rx, value)
-  }
+  },
 
-  dispose(): void {
+  dispose(this: Lifetime<any>): void {
     this.disposed = true
     if (this.finalizers === undefined) {
       return
@@ -383,6 +362,38 @@ class Lifetime<A> implements Rx.Context {
     for (let i = finalizers.length - 1; i >= 0; i--) {
       finalizers[i]()
     }
+  }
+}
+
+const makeLifetime = <A>(node: Node<A>): Lifetime<A> => {
+  function get<A>(rx: Rx.Rx<A>): A {
+    const parent = node.registry.ensureNode(rx)
+    node.addParent(parent)
+    return parent.value()
+  }
+  Object.setPrototypeOf(get, LifetimeProto)
+  get.disposed = false
+  get.finalizers = undefined
+  get.node = node
+  return get as any
+}
+
+class WriteContextImpl<A> implements Rx.WriteContext<A> {
+  constructor(
+    readonly registry: RegistryImpl,
+    readonly node: Node<A>
+  ) {}
+  get<A>(rx: Rx.Rx<A>): A {
+    return this.registry.get(rx)
+  }
+  set<R, W>(rx: Rx.Writable<R, W>, value: W) {
+    return this.registry.set(rx, value)
+  }
+  setSelf(value: any) {
+    return this.node.setValue(value)
+  }
+  refreshSelf() {
+    return this.node.invalidate()
   }
 }
 

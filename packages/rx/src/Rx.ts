@@ -50,32 +50,19 @@ export declare namespace Rx {
    * @since 1.0.0
    * @category models
    */
-  export type Read<A> = (
-    get: Rx.Get,
-    ctx: Context
-  ) => A
+  export type Read<A> = (ctx: Context) => A
 
   /**
    * @since 1.0.0
    * @category models
    */
-  export type ReadFn<Arg, A> = (
-    arg: Arg,
-    get: Rx.Get,
-    ctx: Context
-  ) => A
+  export type ReadFn<Arg, A> = (arg: Arg, ctx: Context) => A
 
   /**
    * @since 1.0.0
    * @category models
    */
-  export type Write<R, W> = (
-    get: Rx.Get,
-    set: Rx.Set,
-    setSelf: (_: R) => void,
-    refreshSelf: () => void,
-    value: W
-  ) => void
+  export type Write<R, W> = (ctx: WriteContext<R>, value: W) => void
 
   /**
    * @since 1.0.0
@@ -120,12 +107,6 @@ export declare namespace Rx {
   export type Subscribe = <A>(rx: Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }) => () => void
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type SubscribeGetter = <A>(rx: Rx<A>, f: () => void) => readonly [get: () => A, unmount: () => void]
 }
 
 /**
@@ -166,7 +147,7 @@ export type WritableTypeId = typeof WritableTypeId
  */
 export interface Writable<R, W> extends Rx<R> {
   readonly [WritableTypeId]: WritableTypeId
-  readonly write: (get: Rx.Get, set: Rx.Set, setSelf: (_: R) => void, refreshSelf: () => void, value: W) => void
+  readonly write: Rx.Write<R, W>
 }
 
 /**
@@ -174,8 +155,9 @@ export interface Writable<R, W> extends Rx<R> {
  * @category context
  */
 export interface Context {
+  <A>(rx: Rx<A>): A
   readonly get: Rx.Get
-  readonly getResult: Rx.GetResult
+  readonly result: Rx.GetResult
   readonly once: Rx.Get
   readonly addFinalizer: (f: () => void) => void
   readonly refresh: Rx.RefreshRx
@@ -186,6 +168,17 @@ export interface Context {
   readonly subscribe: <A>(rx: Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }) => void
+}
+
+/**
+ * @since 1.0.0
+ * @category context
+ */
+export interface WriteContext<A> {
+  readonly get: Rx.Get
+  readonly refreshSelf: () => void
+  readonly setSelf: (a: A) => void
+  readonly set: Rx.Set
 }
 
 const RxProto = {
@@ -250,8 +243,8 @@ export const writable = <R, W>(
   return rx
 }
 
-function constSetSelf<A>(_get: Rx.Get, _set: Rx.Set, setSelf: (_: A) => void, _refreshSelf: () => void, value: A) {
-  setSelf(value)
+function constSetSelf<A>(ctx: WriteContext<A>, value: A) {
+  ctx.setSelf(value)
 }
 
 /**
@@ -261,7 +254,7 @@ function constSetSelf<A>(_get: Rx.Get, _set: Rx.Set, setSelf: (_: A) => void, _r
 export const state = <A>(
   initialValue: A
 ): Writable<A, A> =>
-  writable(function(_get, _ctx) {
+  writable(function(_get) {
     return initialValue
   }, constSetSelf)
 
@@ -337,11 +330,11 @@ export const effect: {
   create: Rx.Read<Effect.Effect<R, E, A>>,
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) =>
-  readable<Result.Result<E, A>>(function(get, ctx) {
-    const effect = create(get, ctx)
+  readable<Result.Result<E, A>>(function(get) {
+    const effect = create(get)
     return options?.runtime
-      ? makeEffectRuntime(ctx, effect, options.runtime)
-      : makeEffect(ctx, effect as Effect.Effect<never, E, A>)
+      ? makeEffectRuntime(get, effect, options.runtime)
+      : makeEffect(get, effect as Effect.Effect<never, E, A>)
   })
 
 /**
@@ -358,8 +351,8 @@ export const scoped: {
   create: Rx.Read<Effect.Effect<R, E, A>>,
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) =>
-  readable<Result.Result<E, A>>(function(get, ctx) {
-    return makeScoped(ctx, create(get, ctx), options)
+  readable<Result.Result<E, A>>(function(get) {
+    return makeScoped(get, create(get), options)
   })
 
 /**
@@ -383,23 +376,23 @@ export const effectFn: {
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) => {
   const argRx = state<[number, Arg]>([0, undefined as any])
-  const effectRx = readable<Effect.Effect<R, E, A> | undefined>(function(get, ctx) {
+  const effectRx = readable<Effect.Effect<R, E, A> | undefined>(function(get) {
     const [counter, arg] = get(argRx)
     if (counter === 0) {
       return undefined
     }
-    return f(arg, get, ctx)
+    return f(arg, get)
   })
-  return writable<Result.Result<E, A>, Arg>(function(get, ctx) {
+  return writable<Result.Result<E, A>, Arg>(function(get) {
     const effect = get(effectRx)
     if (effect === undefined) {
       return Result.initial()
     }
     return options?.runtime
-      ? makeEffectRuntime(ctx, effect, options.runtime)
-      : makeEffect(ctx, effect as Effect.Effect<never, E, A>)
-  }, function(get, set, _setSelf, _refreshSelf, arg) {
-    set(argRx, [get(argRx)[0] + 1, arg])
+      ? makeEffectRuntime(get, effect, options.runtime)
+      : makeEffect(get, effect as Effect.Effect<never, E, A>)
+  }, function(ctx, arg) {
+    ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
   })
 }
 
@@ -408,31 +401,31 @@ export const effectFn: {
  * @category constructors
  */
 export const scopedFn: {
-  <Arg, E, A>(fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<Scope.Scope, E, A>): RxResultFn<E, A, Arg>
+  <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope, E, A>>): RxResultFn<E, A, Arg>
   <Arg, RR, R extends (RR | Scope.Scope), E, A, RE>(
-    fn: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+    fn: Rx.ReadFn<Arg, Effect.Effect<R, E, A>>,
     options: { readonly runtime: RxRuntime<RE, RR> }
   ): RxResultFn<RE | E, A, Arg>
 } = <Arg, R, E, A, RE>(
-  f: (arg: Arg, get: Rx.Get, ctx: Context) => Effect.Effect<R, E, A>,
+  f: Rx.ReadFn<Arg, Effect.Effect<R, E, A>>,
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) => {
   const argRx = state<[number, Arg]>([0, undefined as any])
-  const effectRx = readable<Effect.Effect<R, E, A> | undefined>(function(get, ctx) {
+  const effectRx = readable<Effect.Effect<R, E, A> | undefined>(function(get) {
     const [counter, arg] = get(argRx)
     if (counter === 0) {
       return undefined
     }
-    return f(arg, get, ctx)
+    return f(arg, get)
   })
-  return writable<Result.Result<E, A>, Arg>(function(get, ctx) {
+  return writable<Result.Result<E, A>, Arg>(function(get) {
     const effect = get(effectRx)
     if (effect === undefined) {
       return Result.initial()
     }
-    return makeScoped(ctx, effect, options)
-  }, function(get, set, _setSelf, _refreshSelf, arg) {
-    set(argRx, [get(argRx)[0] + 1, arg])
+    return makeScoped(get, effect, options)
+  }, function(ctx, arg) {
+    ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
   })
 }
 
@@ -532,11 +525,11 @@ export const stream: {
   create: Rx.Read<Stream.Stream<R, E, A>>,
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) =>
-  readable<Result.Result<E | NoSuchElementException, A>>(function(get, ctx) {
-    const stream = create(get, ctx)
+  readable<Result.Result<E | NoSuchElementException, A>>(function(get) {
+    const stream = create(get)
     return options?.runtime
-      ? makeStreamRuntime(ctx, stream, options.runtime)
-      : makeStream(ctx, stream as Stream.Stream<never, E, A>)
+      ? makeStreamRuntime(get, stream, options.runtime)
+      : makeStream(get, stream as Stream.Stream<never, E, A>)
   })
 
 /**
@@ -554,23 +547,23 @@ export const streamFn: {
   options?: { readonly runtime?: RxRuntime<RE, R> }
 ) => {
   const argRx = state<[number, Arg]>([0, undefined as any])
-  const streamRx = readable<Stream.Stream<R, E, A> | undefined>(function(get, ctx) {
+  const streamRx = readable<Stream.Stream<R, E, A> | undefined>(function(get) {
     const [counter, arg] = get(argRx)
     if (counter === 0) {
       return undefined
     }
-    return f(arg, get, ctx)
+    return f(arg, get)
   })
-  return writable<Result.Result<E | NoSuchElementException, A>, Arg>(function(get, ctx) {
+  return writable<Result.Result<E | NoSuchElementException, A>, Arg>(function(get) {
     const stream = get(streamRx)
     if (stream === undefined) {
       return Result.initial()
     }
     return options?.runtime
-      ? makeStreamRuntime(ctx, stream, options.runtime)
-      : makeStream(ctx, stream as Stream.Stream<never, E, A>)
-  }, function(get, set, _setSelf, _refreshSelf, arg) {
-    set(argRx, [get(argRx)[0] + 1, arg])
+      ? makeStreamRuntime(get, stream, options.runtime)
+      : makeStream(get, stream as Stream.Stream<never, E, A>)
+  }, function(ctx, arg) {
+    ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
   })
 }
 /**
@@ -604,8 +597,8 @@ export const streamPull: {
     readonly disableAccumulation?: boolean
   }
 ) => {
-  const pullRx = scoped((get, ctx) => {
-    const stream = create(get, ctx)
+  const pullRx = scoped(function(get) {
+    const stream = create(get)
     return Stream.toPull(
       options?.disableAccumulation ? stream : pipe(
         Stream.chunks(stream),
@@ -618,8 +611,8 @@ export const streamPull: {
     )
   }, options as any)
 
-  return writable<StreamPullResult<E, A>, void>(function(get, ctx) {
-    const previous = ctx.self<Result.Result<E, A>>()
+  return writable<StreamPullResult<E, A>, void>(function(get) {
+    const previous = get.self<Result.Result<E, A>>()
     const pullResult = get(pullRx)
     if (pullResult._tag !== "Success") {
       if (pullResult._tag === "Waiting") {
@@ -640,7 +633,7 @@ export const streamPull: {
         Option.match(error, {
           onNone: () =>
             pipe(
-              ctx.self<StreamPullResult<E, A>>(),
+              get.self<StreamPullResult<E, A>>(),
               Option.flatMap(Result.value),
               Option.match({
                 onNone: () => Effect.fail(NoSuchElementException()),
@@ -656,10 +649,10 @@ export const streamPull: {
       )
     )
     return options?.runtime
-      ? makeEffectRuntime(ctx, pull, options.runtime)
-      : makeEffect(ctx, pull as any)
-  }, function(_get, _set, _setSelf, refreshSelf, _) {
-    refreshSelf()
+      ? makeEffectRuntime(get, pull, options.runtime)
+      : makeEffect(get, pull as any)
+  }, function(ctx, _) {
+    ctx.refreshSelf()
   }, function(refresh) {
     refresh(pullRx)
   })
