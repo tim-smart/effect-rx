@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.1.16
+
+### Patch Changes
+
+- [`3ce7db2`](https://github.com/tim-smart/effect-rx/commit/3ce7db2c366679f31e35f35168ab3cbdb9e125cc) Thanks [@tim-smart](https://github.com/tim-smart)! - add suspense hooks
+
 ## 0.1.15
 
 ### Patch Changes
