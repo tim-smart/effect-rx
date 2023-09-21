@@ -102,8 +102,9 @@ type SuspenseResult<E, A> =
   }
 
 const suspenseCache = globalValue("@effect-rx/rx-react/suspenseCache", () => new Map<Rx.Rx<any>, () => void>())
-const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
-  Rx.readable((get, ctx): SuspenseResult<any, any> => {
+
+const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) => {
+  const selfRx = Rx.readable((get, ctx): SuspenseResult<any, any> => {
     const result = get(rx)
     const value = Result.noWaiting(result)
     if (value._tag === "Initial") {
@@ -112,10 +113,10 @@ const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
         promise: new Promise<void>((resolve) => {
           ctx.addFinalizer(() => {
             resolve()
-            const unmount = suspenseCache.get(rx)
+            const unmount = suspenseCache.get(selfRx)
             if (unmount) {
               unmount()
-              suspenseCache.delete(rx)
+              suspenseCache.delete(selfRx)
             }
           })
         })
@@ -124,9 +125,11 @@ const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
     const isWaiting = Result.isWaiting(result)
     return { _tag: "Value", isWaiting, value } as const
   })
-)
-const suspenseRxWaiting = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
-  Rx.readable((get, ctx): SuspenseResult<any, any> => {
+  return selfRx
+})
+
+const suspenseRxWaiting = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) => {
+  const selfRx = Rx.readable((get, ctx): SuspenseResult<any, any> => {
     const result = get(rx)
     if (result._tag === "Waiting" || result._tag === "Initial") {
       return {
@@ -145,7 +148,8 @@ const suspenseRxWaiting = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
     }
     return { _tag: "Value", isWaiting: false, value: result } as const
   })
-)
+  return selfRx
+})
 
 /**
  * @since 1.0.0
