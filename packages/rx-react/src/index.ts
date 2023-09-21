@@ -19,25 +19,31 @@ export * as Rx from "@effect-rx/rx/Rx"
 export const RegistryContext = React.createContext<Registry.Registry>(Registry.make())
 
 interface RxStore<A> {
-  readonly rx: Rx.Rx<A>
-  readonly registry: Registry.Registry
   readonly subscribe: (f: () => void) => () => void
   readonly snapshot: () => A
 }
 
+const storeRegistry = globalValue(
+  "@effect-rx/rx-react/storeRegistry",
+  () => new WeakMap<Registry.Registry, WeakMap<Rx.Rx<any>, RxStore<any>>>()
+)
+
 function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
-  let getter = function() {
-    return registry.get(rx)
+  const stores = storeRegistry.get(registry) ?? storeRegistry.set(registry, new WeakMap()).get(registry)!
+  const store = stores.get(rx)
+  if (store) {
+    return store
   }
-  function subscribe(f: () => void): () => void {
-    const [get, unmount] = registry.subscribeGetter(rx, f)
-    getter = get
-    return unmount
+  const newStore: RxStore<A> = {
+    subscribe(f) {
+      return registry.subscribe(rx, f)
+    },
+    snapshot() {
+      return registry.get(rx)
+    }
   }
-  function snapshot() {
-    return getter()
-  }
-  return { rx, registry, subscribe, snapshot }
+  stores.set(rx, newStore)
+  return newStore
 }
 
 /**
@@ -46,11 +52,8 @@ function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
  */
 export const useRxValue = <A>(rx: Rx.Rx<A>): A => {
   const registry = React.useContext(RegistryContext)
-  const store = React.useRef<RxStore<A>>(undefined as any)
-  if (store.current?.rx !== rx || store.current?.registry !== registry) {
-    store.current = makeStore(registry, rx)
-  }
-  return React.useSyncExternalStore(store.current.subscribe, store.current.snapshot)
+  const store = makeStore(registry, rx)
+  return React.useSyncExternalStore(store.subscribe, store.snapshot)
 }
 
 /**
@@ -101,55 +104,38 @@ type SuspenseResult<E, A> =
     readonly value: Result.Success<E, A> | Result.Failure<E, A>
   }
 
-const suspenseCache = globalValue("@effect-rx/rx-react/suspenseCache", () => new Map<Rx.Rx<any>, () => void>())
+const suspenseCache = globalValue("@effect-rx/rx-react/suspenseCache", () => new WeakMap<Rx.Rx<any>, () => void>())
+const suspenseRegistry = new FinalizationRegistry((unmount: () => void) => {
+  unmount()
+})
 
-const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) => {
-  const selfRx = Rx.readable((get, ctx): SuspenseResult<any, any> => {
+const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
+  Rx.readable((get, ctx): SuspenseResult<any, any> => {
     const result = get(rx)
     const value = Result.noWaiting(result)
     if (value._tag === "Initial") {
       return {
         _tag: "Suspended",
-        promise: new Promise<void>((resolve) => {
-          ctx.addFinalizer(() => {
-            resolve()
-            const unmount = suspenseCache.get(selfRx)
-            if (unmount) {
-              unmount()
-              suspenseCache.delete(selfRx)
-            }
-          })
-        })
+        promise: new Promise<void>((resolve) => ctx.addFinalizer(resolve))
       } as const
     }
     const isWaiting = Result.isWaiting(result)
     return { _tag: "Value", isWaiting, value } as const
   })
-  return selfRx
-})
+)
 
-const suspenseRxWaiting = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) => {
-  const selfRx = Rx.readable((get, ctx): SuspenseResult<any, any> => {
+const suspenseRxWaiting = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
+  Rx.readable((get, ctx): SuspenseResult<any, any> => {
     const result = get(rx)
     if (result._tag === "Waiting" || result._tag === "Initial") {
       return {
         _tag: "Suspended",
-        promise: new Promise<void>((resolve) => {
-          ctx.addFinalizer(() => {
-            resolve()
-            const unmount = suspenseCache.get(rx)
-            if (unmount) {
-              unmount()
-              suspenseCache.delete(rx)
-            }
-          })
-        })
+        promise: new Promise<void>((resolve) => ctx.addFinalizer(resolve))
       } as const
     }
     return { _tag: "Value", isWaiting: false, value: result } as const
   })
-  return selfRx
-})
+)
 
 /**
  * @since 1.0.0
@@ -170,10 +156,20 @@ export const useRxSuspense = <E, A>(
   const result = useRxValue(resultRx)
   if (result._tag === "Suspended") {
     if (!suspenseCache.has(resultRx)) {
-      suspenseCache.set(resultRx, registry.mount(resultRx))
+      const unmount = registry.mount(resultRx)
+      suspenseCache.set(resultRx, unmount)
+      suspenseRegistry.register(resultRx, unmount, resultRx)
     }
     throw result.promise
+  } else if (suspenseCache.has(resultRx)) {
+    const unmount = suspenseCache.get(resultRx)
+    if (unmount) {
+      suspenseCache.delete(resultRx)
+      suspenseRegistry.unregister(resultRx)
+      unmount()
+    }
   }
+
   return result
 }
 
@@ -188,18 +184,8 @@ export const useRxSuspenseSuccess = <E, A>(
   readonly isWaiting: boolean
   readonly value: A
 } => {
-  const registry = React.useContext(RegistryContext)
-  const resultRx = React.useMemo(
-    () => (options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)),
-    [options?.suspendOnWaiting, rx]
-  )
-  const result = useRxValue(resultRx)
-  if (result._tag === "Suspended") {
-    if (!suspenseCache.has(resultRx)) {
-      suspenseCache.set(resultRx, registry.mount(resultRx))
-    }
-    throw result.promise
-  } else if (result.value._tag === "Failure") {
+  const result = useRxSuspense(rx, options)
+  if (result.value._tag === "Failure") {
     throw Cause.squash(result.value.cause)
   }
   return {
