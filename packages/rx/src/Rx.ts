@@ -616,7 +616,7 @@ export const streamPull: {
         Stream.mapChunks(Chunk.flatten)
       )
     )
-  }, options?.runtime as any)
+  }, options as any)
 
   return writable<StreamPullResult<E, A>, void>(function(get, ctx) {
     const previous = ctx.self<Result.Result<E, A>>()
