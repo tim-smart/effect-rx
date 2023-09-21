@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.1.18
+
+### Patch Changes
+
+- [`a6b577b`](https://github.com/tim-smart/effect-rx/commit/a6b577be2459e2e7f6b20e39690ede112eaefc12) Thanks [@tim-smart](https://github.com/tim-smart)! - fix suspense cache finalizer
+
 ## 0.1.17
 
 ### Patch Changes
