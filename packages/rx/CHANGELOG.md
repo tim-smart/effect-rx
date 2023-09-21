@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.18
+
+### Patch Changes
+
+- [`bcad9a7`](https://github.com/tim-smart/effect-rx/commit/bcad9a71a0f5caa6f3eadf9d56e2a6db64ae547a) Thanks [@tim-smart](https://github.com/tim-smart)! - add support for injecting initial values
+
 ## 0.1.17
 
 ### Patch Changes
