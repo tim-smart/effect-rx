@@ -14,12 +14,19 @@ function constListener(_: any) {}
 export const TypeId: Registry.TypeId = Symbol.for("@effect-rx/rx/Registry") as Registry.TypeId
 
 /** @internal */
-export const make = (): Registry.Registry => new RegistryImpl()
+export const make = (options?: {
+  readonly initialValues: Iterable<readonly [Rx.Rx<any>, any]>
+}): Registry.Registry => new RegistryImpl(options?.initialValues)
 
 class RegistryImpl implements Registry.Registry {
   readonly [TypeId]: Registry.TypeId
-  constructor() {
+  constructor(initialValues?: Iterable<readonly [Rx.Rx<any>, any]>) {
     this[TypeId] = TypeId
+    if (initialValues !== undefined) {
+      for (const [rx, value] of initialValues) {
+        this.ensureNode(rx).setValue(value)
+      }
+    }
   }
 
   private readonly nodes = new Map<Rx.Rx<any>, Node<any>>()

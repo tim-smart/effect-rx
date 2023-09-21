@@ -33,4 +33,6 @@ export interface Registry {
  * @since 1.0.0
  * @category constructors
  */
-export const make: () => Registry = internal.make
+export const make: (
+  options?: { readonly initialValues: Iterable<readonly [Rx.Rx<any>, any]> } | undefined
+) => Registry = internal.make

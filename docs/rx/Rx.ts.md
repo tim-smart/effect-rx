@@ -12,7 +12,10 @@ Added in v1.0.0
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [batching](#batching)
+  - [batch](#batch)
 - [combinators](#combinators)
+  - [initialValue](#initialvalue)
   - [keepAlive](#keepalive)
   - [refreshable](#refreshable)
   - [withLabel](#withlabel)
@@ -57,12 +60,35 @@ Added in v1.0.0
   - [TypeId (type alias)](#typeid-type-alias)
   - [WritableTypeId](#writabletypeid)
   - [WritableTypeId (type alias)](#writabletypeid-type-alias)
-- [utils](#utils)
-  - [batch](#batch)
 
 ---
 
+# batching
+
+## batch
+
+**Signature**
+
+```ts
+export declare const batch: (f: () => void) => void
+```
+
+Added in v1.0.0
+
 # combinators
+
+## initialValue
+
+**Signature**
+
+```ts
+export declare const initialValue: {
+  <A>(initialValue: A): (self: Rx<A>) => readonly [Rx<A>, A]
+  <A>(self: Rx<A>, initialValue: A): readonly [Rx<A>, A]
+}
+```
+
+Added in v1.0.0
 
 ## keepAlive
 
@@ -89,8 +115,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const withLabel: ((name: string) => <A extends Rx<any>>(self: A) => A) &
-  (<A extends Rx<any>>(self: A, name: string) => <A extends Rx<any>>(self: A) => A)
+export declare const withLabel: {
+  (name: string): <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, name: string): <A extends Rx<any>>(self: A) => A
+}
 ```
 
 Added in v1.0.0
@@ -560,18 +588,6 @@ Added in v1.0.0
 
 ```ts
 export type WritableTypeId = typeof WritableTypeId
-```
-
-Added in v1.0.0
-
-# utils
-
-## batch
-
-**Signature**
-
-```ts
-export declare const batch: (f: () => void) => void
 ```
 
 Added in v1.0.0

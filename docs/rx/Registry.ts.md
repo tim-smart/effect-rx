@@ -29,7 +29,9 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const make: () => Registry
+export declare const make: (
+  options?: { readonly initialValues: Iterable<readonly [Rx.Rx<any>, any]> } | undefined
+) => Registry
 ```
 
 Added in v1.0.0

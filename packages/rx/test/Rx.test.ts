@@ -391,6 +391,18 @@ describe("Rx", () => {
     expect(count).toEqual(1)
     expect(r.get(derived)).toEqual("2b")
   })
+
+  it("initialValues", async () => {
+    const state = Rx.state(0)
+    const r = Registry.make({
+      initialValues: [
+        Rx.initialValue(state, 10)
+      ]
+    })
+    expect(r.get(state)).toEqual(10)
+    await new Promise((resolve) => resolve(null))
+    expect(r.get(state)).toEqual(0)
+  })
 })
 
 interface Counter {

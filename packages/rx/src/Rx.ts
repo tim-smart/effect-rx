@@ -716,9 +716,12 @@ export const refreshable = <T extends Rx<any>>(
  * @since 1.0.0
  * @category combinators
  */
-export const withLabel = dual<
+export const withLabel: {
+  (name: string): <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, name: string): <A extends Rx<any>>(self: A) => A
+} = dual<
   (name: string) => <A extends Rx<any>>(self: A) => A,
-  <A extends Rx<any>>(self: A, name: string) => <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, name: string) => A
 >(2, (self, name) =>
   Object.assign(Object.create(Object.getPrototypeOf(self)), {
     ...self,
@@ -727,5 +730,18 @@ export const withLabel = dual<
 
 /**
  * @since 1.0.0
+ * @category combinators
+ */
+export const initialValue: {
+  <A>(initialValue: A): (self: Rx<A>) => readonly [Rx<A>, A]
+  <A>(self: Rx<A>, initialValue: A): readonly [Rx<A>, A]
+} = dual<
+  <A>(initialValue: A) => (self: Rx<A>) => readonly [Rx<A>, A],
+  <A>(self: Rx<A>, initialValue: A) => readonly [Rx<A>, A]
+>(2, (self, initialValue) => [self, initialValue])
+
+/**
+ * @since 1.0.0
+ * @category batching
  */
 export const batch: (f: () => void) => void = internalRegistry.batch
