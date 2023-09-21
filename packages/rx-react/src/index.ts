@@ -153,7 +153,8 @@ export const useRxSuspense = <E, A>(
     () => (options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)),
     [options?.suspendOnWaiting, rx]
   )
-  const result = useRxValue(resultRx)
+  const store = makeStore(registry, resultRx)
+  const result = React.useSyncExternalStore(store.subscribe, store.snapshot)
   if (result._tag === "Suspended") {
     if (!suspenseCache.has(resultRx)) {
       const unmount = registry.mount(resultRx)
