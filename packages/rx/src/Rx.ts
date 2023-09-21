@@ -275,7 +275,9 @@ function makeEffect<E, A>(
   const cancel = runCallback(
     effect,
     function(exit) {
-      ctx.setSelf(Result.fromExit(exit))
+      if (!Exit.isInterrupted(exit)) {
+        ctx.setSelf(Result.fromExit(exit))
+      }
     }
   )
   ctx.addFinalizer(cancel)
@@ -472,6 +474,10 @@ function makeStream<E, A>(
       (a) => Effect.sync(() => ctx.setSelf(Result.waiting(Result.success(a))))
     ),
     (exit) => {
+      if (Exit.isInterrupted(exit)) {
+        return
+      }
+
       if (exit._tag === "Failure") {
         ctx.setSelf(Result.failure(exit.cause))
       } else {
