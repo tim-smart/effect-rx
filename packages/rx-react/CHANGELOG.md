@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.1.20
+
+### Patch Changes
+
+- [`7af6cd8`](https://github.com/tim-smart/effect-rx/commit/7af6cd89bb68f9aaca2357108258fce3414b0b77) Thanks [@tim-smart](https://github.com/tim-smart)! - fix suspenseRegistry
+
 ## 0.1.19
 
 ### Patch Changes
