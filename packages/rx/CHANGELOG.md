@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.16
+
+### Patch Changes
+
+- [`bccb5c0`](https://github.com/tim-smart/effect-rx/commit/bccb5c07709f0dfdbbe92dc034f0ece6406c4280) Thanks [@tim-smart](https://github.com/tim-smart)! - add done boolean to streamPull result
+
 ## 0.1.15
 
 ### Patch Changes
