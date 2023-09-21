@@ -1,5 +1,13 @@
 # @effect-rx/rx
 
+## 0.1.17
+
+### Patch Changes
+
+- [`4045106`](https://github.com/tim-smart/effect-rx/commit/40451061518c2dc96d5c52265945283afd2395df) Thanks [@tim-smart](https://github.com/tim-smart)! - Rx.runtime keepAlive by default
+
+- [`22164a2`](https://github.com/tim-smart/effect-rx/commit/22164a218a1bf404af72c326bec260e0c01a528f) Thanks [@tim-smart](https://github.com/tim-smart)! - refactor context apis
+
 ## 0.1.16
 
 ### Patch Changes
