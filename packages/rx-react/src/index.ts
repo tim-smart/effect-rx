@@ -159,7 +159,10 @@ export const useRxSuspense = <E, A>(
   readonly value: Result.Success<E, A> | Result.Failure<E, A>
 } => {
   const registry = React.useContext(RegistryContext)
-  const resultRx = options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)
+  const resultRx = React.useMemo(
+    () => (options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)),
+    [options?.suspendOnWaiting, rx]
+  )
   const result = useRxValue(resultRx)
   if (result._tag === "Suspended") {
     if (!suspenseCache.has(resultRx)) {
@@ -182,7 +185,10 @@ export const useRxSuspenseSuccess = <E, A>(
   readonly value: A
 } => {
   const registry = React.useContext(RegistryContext)
-  const resultRx = options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)
+  const resultRx = React.useMemo(
+    () => (options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)),
+    [options?.suspendOnWaiting, rx]
+  )
   const result = useRxValue(resultRx)
   if (result._tag === "Suspended") {
     if (!suspenseCache.has(resultRx)) {
