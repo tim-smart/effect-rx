@@ -474,12 +474,10 @@ function makeStream<E, A>(
       (a) => Effect.sync(() => ctx.setSelf(Result.waiting(Result.success(a))))
     ),
     (exit) => {
-      if (Exit.isInterrupted(exit)) {
-        return
-      }
-
       if (exit._tag === "Failure") {
-        ctx.setSelf(Result.failure(exit.cause))
+        if (!Exit.isInterrupted(exit)) {
+          ctx.setSelf(Result.failure(exit.cause))
+        }
       } else {
         pipe(
           ctx.self<Result.Result<E | NoSuchElementException, A>>(),
