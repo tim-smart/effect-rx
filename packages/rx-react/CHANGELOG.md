@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.1.19
+
+### Patch Changes
+
+- [`c13bd37`](https://github.com/tim-smart/effect-rx/commit/c13bd37fae1f15ed37c061d35d1d2d64df6b7cbd) Thanks [@tim-smart](https://github.com/tim-smart)! - refactor useRxValue store creation
+
 ## 0.1.18
 
 ### Patch Changes
