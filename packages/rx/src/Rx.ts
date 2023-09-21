@@ -573,6 +573,14 @@ export const streamFn: {
     set(argRx, [get(argRx)[0] + 1, arg])
   })
 }
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export type StreamPullResult<E, A> = Result.Result<E | NoSuchElementException, {
+  readonly done: boolean
+  readonly items: Array<A>
+}>
 
 /**
  * @since 1.0.0
@@ -581,14 +589,14 @@ export const streamFn: {
 export const streamPull: {
   <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: {
     readonly disableAccumulation?: boolean
-  }): Writable<Result.Result<E | NoSuchElementException, Array<A>>, void>
+  }): Writable<StreamPullResult<E, A>, void>
   <RR, R extends RR, E, A, RE>(
     create: Rx.Read<Stream.Stream<R, E, A>>,
     options: {
       readonly runtime: RxRuntime<RE, RR>
       readonly disableAccumulation?: boolean
     }
-  ): Writable<Result.Result<RE | E | NoSuchElementException, Array<A>>, void>
+  ): Writable<StreamPullResult<RE | E, A>, void>
 } = <R, E, A>(
   create: Rx.Read<Stream.Stream<R, E, A>>,
   options?: {
@@ -610,8 +618,8 @@ export const streamPull: {
     )
   }, options?.runtime as any)
 
-  return writable<Result.Result<E | NoSuchElementException, Array<A>>, void>(function(get, ctx) {
-    const previous = ctx.self<Result.Result<E | NoSuchElementException, Array<A>>>()
+  return writable<StreamPullResult<E, A>, void>(function(get, ctx) {
+    const previous = ctx.self<Result.Result<E, A>>()
     const pullResult = get(pullRx)
     if (pullResult._tag !== "Success") {
       if (pullResult._tag === "Waiting") {
@@ -621,16 +629,26 @@ export const streamPull: {
     }
     const pull = pipe(
       pullResult.value,
-      Effect.map((_) => Chunk.toReadonlyArray(_) as Array<A>),
-      Effect.catchAll((error): Effect.Effect<never, E | NoSuchElementException, Array<A>> =>
+      Effect.map((_) => ({
+        done: false,
+        items: Chunk.toReadonlyArray(_) as Array<A>
+      })),
+      Effect.catchAll((error): Effect.Effect<never, E | NoSuchElementException, {
+        readonly done: boolean
+        readonly items: Array<A>
+      }> =>
         Option.match(error, {
           onNone: () =>
             pipe(
-              ctx.self<Result.Result<E | NoSuchElementException, Array<A>>>(),
+              ctx.self<StreamPullResult<E, A>>(),
               Option.flatMap(Result.value),
               Option.match({
                 onNone: () => Effect.fail(NoSuchElementException()),
-                onSome: Effect.succeed
+                onSome: ({ items }) =>
+                  Effect.succeed({
+                    done: true,
+                    items
+                  })
               })
             ),
           onSome: Effect.fail

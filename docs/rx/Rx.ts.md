@@ -48,6 +48,7 @@ Added in v1.0.0
     - [Write (type alias)](#write-type-alias)
   - [RxResultFn (interface)](#rxresultfn-interface)
   - [RxRuntime (interface)](#rxruntime-interface)
+  - [StreamPullResult (type alias)](#streampullresult-type-alias)
   - [Writable (interface)](#writable-interface)
 - [type ids](#type-ids)
   - [RefreshableTypeId](#refreshabletypeid)
@@ -242,13 +243,13 @@ Added in v1.0.0
 ```ts
 export declare const streamPull: {
   <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: { readonly disableAccumulation?: boolean }): Writable<
-    Result.Result<NoSuchElementException | E, A[]>,
+    StreamPullResult<E, A>,
     void
   >
   <RR, R extends RR, E, A, RE>(
     create: Rx.Read<Stream.Stream<R, E, A>>,
     options: { readonly runtime: RxRuntime<RE, RR>; readonly disableAccumulation?: boolean | undefined }
-  ): Writable<Result.Result<NoSuchElementException | E | RE, A[]>, void>
+  ): Writable<StreamPullResult<E | RE, A>, void>
 }
 ```
 
@@ -459,6 +460,22 @@ Added in v1.0.0
 
 ```ts
 export interface RxRuntime<E, A> extends Rx<Result.Result<E, Runtime.Runtime<A>>> {}
+```
+
+Added in v1.0.0
+
+## StreamPullResult (type alias)
+
+**Signature**
+
+```ts
+export type StreamPullResult<E, A> = Result.Result<
+  E | NoSuchElementException,
+  {
+    readonly done: boolean
+    readonly items: Array<A>
+  }
+>
 ```
 
 Added in v1.0.0

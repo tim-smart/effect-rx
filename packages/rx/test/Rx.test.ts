@@ -233,7 +233,7 @@ describe("Rx", () => {
 
   it("streamPull", async () => {
     const count = Rx.streamPull(() =>
-      Stream.range(0, 5, 1).pipe(
+      Stream.range(0, 2, 1).pipe(
         Stream.tap(() => Effect.sleep(50))
       )
     ).pipe(Rx.refreshable)
@@ -247,27 +247,32 @@ describe("Rx", () => {
     await vi.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isSuccess(result))
-    assert.deepEqual(Result.value(result), Option.some([0]))
+    assert.deepEqual(result.value, { done: false, items: [0] })
 
     r.set(count, void 0)
     result = r.get(count)
     assert(Result.isWaiting(result))
-    assert.deepEqual(Result.value(result), Option.some([0]))
+    assert.deepEqual(Result.value(result), Option.some({ done: false, items: [0] }))
 
     await vi.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isSuccess(result))
-    assert.deepEqual(Result.value(result), Option.some([0, 1]))
+    assert.deepEqual(result.value, { done: false, items: [0, 1] })
+
+    r.set(count, void 0)
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    assert.deepEqual(result.value, { done: true, items: [0, 1] })
 
     r.refresh(count)
     result = r.get(count)
     assert(Result.isWaiting(result))
-    assert.deepEqual(Result.value(result), Option.some([0, 1]))
+    assert.deepEqual(Result.value(result), Option.some({ done: true, items: [0, 1] }))
 
     await vi.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isSuccess(result))
-    assert.deepEqual(Result.value(result), Option.some([0]))
+    assert.deepEqual(result.value, { done: false, items: [0] })
 
     unmount()
     await new Promise((resolve) => resolve(null))
