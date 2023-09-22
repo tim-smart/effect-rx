@@ -115,6 +115,19 @@ describe("Rx", () => {
     expect(result.value).toEqual(2)
   })
 
+  it("effect mapResult", async () => {
+    const count = Rx.effectFn((n: number) => Effect.succeed(n + 1)).pipe(
+      Rx.mapResult((_) => _ + 1)
+    )
+    const r = Registry.make()
+    let result = r.get(count)
+    assert(Result.isInitial(result))
+    r.set(count, 1)
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(3)
+  })
+
   it("scopedFn", async () => {
     let finalized = 0
     const count = Rx.scopedFn((n: number) =>
