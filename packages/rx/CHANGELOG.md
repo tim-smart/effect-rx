@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.20
+
+### Patch Changes
+
+- [`0a67bdd`](https://github.com/tim-smart/effect-rx/commit/0a67bddc0755151f72cd309490a1c3c03559fb0d) Thanks [@tim-smart](https://github.com/tim-smart)! - add map apis
+
 ## 0.1.19
 
 ### Patch Changes
