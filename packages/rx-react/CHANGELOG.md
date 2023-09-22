@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.1.30
+
+### Patch Changes
+
+- [`f64f123`](https://github.com/tim-smart/effect-rx/commit/f64f123e65de2887fbdd29fe663c4ab48663cb44) Thanks [@tim-smart](https://github.com/tim-smart)! - increase delay for suspense unmount
+
 ## 0.1.29
 
 ### Patch Changes
