@@ -159,8 +159,10 @@ export const useRxSuspense = <E, A>(
       suspenseMounts.add(resultRx)
       const unmount = registry.mount(resultRx)
       result.promise.then(function() {
-        unmount()
-        suspenseMounts.delete(resultRx)
+        queueMicrotask(function() {
+          unmount()
+          suspenseMounts.delete(resultRx)
+        })
       })
     }
     throw result.promise
