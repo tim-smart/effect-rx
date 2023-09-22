@@ -4,6 +4,7 @@
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
+import type * as RxRef from "@effect-rx/rx/RxRef"
 import { globalValue } from "@effect/data/GlobalValue"
 import * as Cause from "@effect/io/Cause"
 import * as React from "react"
@@ -11,6 +12,7 @@ import * as React from "react"
 export * as Registry from "@effect-rx/rx/Registry"
 export * as Result from "@effect-rx/rx/Result"
 export * as Rx from "@effect-rx/rx/Rx"
+export * as RxRef from "@effect-rx/rx/RxRef"
 
 /**
  * @since 1.0.0
@@ -193,4 +195,14 @@ export const useRxSuspenseSuccess = <E, A>(
     isWaiting: result.isWaiting,
     value: result.value.value
   }
+}
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
+export const useRxRef = <A>(ref: RxRef.ReadonlyRef<A>): A => {
+  const [value, setValue] = React.useState(ref.value)
+  React.useEffect(() => ref.subscribe(setValue), [ref])
+  return value
 }
