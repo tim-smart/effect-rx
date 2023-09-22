@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.21
+
+### Patch Changes
+
+- [`a2c19f4`](https://github.com/tim-smart/effect-rx/commit/a2c19f4b61775b5476818d9fd87a9c88349d0d51) Thanks [@tim-smart](https://github.com/tim-smart)! - add RxRef Collection.toArray
+
 ## 0.1.20
 
 ### Patch Changes
