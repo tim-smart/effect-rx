@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.1.24
+
+### Patch Changes
+
+- [`6c20898`](https://github.com/tim-smart/effect-rx/commit/6c208986db24e97918f792e787cada6969ee86d0) Thanks [@tim-smart](https://github.com/tim-smart)! - add RxRef module & hook
+
+- Updated dependencies [[`0a67bdd`](https://github.com/tim-smart/effect-rx/commit/0a67bddc0755151f72cd309490a1c3c03559fb0d)]:
+  - @effect-rx/rx@0.1.20
+
 ## 0.1.23
 
 ### Patch Changes
