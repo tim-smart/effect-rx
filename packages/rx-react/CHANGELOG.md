@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.1.28
+
+### Patch Changes
+
+- [`d91eaca`](https://github.com/tim-smart/effect-rx/commit/d91eacade3066576a694f4bf49b9e9ba5a16aad6) Thanks [@tim-smart](https://github.com/tim-smart)! - support runtimes without WeakRef
+
+- Updated dependencies [[`d91eaca`](https://github.com/tim-smart/effect-rx/commit/d91eacade3066576a694f4bf49b9e9ba5a16aad6)]:
+  - @effect-rx/rx@0.1.24
+
 ## 0.1.27
 
 ### Patch Changes
