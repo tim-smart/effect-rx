@@ -17,6 +17,8 @@ Added in v1.0.0
 - [combinators](#combinators)
   - [initialValue](#initialvalue)
   - [keepAlive](#keepalive)
+  - [map](#map)
+  - [mapResult](#mapresult)
   - [refreshable](#refreshable)
   - [withLabel](#withlabel)
 - [constructors](#constructors)
@@ -96,6 +98,29 @@ Added in v1.0.0
 
 ```ts
 export declare const keepAlive: <A extends Rx<any>>(self: A) => A
+```
+
+Added in v1.0.0
+
+## map
+
+**Signature**
+
+```ts
+export declare const map: { <A, B>(f: (_: A) => B): (self: Rx<A>) => Rx<B>; <A, B>(self: Rx<A>, f: (_: A) => B): Rx<B> }
+```
+
+Added in v1.0.0
+
+## mapResult
+
+**Signature**
+
+```ts
+export declare const mapResult: (<A, B>(
+  f: (_: A) => B
+) => <E>(self: Rx<Result.Result<E, A>>) => Rx<Result.Result<E, B>>) &
+  (<E, A, B>(self: Rx<Result.Result<E, A>>, f: (_: A) => B) => Rx<Result.Result<E, B>>)
 ```
 
 Added in v1.0.0

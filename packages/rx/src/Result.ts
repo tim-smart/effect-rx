@@ -2,7 +2,7 @@
  * @since 1.0.0
  */
 import * as Data from "@effect/data/Data"
-import { identity } from "@effect/data/Function"
+import { dual, identity } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
 import * as Cause from "@effect/io/Cause"
 import * as Exit from "@effect/io/Exit"
@@ -247,3 +247,22 @@ export const toExit = <E, A>(
     }
   }
 }
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const map = dual<
+  <A, B>(f: (a: A) => B) => <E>(self: Result<E, A>) => Result<E, B>,
+  <E, A, B>(self: Result<E, A>, f: (a: A) => B) => Result<E, B>
+>(2, <E, A, B>(self: Result<E, A>, f: (a: A) => B): Result<E, B> => {
+  switch (self._tag) {
+    case "Initial":
+    case "Failure":
+      return self as any as Result<E, B>
+    case "Waiting":
+      return waiting(map(self.previous, f) as any)
+    case "Success":
+      return success(f(self.value))
+  }
+})

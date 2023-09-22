@@ -17,6 +17,7 @@ Added in v1.0.0
   - [noWaiting](#nowaiting)
   - [value](#value)
 - [combinators](#combinators)
+  - [map](#map)
   - [toExit](#toexit)
 - [constructors](#constructors)
   - [fail](#fail)
@@ -79,6 +80,17 @@ export declare const value: <E, A>(result: Result<E, A>) => Option.Option<A>
 Added in v1.0.0
 
 # combinators
+
+## map
+
+**Signature**
+
+```ts
+export declare const map: (<A, B>(f: (a: A) => B) => <E>(self: Result<E, A>) => Result<E, B>) &
+  (<E, A, B>(self: Result<E, A>, f: (a: A) => B) => Result<E, B>)
+```
+
+Added in v1.0.0
 
 ## toExit
 

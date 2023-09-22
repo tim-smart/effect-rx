@@ -742,6 +742,27 @@ export const initialValue: {
 
 /**
  * @since 1.0.0
+ * @category combinators
+ */
+export const map: {
+  <A, B>(f: (_: A) => B): (self: Rx<A>) => Rx<B>
+  <A, B>(self: Rx<A>, f: (_: A) => B): Rx<B>
+} = dual<
+  <A, B>(f: (_: A) => B) => (self: Rx<A>) => Rx<B>,
+  <A, B>(self: Rx<A>, f: (_: A) => B) => Rx<B>
+>(2, (self, f) => readable((get) => f(get(self))))
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const mapResult = dual<
+  <A, B>(f: (_: A) => B) => <E>(self: Rx<Result.Result<E, A>>) => Rx<Result.Result<E, B>>,
+  <E, A, B>(self: Rx<Result.Result<E, A>>, f: (_: A) => B) => Rx<Result.Result<E, B>>
+>(2, (self, f) => map(self, Result.map(f)))
+
+/**
+ * @since 1.0.0
  * @category batching
  */
 export const batch: (f: () => void) => void = internalRegistry.batch
