@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.1.27
+
+### Patch Changes
+
+- [`414f882`](https://github.com/tim-smart/effect-rx/commit/414f882d83f1720998faae4f6610c58cad5d52e4) Thanks [@tim-smart](https://github.com/tim-smart)! - add FinalizationRegistry polyfill
+
+- Updated dependencies [[`414f882`](https://github.com/tim-smart/effect-rx/commit/414f882d83f1720998faae4f6610c58cad5d52e4)]:
+  - @effect-rx/rx@0.1.23
+
 ## 0.1.26
 
 ### Patch Changes

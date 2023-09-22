@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.23
+
+### Patch Changes
+
+- [`414f882`](https://github.com/tim-smart/effect-rx/commit/414f882d83f1720998faae4f6610c58cad5d52e4) Thanks [@tim-smart](https://github.com/tim-smart)! - add FinalizationRegistry polyfill
+
 ## 0.1.22
 
 ### Patch Changes
