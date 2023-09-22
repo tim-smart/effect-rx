@@ -1,6 +1,7 @@
 /**
  * @since 1.0.0
  */
+import { UniversalFinalizationRegistry } from "@effect-rx/rx/internal/finalizationRegistry"
 import * as internalRegistry from "@effect-rx/rx/internal/registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Chunk from "@effect/data/Chunk"
@@ -685,7 +686,7 @@ export const family = <Arg, T extends Rx<any>>(
   f: (arg: Arg) => T
 ): (arg: Arg) => T => {
   const atoms = new Map<number, WeakRef<T>>()
-  const registry = new FinalizationRegistry<number>((hash) => {
+  const registry = new UniversalFinalizationRegistry<number>((hash) => {
     atoms.delete(hash)
   })
   return function(arg) {

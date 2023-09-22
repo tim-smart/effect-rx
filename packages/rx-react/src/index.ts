@@ -1,6 +1,7 @@
 /**
  * @since 1.0.0
  */
+import { UniversalFinalizationRegistry } from "@effect-rx/rx/internal/finalizationRegistry"
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
@@ -107,7 +108,7 @@ type SuspenseResult<E, A> =
   }
 
 const suspenseCache = globalValue("@effect-rx/rx-react/suspenseCache", () => new WeakMap<Rx.Rx<any>, () => void>())
-const suspenseRegistry = new FinalizationRegistry((unmount: () => void) => {
+const suspenseRegistry = new UniversalFinalizationRegistry((unmount: () => void) => {
   unmount()
 })
 
