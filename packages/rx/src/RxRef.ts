@@ -59,7 +59,19 @@ export const make = <A>(value: A): RxRef<A> => new RxRefImpl(value)
  */
 export const collection = <A>(items: Iterable<A>): Collection<A> => new CollectionImpl(items)
 
-class Subscribable<A> {
+const keyState = globalValue("@effect-rx/rx/RxRef/keyState", () => ({
+  count: 0,
+  generate() {
+    return `RxRef-${this.count++}`
+  }
+}))
+
+class ReadonlyRefImpl<A> implements ReadonlyRef<A> {
+  readonly [TypeId]: TypeId
+  readonly key = keyState.generate()
+  constructor(public value: A) {
+    this[TypeId] = TypeId
+  }
   listeners: Array<(a: A) => void> = []
   listenerCount = 0
 
@@ -82,22 +94,7 @@ class Subscribable<A> {
       }
     }
   }
-}
 
-const keyState = globalValue("@effect-rx/rx/RxRef/keyState", () => ({
-  count: 0,
-  generate() {
-    return `RxRef-${this.count++}`
-  }
-}))
-
-class ReadonlyRefImpl<A> extends Subscribable<A> implements ReadonlyRef<A> {
-  readonly [TypeId]: TypeId
-  readonly key = keyState.generate()
-  constructor(public value: A) {
-    super()
-    this[TypeId] = TypeId
-  }
   map<B>(f: (a: A) => B): ReadonlyRef<B> {
     return new MapRefImpl(this, f)
   }
