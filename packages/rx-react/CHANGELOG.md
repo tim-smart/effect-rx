@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.1.32
+
+### Patch Changes
+
+- [`bd2f2c3`](https://github.com/tim-smart/effect-rx/commit/bd2f2c36acaf196ba5094448260ec8c4a7451c4d) Thanks [@tim-smart](https://github.com/tim-smart)! - prevent unneccessary recalcs in useRxRef
+
 ## 0.1.31
 
 ### Patch Changes
