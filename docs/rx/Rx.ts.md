@@ -43,6 +43,7 @@ Added in v1.0.0
   - [Rx (namespace)](#rx-namespace)
     - [Get (type alias)](#get-type-alias)
     - [GetResult (type alias)](#getresult-type-alias)
+    - [Infer (type alias)](#infer-type-alias)
     - [Mount (type alias)](#mount-type-alias)
     - [Read (type alias)](#read-type-alias)
     - [ReadFn (type alias)](#readfn-type-alias)
@@ -55,6 +56,8 @@ Added in v1.0.0
   - [RxRuntime (interface)](#rxruntime-interface)
   - [StreamPullResult (type alias)](#streampullresult-type-alias)
   - [Writable (interface)](#writable-interface)
+- [refinements](#refinements)
+  - [isWritable](#iswritable)
 - [type ids](#type-ids)
   - [RefreshableTypeId](#refreshabletypeid)
   - [RefreshableTypeId (type alias)](#refreshabletypeid-type-alias)
@@ -107,7 +110,13 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const map: { <A, B>(f: (_: A) => B): (self: Rx<A>) => Rx<B>; <A, B>(self: Rx<A>, f: (_: A) => B): Rx<B> }
+export declare const map: (<R extends Rx<any>, B>(
+  f: (_: Rx.Infer<R>) => B
+) => (self: R) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>) &
+  (<R extends Rx<any>, B>(
+    self: R,
+    f: (_: Rx.Infer<R>) => B
+  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>)
 ```
 
 Added in v1.0.0
@@ -117,10 +126,19 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const mapResult: (<A, B>(
-  f: (_: A) => B
-) => <E>(self: Rx<Result.Result<E, A>>) => Rx<Result.Result<E, B>>) &
-  (<E, A, B>(self: Rx<Result.Result<E, A>>, f: (_: A) => B) => Rx<Result.Result<E, B>>)
+export declare const mapResult: (<R extends Rx<Result.Result<any, any>>, B>(
+  f: (_: Result.Result.Success<Rx.Infer<R>>) => B
+) => (
+  self: R
+) => [R] extends [Writable<infer _, infer RW>]
+  ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>, RW>
+  : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>>) &
+  (<R extends Rx<Result.Result<any, any>>, B>(
+    self: R,
+    f: (_: Result.Result.Success<Rx.Infer<R>>) => B
+  ) => [R] extends [Writable<infer _, infer RW>]
+    ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>, RW>
+    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>>)
 ```
 
 Added in v1.0.0
@@ -420,6 +438,16 @@ export type GetResult = <E, A>(rx: Rx<Result.Result<E, A>>) => Exit.Exit<E | NoS
 
 Added in v1.0.0
 
+### Infer (type alias)
+
+**Signature**
+
+```ts
+export type Infer<T extends Rx<any>> = T extends Rx<infer A> ? A : never
+```
+
+Added in v1.0.0
+
 ### Mount (type alias)
 
 **Signature**
@@ -551,6 +579,18 @@ export interface Writable<R, W> extends Rx<R> {
   readonly [WritableTypeId]: WritableTypeId
   readonly write: Rx.Write<R, W>
 }
+```
+
+Added in v1.0.0
+
+# refinements
+
+## isWritable
+
+**Signature**
+
+```ts
+export declare const isWritable: <R, W>(rx: Rx<R>) => rx is Writable<R, W>
 ```
 
 Added in v1.0.0

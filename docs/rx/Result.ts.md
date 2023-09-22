@@ -34,6 +34,8 @@ Added in v1.0.0
   - [Result (type alias)](#result-type-alias)
   - [Result (namespace)](#result-namespace)
     - [Variance (interface)](#variance-interface)
+    - [Failure (type alias)](#failure-type-alias)
+    - [Success (type alias)](#success-type-alias)
   - [Success (interface)](#success-interface)
   - [Waiting (interface)](#waiting-interface)
 - [refinements](#refinements)
@@ -236,6 +238,26 @@ export interface Variance<E, A> {
     readonly A: (_: never) => A
   }
 }
+```
+
+Added in v1.0.0
+
+### Failure (type alias)
+
+**Signature**
+
+```ts
+export type Failure<R extends Result<any, any>> = R extends Result<infer E, infer _> ? E : never
+```
+
+Added in v1.0.0
+
+### Success (type alias)
+
+**Signature**
+
+```ts
+export type Success<R extends Result<any, any>> = R extends Result<infer _, infer A> ? A : never
 ```
 
 Added in v1.0.0

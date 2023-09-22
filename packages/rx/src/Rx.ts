@@ -107,6 +107,11 @@ export declare namespace Rx {
   export type Subscribe = <A>(rx: Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }) => () => void
+
+  /**
+   * @since 1.0.0
+   */
+  export type Infer<T extends Rx<any>> = T extends Rx<infer A> ? A : never
 }
 
 /**
@@ -210,6 +215,12 @@ const WritableProto = {
 function defaultRefresh(this: Rx<any>, f: any) {
   f(this)
 }
+
+/**
+ * @since 1.0.0
+ * @category refinements
+ */
+export const isWritable = <R, W>(rx: Rx<R>): rx is Writable<R, W> => WritableTypeId in rx
 
 /**
  * @since 1.0.0
@@ -744,22 +755,45 @@ export const initialValue: {
  * @since 1.0.0
  * @category combinators
  */
-export const map: {
-  <A, B>(f: (_: A) => B): (self: Rx<A>) => Rx<B>
-  <A, B>(self: Rx<A>, f: (_: A) => B): Rx<B>
-} = dual<
-  <A, B>(f: (_: A) => B) => (self: Rx<A>) => Rx<B>,
-  <A, B>(self: Rx<A>, f: (_: A) => B) => Rx<B>
->(2, (self, f) => readable((get) => f(get(self))))
+export const map = dual<
+  <R extends Rx<any>, B>(
+    f: (_: Rx.Infer<R>) => B
+  ) => (self: R) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>,
+  <R extends Rx<any>, B>(
+    self: R,
+    f: (_: Rx.Infer<R>) => B
+  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>
+>(
+  2,
+  (<A, B>(self: Rx<A>, f: (_: A) => B): Rx<B> =>
+    isWritable(self)
+      ? writable((get) => f(get(self)), function(ctx, value) {
+        ctx.set(self, value)
+      }, function(refresh) {
+        refresh(self)
+      })
+      : readable((get) => f(get(self)), function(refresh) {
+        refresh(self)
+      })) as any
+)
 
 /**
  * @since 1.0.0
  * @category combinators
  */
 export const mapResult = dual<
-  <A, B>(f: (_: A) => B) => <E>(self: Rx<Result.Result<E, A>>) => Rx<Result.Result<E, B>>,
-  <E, A, B>(self: Rx<Result.Result<E, A>>, f: (_: A) => B) => Rx<Result.Result<E, B>>
->(2, (self, f) => map(self, Result.map(f)))
+  <R extends Rx<Result.Result<any, any>>, B>(
+    f: (_: Result.Result.Success<Rx.Infer<R>>) => B
+  ) => (
+    self: R
+  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>, RW>
+    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>>,
+  <R extends Rx<Result.Result<any, any>>, B>(
+    self: R,
+    f: (_: Result.Result.Success<Rx.Infer<R>>) => B
+  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>, RW>
+    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>>
+>(2, (self, f) => map(self, Result.map(f)) as any)
 
 /**
  * @since 1.0.0

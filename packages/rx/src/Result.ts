@@ -46,6 +46,16 @@ export declare namespace Result {
       readonly A: (_: never) => A
     }
   }
+
+  /**
+   * @since 1.0.0
+   */
+  export type Success<R extends Result<any, any>> = R extends Result<infer _, infer A> ? A : never
+
+  /**
+   * @since 1.0.0
+   */
+  export type Failure<R extends Result<any, any>> = R extends Result<infer E, infer _> ? E : never
 }
 
 const ResultProto = Data.struct({
