@@ -1,7 +1,6 @@
 /**
  * @since 1.0.0
  */
-import { UniversalFinalizationRegistry } from "@effect-rx/rx/internal/finalizationRegistry"
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
@@ -107,11 +106,6 @@ type SuspenseResult<E, A> =
     readonly value: Result.Success<E, A> | Result.Failure<E, A>
   }
 
-const suspenseCache = globalValue("@effect-rx/rx-react/suspenseCache", () => new WeakMap<Rx.Rx<any>, () => void>())
-const suspenseRegistry = new UniversalFinalizationRegistry((unmount: () => void) => {
-  unmount()
-})
-
 const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
   Rx.readable((get): SuspenseResult<any, any> => {
     const result = get(rx)
@@ -140,6 +134,8 @@ const suspenseRxWaiting = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
   })
 )
 
+const suspenseMounts = globalValue("@effect-rx/rx-react/suspenseMounts", () => new Set<Rx.Rx<any>>())
+
 /**
  * @since 1.0.0
  * @category hooks
@@ -159,19 +155,15 @@ export const useRxSuspense = <E, A>(
   const store = makeStore(registry, resultRx)
   const result = React.useSyncExternalStore(store.subscribe, store.snapshot)
   if (result._tag === "Suspended") {
-    if (!suspenseCache.has(resultRx)) {
+    if (!suspenseMounts.has(resultRx)) {
+      suspenseMounts.add(resultRx)
       const unmount = registry.mount(resultRx)
-      suspenseCache.set(resultRx, unmount)
-      suspenseRegistry.register(result.promise, unmount, resultRx)
+      result.promise.then(function() {
+        unmount()
+        suspenseMounts.delete(resultRx)
+      })
     }
     throw result.promise
-  } else if (suspenseCache.has(resultRx)) {
-    const unmount = suspenseCache.get(resultRx)
-    if (unmount) {
-      suspenseCache.delete(resultRx)
-      suspenseRegistry.unregister(resultRx)
-      unmount()
-    }
   }
 
   return result

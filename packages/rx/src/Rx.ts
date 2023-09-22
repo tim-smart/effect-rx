@@ -1,7 +1,6 @@
 /**
  * @since 1.0.0
  */
-import { UniversalFinalizationRegistry } from "@effect-rx/rx/internal/finalizationRegistry"
 import * as internalRegistry from "@effect-rx/rx/internal/registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Chunk from "@effect/data/Chunk"
@@ -682,25 +681,41 @@ export const streamPull: {
  * @since 1.0.0
  * @category constructors
  */
-export const family = <Arg, T extends Rx<any>>(
-  f: (arg: Arg) => T
-): (arg: Arg) => T => {
-  const atoms = new Map<number, WeakRef<T>>()
-  const registry = new UniversalFinalizationRegistry<number>((hash) => {
-    atoms.delete(hash)
-  })
-  return function(arg) {
-    const hash = Hash.hash(arg)
-    const atom = atoms.get(hash)?.deref()
-    if (atom !== undefined) {
-      return atom
+export const family = typeof WeakRef === "undefined" || typeof FinalizationRegistry === "undefined" ?
+  <Arg, T extends Rx<any>>(
+    f: (arg: Arg) => T
+  ): (arg: Arg) => T => {
+    const atoms = new Map<number, T>()
+    return function(arg) {
+      const hash = Hash.hash(arg)
+      const atom = atoms.get(hash)
+      if (atom !== undefined) {
+        return atom
+      }
+      const newAtom = f(arg)
+      atoms.set(hash, newAtom)
+      return newAtom
     }
-    const newAtom = f(arg)
-    atoms.set(hash, new WeakRef(newAtom))
-    registry.register(newAtom, hash)
-    return newAtom
+  } :
+  <Arg, T extends Rx<any>>(
+    f: (arg: Arg) => T
+  ): (arg: Arg) => T => {
+    const atoms = new Map<number, WeakRef<T>>()
+    const registry = new FinalizationRegistry<number>((hash) => {
+      atoms.delete(hash)
+    })
+    return function(arg) {
+      const hash = Hash.hash(arg)
+      const atom = atoms.get(hash)?.deref()
+      if (atom !== undefined) {
+        return atom
+      }
+      const newAtom = f(arg)
+      atoms.set(hash, new WeakRef(newAtom))
+      registry.register(newAtom, hash)
+      return newAtom
+    }
   }
-}
 
 /**
  * @since 1.0.0
