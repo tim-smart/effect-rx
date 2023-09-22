@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.1.29
+
+### Patch Changes
+
+- [`ba08716`](https://github.com/tim-smart/effect-rx/commit/ba08716901778c8f01f2e3fc7772915b954539d9) Thanks [@tim-smart](https://github.com/tim-smart)! - fix suspense unmounting too early
+
 ## 0.1.28
 
 ### Patch Changes
