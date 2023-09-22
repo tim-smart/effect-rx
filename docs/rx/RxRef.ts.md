@@ -58,6 +58,7 @@ export interface Collection<A> extends ReadonlyRef<ReadonlyArray<RxRef<A>>> {
   readonly push: (item: A) => Collection<A>
   readonly insertAt: (index: number, item: A) => Collection<A>
   readonly remove: (ref: RxRef<A>) => Collection<A>
+  readonly toArray: () => Array<A>
 }
 ```
 
