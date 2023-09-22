@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.24
+
+### Patch Changes
+
+- [`d91eaca`](https://github.com/tim-smart/effect-rx/commit/d91eacade3066576a694f4bf49b9e9ba5a16aad6) Thanks [@tim-smart](https://github.com/tim-smart)! - support runtimes without WeakRef
+
 ## 0.1.23
 
 ### Patch Changes
