@@ -197,7 +197,7 @@ export const useRxSuspenseSuccess = <E, A>(
  * @category hooks
  */
 export const useRxRef = <A>(ref: RxRef.ReadonlyRef<A>): A => {
-  const [, setValue] = React.useState(ref.value)
+  const [value, setValue] = React.useState(ref.value)
   React.useEffect(() => ref.subscribe(setValue), [ref])
-  return ref.value
+  return value
 }
