@@ -196,6 +196,15 @@ export const useRxSuspenseSuccess = <E, A>(
  * @since 1.0.0
  * @category hooks
  */
+export const useMountRx = <A>(rx: Rx.Rx<A>): void => {
+  const registry = React.useContext(RegistryContext)
+  React.useEffect(() => registry.mount(rx), [rx, registry])
+}
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
 export const useRxRef = <A>(ref: RxRef.ReadonlyRef<A>): A => {
   const [value, setValue] = React.useState(ref.value)
   React.useEffect(() => ref.subscribe(setValue), [ref])

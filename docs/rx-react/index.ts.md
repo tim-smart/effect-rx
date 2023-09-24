@@ -15,6 +15,7 @@ Added in v1.0.0
 - [context](#context)
   - [RegistryContext](#registrycontext)
 - [hooks](#hooks)
+  - [useMountRx](#usemountrx)
   - [useRefreshRx](#userefreshrx)
   - [useRx](#userx)
   - [useRxRef](#userxref)
@@ -38,6 +39,16 @@ export declare const RegistryContext: React.Context<Registry.Registry>
 Added in v1.0.0
 
 # hooks
+
+## useMountRx
+
+**Signature**
+
+```ts
+export declare const useMountRx: <A>(rx: Rx.Rx<A>) => void
+```
+
+Added in v1.0.0
 
 ## useRefreshRx
 
