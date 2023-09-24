@@ -48,12 +48,7 @@ function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
   return newStore
 }
 
-/**
- * @since 1.0.0
- * @category hooks
- */
-export const useRxValue = <A>(rx: Rx.Rx<A>): A => {
-  const registry = React.useContext(RegistryContext)
+function useStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): A {
   const store = makeStore(registry, rx)
   return React.useSyncExternalStore(store.subscribe, store.snapshot)
 }
@@ -62,8 +57,16 @@ export const useRxValue = <A>(rx: Rx.Rx<A>): A => {
  * @since 1.0.0
  * @category hooks
  */
-export const useSetRx = <R, W>(rx: Rx.Writable<R, W>): (_: W | ((_: R) => W)) => void => {
+export const useRxValue = <A>(rx: Rx.Rx<A>): A => {
   const registry = React.useContext(RegistryContext)
+  return useStore(registry, rx)
+}
+
+function mountRx<A>(registry: Registry.Registry, rx: Rx.Rx<A>): void {
+  React.useEffect(() => registry.mount(rx), [rx, registry])
+}
+
+function setRx<R, W>(registry: Registry.Registry, rx: Rx.Writable<R, W>): (_: W | ((_: R) => W)) => void {
   return React.useCallback((value) => {
     if (typeof value === "function") {
       registry.set(rx, (value as any)(registry.get(rx)))
@@ -78,8 +81,28 @@ export const useSetRx = <R, W>(rx: Rx.Writable<R, W>): (_: W | ((_: R) => W)) =>
  * @since 1.0.0
  * @category hooks
  */
-export const useRefreshRx = <A>(rx: Rx.Rx<A> & Rx.Refreshable): () => void => {
+export const useRxMount = <A>(rx: Rx.Rx<A>): void => {
   const registry = React.useContext(RegistryContext)
+  mountRx(registry, rx)
+}
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
+export const useRxSet = <R, W>(rx: Rx.Writable<R, W>): (_: W | ((_: R) => W)) => void => {
+  const registry = React.useContext(RegistryContext)
+  mountRx(registry, rx)
+  return setRx(registry, rx)
+}
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
+export const useRxRefresh = <A>(rx: Rx.Rx<A> & Rx.Refreshable): () => void => {
+  const registry = React.useContext(RegistryContext)
+  mountRx(registry, rx)
   return React.useCallback(() => {
     registry.refresh(rx)
   }, [registry, rx])
@@ -89,11 +112,15 @@ export const useRefreshRx = <A>(rx: Rx.Rx<A> & Rx.Refreshable): () => void => {
  * @since 1.0.0
  * @category hooks
  */
-export const useRx = <R, W>(rx: Rx.Writable<R, W>): readonly [value: R, setOrUpdate: (_: W | ((_: R) => W)) => void] =>
-  [
-    useRxValue(rx),
-    useSetRx(rx)
+export const useRx = <R, W>(
+  rx: Rx.Writable<R, W>
+): readonly [value: R, setOrUpdate: (_: W | ((_: R) => W)) => void] => {
+  const registry = React.useContext(RegistryContext)
+  return [
+    useStore(registry, rx),
+    setRx(registry, rx)
   ] as const
+}
 
 type SuspenseResult<E, A> =
   | {
@@ -152,8 +179,7 @@ export const useRxSuspense = <E, A>(
     () => (options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)),
     [options?.suspendOnWaiting, rx]
   )
-  const store = makeStore(registry, resultRx)
-  const result = React.useSyncExternalStore(store.subscribe, store.snapshot)
+  const result = useStore(registry, resultRx)
   if (result._tag === "Suspended") {
     if (!suspenseMounts.has(resultRx)) {
       suspenseMounts.add(resultRx)
@@ -190,15 +216,6 @@ export const useRxSuspenseSuccess = <E, A>(
     isWaiting: result.isWaiting,
     value: result.value.value
   }
-}
-
-/**
- * @since 1.0.0
- * @category hooks
- */
-export const useMountRx = <A>(rx: Rx.Rx<A>): void => {
-  const registry = React.useContext(RegistryContext)
-  React.useEffect(() => registry.mount(rx), [rx, registry])
 }
 
 /**

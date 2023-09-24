@@ -15,14 +15,14 @@ Added in v1.0.0
 - [context](#context)
   - [RegistryContext](#registrycontext)
 - [hooks](#hooks)
-  - [useMountRx](#usemountrx)
-  - [useRefreshRx](#userefreshrx)
   - [useRx](#userx)
+  - [useRxMount](#userxmount)
   - [useRxRef](#userxref)
+  - [useRxRefresh](#userxrefresh)
+  - [useRxSet](#userxset)
   - [useRxSuspense](#userxsuspense)
   - [useRxSuspenseSuccess](#userxsuspensesuccess)
   - [useRxValue](#userxvalue)
-  - [useSetRx](#usesetrx)
 
 ---
 
@@ -40,26 +40,6 @@ Added in v1.0.0
 
 # hooks
 
-## useMountRx
-
-**Signature**
-
-```ts
-export declare const useMountRx: <A>(rx: Rx.Rx<A>) => void
-```
-
-Added in v1.0.0
-
-## useRefreshRx
-
-**Signature**
-
-```ts
-export declare const useRefreshRx: <A>(rx: Rx.Rx<A> & Rx.Refreshable) => () => void
-```
-
-Added in v1.0.0
-
 ## useRx
 
 **Signature**
@@ -72,12 +52,42 @@ export declare const useRx: <R, W>(
 
 Added in v1.0.0
 
+## useRxMount
+
+**Signature**
+
+```ts
+export declare const useRxMount: <A>(rx: Rx.Rx<A>) => void
+```
+
+Added in v1.0.0
+
 ## useRxRef
 
 **Signature**
 
 ```ts
 export declare const useRxRef: <A>(ref: RxRef.ReadonlyRef<A>) => A
+```
+
+Added in v1.0.0
+
+## useRxRefresh
+
+**Signature**
+
+```ts
+export declare const useRxRefresh: <A>(rx: Rx.Rx<A> & Rx.Refreshable) => () => void
+```
+
+Added in v1.0.0
+
+## useRxSet
+
+**Signature**
+
+```ts
+export declare const useRxSet: <R, W>(rx: Rx.Writable<R, W>) => (_: W | ((_: R) => W)) => void
 ```
 
 Added in v1.0.0
@@ -114,16 +124,6 @@ Added in v1.0.0
 
 ```ts
 export declare const useRxValue: <A>(rx: Rx.Rx<A>) => A
-```
-
-Added in v1.0.0
-
-## useSetRx
-
-**Signature**
-
-```ts
-export declare const useSetRx: <R, W>(rx: Rx.Writable<R, W>) => (_: W | ((_: R) => W)) => void
 ```
 
 Added in v1.0.0
