@@ -1,5 +1,15 @@
 # @effect-rx/rx-react
 
+## 0.2.0
+
+### Minor Changes
+
+- [`7483263`](https://github.com/tim-smart/effect-rx/commit/748326369ce46ba3e8c37ab2e9200a6b876f66ac) Thanks [@tim-smart](https://github.com/tim-smart)! - rename react hooks
+
+### Patch Changes
+
+- [`7483263`](https://github.com/tim-smart/effect-rx/commit/748326369ce46ba3e8c37ab2e9200a6b876f66ac) Thanks [@tim-smart](https://github.com/tim-smart)! - mount Rx in mutation hooks
+
 ## 0.1.33
 
 ### Patch Changes
