@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.1.33
+
+### Patch Changes
+
+- [`8a062c7`](https://github.com/tim-smart/effect-rx/commit/8a062c795b569978d1082da3b62b27c1c8a460ac) Thanks [@tim-smart](https://github.com/tim-smart)! - add useMountRx hook
+
 ## 0.1.32
 
 ### Patch Changes
