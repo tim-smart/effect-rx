@@ -5,6 +5,7 @@ import * as Equal from "@effect/data/Equal"
 import { globalValue } from "@effect/data/GlobalValue"
 import * as Option from "@effect/data/Option"
 import type { NoSuchElementException } from "@effect/io/Cause"
+import * as Effect from "@effect/io/Effect"
 import type { Exit } from "@effect/io/Exit"
 
 const constImmediate = { immediate: true }
@@ -353,18 +354,38 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
     return this.node.valueOption() as any
   },
 
-  refresh<A>(this: Lifetime<any>, rx: Rx.Rx<A> & Rx.Refreshable): void {
+  refreshSync<A>(this: Lifetime<any>, rx: Rx.Rx<A> & Rx.Refreshable): void {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
     this.node.registry.refresh(rx)
   },
 
-  refreshSelf(this: Lifetime<any>): void {
+  refresh<A>(this: Lifetime<any>, rx: Rx.Rx<A> & Rx.Refreshable) {
+    return Effect.suspend(() => {
+      if (this.disposed) {
+        return Effect.die(disposedError(this.node.rx))
+      }
+      this.node.registry.refresh(rx)
+      return Effect.unit
+    })
+  },
+
+  refreshSelfSync(this: Lifetime<any>): void {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
     this.node.invalidate()
+  },
+
+  get refreshSelf() {
+    return Effect.suspend(() => {
+      if ((this as Lifetime<any>).disposed) {
+        return Effect.die(disposedError((this as Lifetime<any>).node.rx))
+      }
+      ;(this as Lifetime<any>).node.invalidate()
+      return Effect.unit
+    })
   },
 
   subscribe<A>(this: Lifetime<any>, rx: Rx.Rx<A>, f: (_: A) => void, options?: {
@@ -376,18 +397,38 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
     this.addFinalizer(this.node.registry.subscribe(rx, f, options))
   },
 
-  setSelf<A>(this: Lifetime<any>, a: A): void {
+  setSelfSync<A>(this: Lifetime<any>, a: A): void {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
     this.node.setValue(a as any)
   },
 
-  set<R, W>(this: Lifetime<any>, rx: Rx.Writable<R, W>, value: W): void {
+  setSelf<A>(this: Lifetime<any>, value: A) {
+    return Effect.suspend(() => {
+      if (this.disposed) {
+        return Effect.die(disposedError(this.node.rx))
+      }
+      this.node.setValue(value)
+      return Effect.unit
+    })
+  },
+
+  setSync<R, W>(this: Lifetime<any>, rx: Rx.Writable<R, W>, value: W): void {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
     this.node.registry.set(rx, value)
+  },
+
+  set<R, W>(this: Lifetime<any>, rx: Rx.Writable<R, W>, value: W) {
+    return Effect.suspend(() => {
+      if (this.disposed) {
+        return Effect.die(disposedError(this.node.rx))
+      }
+      this.node.registry.set(rx, value)
+      return Effect.unit
+    })
   },
 
   dispose(this: Lifetime<any>): void {

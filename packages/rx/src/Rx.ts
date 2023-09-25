@@ -92,7 +92,19 @@ export declare namespace Rx {
    * @since 1.0.0
    * @category models
    */
-  export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => void
+  export type SetEffect = <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<never, never, void>
+
+  /**
+   * @since 1.0.0
+   * @category models
+   */
+  export type RefreshRxSync = <A>(rx: Rx<A> & Refreshable) => void
+
+  /**
+   * @since 1.0.0
+   * @category models
+   */
+  export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => Effect.Effect<never, never, void>
 
   /**
    * @since 1.0.0
@@ -165,11 +177,15 @@ export interface Context {
   readonly result: Rx.GetResult
   readonly once: Rx.Get
   readonly addFinalizer: (f: () => void) => void
+  readonly refreshSync: Rx.RefreshRxSync
   readonly refresh: Rx.RefreshRx
-  readonly refreshSelf: () => void
+  readonly refreshSelfSync: () => void
+  readonly refreshSelf: Effect.Effect<never, never, void>
   readonly self: <A>() => Option.Option<A>
-  readonly setSelf: <A>(a: A) => void
-  readonly set: Rx.Set
+  readonly setSelfSync: <A>(a: A) => void
+  readonly setSelf: <A>(a: A) => Effect.Effect<never, never, void>
+  readonly setSync: Rx.Set
+  readonly set: Rx.SetEffect
   readonly subscribe: <A>(rx: Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }) => void
@@ -280,7 +296,7 @@ function makeEffect<E, A>(
     create(ctx),
     function(exit) {
       if (!Exit.isInterrupted(exit)) {
-        ctx.setSelf(Result.fromExit(exit))
+        ctx.setSelfSync(Result.fromExit(exit))
       }
     }
   )
@@ -484,20 +500,20 @@ function makeStream<E, A>(
   const cancel = runCallback(
     Stream.runForEach(
       create(ctx),
-      (a) => Effect.sync(() => ctx.setSelf(Result.waiting(Result.success(a))))
+      (a) => Effect.sync(() => ctx.setSelfSync(Result.waiting(Result.success(a))))
     ),
     (exit) => {
       if (exit._tag === "Failure") {
         if (!Exit.isInterrupted(exit)) {
-          ctx.setSelf(Result.failure(exit.cause))
+          ctx.setSelfSync(Result.failure(exit.cause))
         }
       } else {
         pipe(
           ctx.self<Result.Result<E | NoSuchElementException, A>>(),
           Option.flatMap(Result.value),
           Option.match({
-            onNone: () => ctx.setSelf(Result.fail(NoSuchElementException())),
-            onSome: (a) => ctx.setSelf(Result.success(a))
+            onNone: () => ctx.setSelfSync(Result.fail(NoSuchElementException())),
+            onSome: (a) => ctx.setSelfSync(Result.success(a))
           })
         )
       }

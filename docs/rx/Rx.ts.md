@@ -49,7 +49,9 @@ Added in v1.0.0
     - [ReadFn (type alias)](#readfn-type-alias)
     - [Refresh (type alias)](#refresh-type-alias)
     - [RefreshRx (type alias)](#refreshrx-type-alias)
+    - [RefreshRxSync (type alias)](#refreshrxsync-type-alias)
     - [Set (type alias)](#set-type-alias)
+    - [SetEffect (type alias)](#seteffect-type-alias)
     - [Subscribe (type alias)](#subscribe-type-alias)
     - [Write (type alias)](#write-type-alias)
   - [RxResultFn (interface)](#rxresultfn-interface)
@@ -352,11 +354,15 @@ export interface Context {
   readonly result: Rx.GetResult
   readonly once: Rx.Get
   readonly addFinalizer: (f: () => void) => void
+  readonly refreshSync: Rx.RefreshRxSync
   readonly refresh: Rx.RefreshRx
-  readonly refreshSelf: () => void
+  readonly refreshSelfSync: () => void
+  readonly refreshSelf: Effect.Effect<never, never, void>
   readonly self: <A>() => Option.Option<A>
-  readonly setSelf: <A>(a: A) => void
-  readonly set: Rx.Set
+  readonly setSelfSync: <A>(a: A) => void
+  readonly setSelf: <A>(a: A) => Effect.Effect<never, never, void>
+  readonly setSync: Rx.Set
+  readonly set: Rx.SetEffect
   readonly subscribe: <A>(
     rx: Rx<A>,
     f: (_: A) => void,
@@ -493,7 +499,17 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => void
+export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => Effect.Effect<never, never, void>
+```
+
+Added in v1.0.0
+
+### RefreshRxSync (type alias)
+
+**Signature**
+
+```ts
+export type RefreshRxSync = <A>(rx: Rx<A> & Refreshable) => void
 ```
 
 Added in v1.0.0
@@ -504,6 +520,16 @@ Added in v1.0.0
 
 ```ts
 export type Set = <R, W>(rx: Writable<R, W>, value: W) => void
+```
+
+Added in v1.0.0
+
+### SetEffect (type alias)
+
+**Signature**
+
+```ts
+export type SetEffect = <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<never, never, void>
 ```
 
 Added in v1.0.0
