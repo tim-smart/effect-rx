@@ -33,7 +33,7 @@ Added in v1.0.0
   - [NoWaiting (type alias)](#nowaiting-type-alias)
   - [Result (type alias)](#result-type-alias)
   - [Result (namespace)](#result-namespace)
-    - [Variance (interface)](#variance-interface)
+    - [Proto (interface)](#proto-interface)
     - [Failure (type alias)](#failure-type-alias)
     - [Success (type alias)](#success-type-alias)
   - [Success (interface)](#success-interface)
@@ -183,7 +183,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface Failure<E, A> extends Result.Variance<E, A> {
+export interface Failure<E, A> extends Result.Proto<E, A> {
   readonly _tag: 'Failure'
   readonly cause: Cause.Cause<E>
 }
@@ -196,7 +196,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface Initial<E, A> extends Result.Variance<E, A>, Data.Case {
+export interface Initial<E, A> extends Result.Proto<E, A> {
   readonly _tag: 'Initial'
 }
 ```
@@ -227,12 +227,12 @@ Added in v1.0.0
 
 Added in v1.0.0
 
-### Variance (interface)
+### Proto (interface)
 
 **Signature**
 
 ```ts
-export interface Variance<E, A> {
+export interface Proto<E, A> extends Pipeable, Data.Case {
   readonly [TypeId]: {
     readonly E: (_: never) => E
     readonly A: (_: never) => A
@@ -267,7 +267,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface Success<E, A> extends Result.Variance<E, A> {
+export interface Success<E, A> extends Result.Proto<E, A> {
   readonly _tag: 'Success'
   readonly value: A
 }
@@ -280,7 +280,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface Waiting<E, A> extends Result.Variance<E, A> {
+export interface Waiting<E, A> extends Result.Proto<E, A> {
   readonly _tag: 'Waiting'
   readonly previous: Initial<E, A> | Success<E, A> | Failure<E, A>
 }

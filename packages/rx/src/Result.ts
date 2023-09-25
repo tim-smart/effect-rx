@@ -4,6 +4,7 @@
 import * as Data from "@effect/data/Data"
 import { dual, identity } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
+import { type Pipeable, pipeArguments } from "@effect/data/Pipeable"
 import * as Cause from "@effect/io/Cause"
 import * as Exit from "@effect/io/Exit"
 
@@ -40,7 +41,7 @@ export declare namespace Result {
    * @since 1.0.0
    * @category models
    */
-  export interface Variance<E, A> {
+  export interface Proto<E, A> extends Pipeable, Data.Case {
     readonly [TypeId]: {
       readonly E: (_: never) => E
       readonly A: (_: never) => A
@@ -62,6 +63,9 @@ const ResultProto = Data.struct({
   [TypeId]: {
     E: identity,
     A: identity
+  },
+  pipe() {
+    return pipeArguments(this, arguments)
   }
 })
 
@@ -69,7 +73,7 @@ const ResultProto = Data.struct({
  * @since 1.0.0
  * @category models
  */
-export interface Initial<E, A> extends Result.Variance<E, A>, Data.Case {
+export interface Initial<E, A> extends Result.Proto<E, A> {
   readonly _tag: "Initial"
 }
 
@@ -118,7 +122,7 @@ const constInitial: Initial<never, never> = Object.assign(Object.create(ResultPr
  * @since 1.0.0
  * @category models
  */
-export interface Waiting<E, A> extends Result.Variance<E, A> {
+export interface Waiting<E, A> extends Result.Proto<E, A> {
   readonly _tag: "Waiting"
   readonly previous: Initial<E, A> | Success<E, A> | Failure<E, A>
 }
@@ -144,7 +148,7 @@ export const waiting = <E, A>(previous: Initial<E, A> | Success<E, A> | Failure<
  * @since 1.0.0
  * @category models
  */
-export interface Success<E, A> extends Result.Variance<E, A> {
+export interface Success<E, A> extends Result.Proto<E, A> {
   readonly _tag: "Success"
   readonly value: A
 }
@@ -170,7 +174,7 @@ export const success = <E, A>(value: A): Success<E, A> => {
  * @since 1.0.0
  * @category models
  */
-export interface Failure<E, A> extends Result.Variance<E, A> {
+export interface Failure<E, A> extends Result.Proto<E, A> {
   readonly _tag: "Failure"
   readonly cause: Cause.Cause<E>
 }
