@@ -25,6 +25,7 @@ Added in v1.0.0
   - [effect](#effect)
   - [effectFn](#effectfn)
   - [family](#family)
+  - [fn](#fn)
   - [readable](#readable)
   - [runtime](#runtime)
   - [scoped](#scoped)
@@ -208,6 +209,16 @@ Added in v1.0.0
 
 ```ts
 export declare const family: <Arg, T extends Rx<any>>(f: (arg: Arg) => T) => (arg: Arg) => T
+```
+
+Added in v1.0.0
+
+## fn
+
+**Signature**
+
+```ts
+export declare const fn: <Arg, A>(f: Rx.ReadFn<Arg, A>) => Writable<Option.Option<A>, Arg>
 ```
 
 Added in v1.0.0
