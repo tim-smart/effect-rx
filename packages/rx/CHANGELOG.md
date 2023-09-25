@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.2.3
+
+### Patch Changes
+
+- [`8251c02`](https://github.com/tim-smart/effect-rx/commit/8251c02ef58a7cf151f0ebf65c81643587370db8) Thanks [@tim-smart](https://github.com/tim-smart)! - fix refresh chaining
+
 ## 0.2.2
 
 ### Patch Changes
