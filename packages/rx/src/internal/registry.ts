@@ -40,8 +40,12 @@ class RegistryImpl implements Registry.Registry {
     rx.write(this.ensureNode(rx).writeContext, value)
   }
 
-  refresh<A>(rx: Rx.Rx<A> & Rx.Refreshable): void {
-    rx.refresh(this.invalidateRx)
+  refresh = <A>(rx: Rx.Rx<A>): void => {
+    if (rx.refresh !== undefined) {
+      rx.refresh(this.refresh)
+    } else {
+      this.invalidateRx(rx)
+    }
   }
 
   subscribe<A>(rx: Rx.Rx<A>, f: (_: A) => void, options?: { readonly immediate?: boolean }): () => void {

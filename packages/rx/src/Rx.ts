@@ -37,7 +37,7 @@ export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
   readonly read: Rx.Read<A>
-  readonly refresh: Rx.Refresh
+  readonly refresh?: Rx.Refresh
   readonly label?: readonly [name: string, stack: string]
 }
 
@@ -228,12 +228,6 @@ const WritableProto = {
   [WritableTypeId]: WritableTypeId
 } as const
 
-function defaultRefresh(rx: Rx<any>) {
-  return function(f: any) {
-    f(rx)
-  }
-}
-
 /**
  * @since 1.0.0
  * @category refinements
@@ -251,7 +245,7 @@ export const readable = <A>(
   const rx = Object.create(RxProto)
   rx.keepAlive = false
   rx.read = read
-  rx.refresh = refresh ?? defaultRefresh(rx)
+  rx.refresh = refresh
   return rx
 }
 
@@ -268,7 +262,7 @@ export const writable = <R, W>(
   rx.keepAlive = false
   rx.read = read
   rx.write = write
-  rx.refresh = refresh ?? defaultRefresh(rx)
+  rx.refresh = refresh
   return rx
 }
 
@@ -801,8 +795,19 @@ export const map = dual<
   2,
   (<A, B>(self: Rx<A>, f: (_: A) => B): Rx<B> =>
     isWritable(self)
-      ? writable((get) => f(get(self)), self.write as any, self.refresh)
-      : readable((get) => f(get(self)), self.refresh)) as any
+      ? writable(
+        (get) => f(get(self)),
+        self.write as any,
+        self.refresh ?? function(refresh) {
+          refresh(self)
+        }
+      )
+      : readable(
+        (get) => f(get(self)),
+        self.refresh ?? function(refresh) {
+          refresh(self)
+        }
+      )) as any
 )
 
 /**

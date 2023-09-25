@@ -413,7 +413,7 @@ export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
   readonly read: Rx.Read<A>
-  readonly refresh: Rx.Refresh
+  readonly refresh?: Rx.Refresh
   readonly label?: readonly [name: string, stack: string]
 }
 ```
