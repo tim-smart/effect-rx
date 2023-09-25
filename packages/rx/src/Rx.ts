@@ -2,6 +2,7 @@
  * @since 1.0.0
  */
 import * as internalRegistry from "@effect-rx/rx/internal/registry"
+import { runCallbackSyncDefault } from "@effect-rx/rx/internal/runtime"
 import * as Result from "@effect-rx/rx/Result"
 import * as Chunk from "@effect/data/Chunk"
 import { dual, pipe } from "@effect/data/Function"
@@ -284,7 +285,7 @@ export const state = <A>(
 function makeEffect<E, A>(
   ctx: Context,
   create: Rx.Read<Effect.Effect<never, E, A>>,
-  runCallback = Effect.runCallback
+  runCallback = runCallbackSyncDefault
 ): Result.Result<E, A> {
   const previous = ctx.self<Result.Result<E, A>>()
 
@@ -296,7 +297,9 @@ function makeEffect<E, A>(
       }
     }
   )
-  ctx.addFinalizer(cancel)
+  if (cancel !== undefined) {
+    ctx.addFinalizer(cancel)
+  }
 
   if (previous._tag === "Some") {
     return Result.waitingFrom(previous)
