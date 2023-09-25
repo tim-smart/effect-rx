@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.2.2
+
+### Patch Changes
+
+- [`a53ffad`](https://github.com/tim-smart/effect-rx/commit/a53ffad1f640bdcbda08bd9543e1d467e767c064) Thanks [@tim-smart](https://github.com/tim-smart)! - fix default refresh for .map\*
+
 ## 0.2.1
 
 ### Patch Changes
