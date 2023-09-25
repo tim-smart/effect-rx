@@ -228,8 +228,10 @@ const WritableProto = {
   [WritableTypeId]: WritableTypeId
 } as const
 
-function defaultRefresh(this: Rx<any>, f: any) {
-  f(this)
+function defaultRefresh(rx: Rx<any>) {
+  return function(f: any) {
+    f(rx)
+  }
 }
 
 /**
@@ -244,12 +246,12 @@ export const isWritable = <R, W>(rx: Rx<R>): rx is Writable<R, W> => WritableTyp
  */
 export const readable = <A>(
   read: Rx.Read<A>,
-  refresh: Rx.Refresh = defaultRefresh
+  refresh?: Rx.Refresh
 ): Rx<A> => {
   const rx = Object.create(RxProto)
   rx.keepAlive = false
   rx.read = read
-  rx.refresh = refresh
+  rx.refresh = refresh ?? defaultRefresh(rx)
   return rx
 }
 
@@ -260,13 +262,13 @@ export const readable = <A>(
 export const writable = <R, W>(
   read: Rx.Read<R>,
   write: Rx.Write<R, W>,
-  refresh: Rx.Refresh = defaultRefresh
+  refresh?: Rx.Refresh
 ): Writable<R, W> => {
   const rx = Object.create(WritableProto)
   rx.keepAlive = false
   rx.read = read
   rx.write = write
-  rx.refresh = refresh
+  rx.refresh = refresh ?? defaultRefresh(rx)
   return rx
 }
 
@@ -799,14 +801,8 @@ export const map = dual<
   2,
   (<A, B>(self: Rx<A>, f: (_: A) => B): Rx<B> =>
     isWritable(self)
-      ? writable((get) => f(get(self)), function(ctx, value) {
-        ctx.set(self, value)
-      }, function(refresh) {
-        refresh(self)
-      })
-      : readable((get) => f(get(self)), function(refresh) {
-        refresh(self)
-      })) as any
+      ? writable((get) => f(get(self)), self.write as any, self.refresh)
+      : readable((get) => f(get(self)), self.refresh)) as any
 )
 
 /**

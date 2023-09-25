@@ -128,6 +128,44 @@ describe("Rx", () => {
     expect(result.value).toEqual(3)
   })
 
+  it("effect double mapResult", async () => {
+    const seed = Rx.state(0)
+    const count = Rx.effect((get) => Effect.succeed(get(seed) + 1)).pipe(
+      Rx.mapResult((_) => _ + 10),
+      Rx.mapResult((_) => _ + 100)
+    )
+    const r = Registry.make()
+    let result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(111)
+    r.set(seed, 1)
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(112)
+  })
+
+  it("effect double mapResult refresh", async () => {
+    let rebuilds = 0
+    const count = Rx.effect(() => {
+      rebuilds++
+      return Effect.succeed(1)
+    }).pipe(
+      Rx.mapResult((_) => _ + 10),
+      Rx.mapResult((_) => _ + 100),
+      Rx.refreshable
+    )
+    const r = Registry.make()
+    let result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(111)
+    expect(rebuilds).toEqual(1)
+    r.refresh(count)
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(111)
+    expect(rebuilds).toEqual(2)
+  })
+
   it("scopedFn", async () => {
     let finalized = 0
     const count = Rx.scopedFn((n: number) =>
