@@ -69,7 +69,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface ReadonlyRef<A> {
+export interface ReadonlyRef<A> extends Equal.Equal {
   readonly [TypeId]: TypeId
   readonly key: string
   readonly value: A

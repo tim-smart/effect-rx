@@ -3,6 +3,7 @@
  */
 import * as Equal from "@effect/data/Equal"
 import { globalValue } from "@effect/data/GlobalValue"
+import * as Hash from "@effect/data/Hash"
 
 /**
  * @since 1.0.0
@@ -20,7 +21,7 @@ export type TypeId = typeof TypeId
  * @since 1.0.0
  * @category models
  */
-export interface ReadonlyRef<A> {
+export interface ReadonlyRef<A> extends Equal.Equal {
   readonly [TypeId]: TypeId
   readonly key: string
   readonly value: A
@@ -73,6 +74,15 @@ class ReadonlyRefImpl<A> implements ReadonlyRef<A> {
   constructor(public value: A) {
     this[TypeId] = TypeId
   }
+
+  [Equal.symbol](that: ReadonlyRef<A>) {
+    return Equal.equals(this.value, that.value)
+  }
+
+  [Hash.symbol]() {
+    return Hash.hash(this.value)
+  }
+
   listeners: Array<(a: A) => void> = []
   listenerCount = 0
 
@@ -121,6 +131,12 @@ class MapRefImpl<A, B> implements ReadonlyRef<B> {
   readonly key = keyState.generate()
   constructor(readonly parent: ReadonlyRef<A>, readonly transform: (a: A) => B) {
     this[TypeId] = TypeId
+  }
+  [Equal.symbol](that: ReadonlyRef<A>) {
+    return Equal.equals(this.value, that.value)
+  }
+  [Hash.symbol]() {
+    return Hash.hash(this.value)
   }
   get value() {
     return this.transform(this.parent.value)
