@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.2.5
+
+### Patch Changes
+
+- [`3346b20`](https://github.com/tim-smart/effect-rx/commit/3346b200ab2a3f3563f2b382186ea93ba8d28d0c) Thanks [@tim-smart](https://github.com/tim-smart)! - try run effects synchronously
+
 ## 0.2.4
 
 ### Patch Changes
