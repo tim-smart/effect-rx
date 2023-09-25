@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.2.1
+
+### Patch Changes
+
+- [`faa6915`](https://github.com/tim-smart/effect-rx/commit/faa6915fee0ac1b41572618f23941b59ffc14f5a) Thanks [@tim-smart](https://github.com/tim-smart)! - make Result Pipeable
+
 ## 0.2.0
 
 ### Minor Changes
