@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.3.1
+
+### Patch Changes
+
+- [`6f7d960`](https://github.com/tim-smart/effect-rx/commit/6f7d9602d5d83a1651f1df5a9df2d8edb4956bbf) Thanks [@tim-smart](https://github.com/tim-smart)! - add .mount(rx) to context
+
 ## 0.3.0
 
 ### Minor Changes
