@@ -178,6 +178,7 @@ export interface Context {
   readonly result: Rx.GetResult
   readonly once: Rx.Get
   readonly addFinalizer: (f: () => void) => void
+  readonly mount: <A>(rx: Rx<A>) => void
   readonly refreshSync: Rx.RefreshRxSync
   readonly refresh: Rx.RefreshRx
   readonly refreshSelfSync: () => void

@@ -392,6 +392,13 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
     })
   },
 
+  mount<A>(this: Lifetime<any>, rx: Rx.Rx<A>): void {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
+    this.addFinalizer(this.node.registry.mount(rx))
+  },
+
   subscribe<A>(this: Lifetime<any>, rx: Rx.Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }): void {
