@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.3.0
+
+### Minor Changes
+
+- [`5beb982`](https://github.com/tim-smart/effect-rx/commit/5beb98296e99724ed3b28cf3c2bfdc25155cda77) Thanks [@tim-smart](https://github.com/tim-smart)! - update dependencies
+
 ## 0.2.6
 
 ### Patch Changes
