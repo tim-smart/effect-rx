@@ -23,6 +23,11 @@ Added in v1.0.0
   - [useRxSuspense](#userxsuspense)
   - [useRxSuspenseSuccess](#userxsuspensesuccess)
   - [useRxValue](#userxvalue)
+- [modules](#modules)
+  - [From "@effect-rx/rx/Registry"](#from-effect-rxrxregistry)
+  - [From "@effect-rx/rx/Result"](#from-effect-rxrxresult)
+  - [From "@effect-rx/rx/Rx"](#from-effect-rxrxrx)
+  - [From "@effect-rx/rx/RxRef"](#from-effect-rxrxrxref)
 
 ---
 
@@ -124,6 +129,56 @@ Added in v1.0.0
 
 ```ts
 export declare const useRxValue: <A>(rx: Rx.Rx<A>) => A
+```
+
+Added in v1.0.0
+
+# modules
+
+## From "@effect-rx/rx/Registry"
+
+Re-exports all named exports from the "@effect-rx/rx/Registry" module.
+
+**Signature**
+
+```ts
+export * from '@effect-rx/rx/Registry'
+```
+
+Added in v1.0.0
+
+## From "@effect-rx/rx/Result"
+
+Re-exports all named exports from the "@effect-rx/rx/Result" module.
+
+**Signature**
+
+```ts
+export * from '@effect-rx/rx/Result'
+```
+
+Added in v1.0.0
+
+## From "@effect-rx/rx/Rx"
+
+Re-exports all named exports from the "@effect-rx/rx/Rx" module.
+
+**Signature**
+
+```ts
+export * from '@effect-rx/rx/Rx'
+```
+
+Added in v1.0.0
+
+## From "@effect-rx/rx/RxRef"
+
+Re-exports all named exports from the "@effect-rx/rx/RxRef" module.
+
+**Signature**
+
+```ts
+export * from '@effect-rx/rx/RxRef'
 ```
 
 Added in v1.0.0

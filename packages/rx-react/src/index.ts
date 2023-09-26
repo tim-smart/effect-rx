@@ -9,9 +9,25 @@ import { globalValue } from "@effect/data/GlobalValue"
 import * as Cause from "@effect/io/Cause"
 import * as React from "react"
 
+/**
+ * @since 1.0.0
+ * @category modules
+ */
 export * as Registry from "@effect-rx/rx/Registry"
+/**
+ * @since 1.0.0
+ * @category modules
+ */
 export * as Result from "@effect-rx/rx/Result"
+/**
+ * @since 1.0.0
+ * @category modules
+ */
 export * as Rx from "@effect-rx/rx/Rx"
+/**
+ * @since 1.0.0
+ * @category modules
+ */
 export * as RxRef from "@effect-rx/rx/RxRef"
 
 /**

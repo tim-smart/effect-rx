@@ -496,7 +496,7 @@ export const runtime: {
     ? scoped(() =>
       Effect.flatMap(
         Layer.build(layer),
-        (context) => Effect.provideSomeContext(Effect.runtime<A>(), context)
+        (context) => Effect.provide(Effect.runtime<A>(), context)
       ), { runtime: options.runtime })
     : scoped(() => Layer.toRuntime(layer) as Effect.Effect<Scope.Scope, E, Runtime.Runtime<A>>)
 
