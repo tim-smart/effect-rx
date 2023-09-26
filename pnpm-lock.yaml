@@ -132,6 +132,9 @@ importers:
         specifier: workspace:^
         version: link:../rx/dist
     devDependencies:
+      '@effect/data':
+        specifier: ^0.18.6
+        version: 0.18.6
       '@effect/io':
         specifier: ^0.41.0
         version: 0.41.0(@effect/data@0.18.6)
