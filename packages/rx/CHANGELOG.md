@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.2.6
+
+### Patch Changes
+
+- [`4e173d5`](https://github.com/tim-smart/effect-rx/commit/4e173d5a727b19ffb0312b966fdee905814c344c) Thanks [@tim-smart](https://github.com/tim-smart)! - fix \*Fn not running for constant return values
+
 ## 0.2.5
 
 ### Patch Changes
