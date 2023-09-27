@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.3.3
+
+### Patch Changes
+
+- [`aec6e5c`](https://github.com/tim-smart/effect-rx/commit/aec6e5cebf3ed726b9a0f47acf4620bf6db99314) Thanks [@tim-smart](https://github.com/tim-smart)! - add useRxSetPromise hook
+
 ## 0.3.2
 
 ### Patch Changes
