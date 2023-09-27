@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.3.4
+
+### Patch Changes
+
+- [`c959696`](https://github.com/tim-smart/effect-rx/commit/c959696bf0eb5d8cd4336fef926813f9e9d304a3) Thanks [@tim-smart](https://github.com/tim-smart)! - add selector to useRxValue
+
 ## 0.3.3
 
 ### Patch Changes
