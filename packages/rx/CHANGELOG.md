@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.3.2
+
+### Patch Changes
+
+- [`aa23958`](https://github.com/tim-smart/effect-rx/commit/aa23958ae7180ebde11b544b39a9c6e4ac865f33) Thanks [@tim-smart](https://github.com/tim-smart)! - add useRxSubscribe hook
+
 ## 0.3.1
 
 ### Patch Changes
