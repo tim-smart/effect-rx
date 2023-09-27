@@ -7,6 +7,7 @@ import * as Rx from "@effect-rx/rx/Rx"
 import type * as RxRef from "@effect-rx/rx/RxRef"
 import { globalValue } from "@effect/data/GlobalValue"
 import * as Cause from "@effect/io/Cause"
+import type * as Exit from "@effect/io/Exit"
 import * as React from "react"
 
 /**
@@ -93,6 +94,40 @@ function setRx<R, W>(registry: Registry.Registry, rx: Rx.Writable<R, W>): (_: W 
   }, [registry, rx])
 }
 
+function setRxPromise<E, A, W>(
+  registry: Registry.Registry,
+  rx: Rx.Writable<Result.Result<E, A>, W>
+): (_: W) => Promise<Exit.Exit<E, A>> {
+  const cancelRef = React.useRef<Set<() => void>>(undefined as any)
+  if (!cancelRef.current) {
+    cancelRef.current = new Set()
+  }
+  React.useEffect(() => () => {
+    cancelRef.current.forEach((cancel) => cancel())
+    cancelRef.current.clear()
+  }, [])
+
+  return React.useCallback((value) => {
+    registry.set(rx, value)
+
+    return new Promise((resolve) => {
+      const value = registry.get(rx)
+      if (Result.isSuccess(value) || Result.isFailure(value)) {
+        resolve(Result.toExit(value) as any)
+      } else {
+        const cancel = registry.subscribe(rx, (value) => {
+          if (Result.isSuccess(value) || Result.isFailure(value)) {
+            cancelRef.current.delete(cancel)
+            cancel()
+            resolve(Result.toExit(value) as any)
+          }
+        })
+        cancelRef.current.add(cancel)
+      }
+    })
+  }, [registry, rx])
+}
+
 /**
  * @since 1.0.0
  * @category hooks
@@ -110,6 +145,17 @@ export const useRxSet = <R, W>(rx: Rx.Writable<R, W>): (_: W | ((_: R) => W)) =>
   const registry = React.useContext(RegistryContext)
   mountRx(registry, rx)
   return setRx(registry, rx)
+}
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
+export const useRxSetPromise = <E, A, W>(
+  rx: Rx.Writable<Result.Result<E, A>, W>
+): (_: W) => Promise<Exit.Exit<E, A>> => {
+  const registry = React.useContext(RegistryContext)
+  return setRxPromise(registry, rx)
 }
 
 /**

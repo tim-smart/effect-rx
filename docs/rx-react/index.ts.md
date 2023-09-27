@@ -20,6 +20,7 @@ Added in v1.0.0
   - [useRxRef](#userxref)
   - [useRxRefresh](#userxrefresh)
   - [useRxSet](#userxset)
+  - [useRxSetPromise](#userxsetpromise)
   - [useRxSubcribe](#userxsubcribe)
   - [useRxSuspense](#userxsuspense)
   - [useRxSuspenseSuccess](#userxsuspensesuccess)
@@ -94,6 +95,18 @@ Added in v1.0.0
 
 ```ts
 export declare const useRxSet: <R, W>(rx: Rx.Writable<R, W>) => (_: W | ((_: R) => W)) => void
+```
+
+Added in v1.0.0
+
+## useRxSetPromise
+
+**Signature**
+
+```ts
+export declare const useRxSetPromise: <E, A, W>(
+  rx: Rx.Writable<Result.Result<E, A>, W>
+) => (_: W) => Promise<Exit.Exit<E, A>>
 ```
 
 Added in v1.0.0
