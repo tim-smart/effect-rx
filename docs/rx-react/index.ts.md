@@ -21,7 +21,7 @@ Added in v1.0.0
   - [useRxRefresh](#userxrefresh)
   - [useRxSet](#userxset)
   - [useRxSetPromise](#userxsetpromise)
-  - [useRxSubcribe](#userxsubcribe)
+  - [useRxSubscribe](#userxsubscribe)
   - [useRxSuspense](#userxsuspense)
   - [useRxSuspenseSuccess](#userxsuspensesuccess)
   - [useRxValue](#userxvalue)
@@ -111,12 +111,12 @@ export declare const useRxSetPromise: <E, A, W>(
 
 Added in v1.0.0
 
-## useRxSubcribe
+## useRxSubscribe
 
 **Signature**
 
 ```ts
-export declare const useRxSubcribe: <A>(
+export declare const useRxSubscribe: <A>(
   rx: Rx.Rx<A>,
   f: (_: A) => void,
   options?: { readonly immediate?: boolean }
@@ -156,7 +156,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRxValue: <A>(rx: Rx.Rx<A>) => A
+export declare const useRxValue: { <A>(rx: Rx.Rx<A>): A; <A, B>(rx: Rx.Rx<A>, f: (_: A) => B): B }
 ```
 
 Added in v1.0.0

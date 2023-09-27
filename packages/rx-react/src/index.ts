@@ -74,8 +74,15 @@ function useStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): A {
  * @since 1.0.0
  * @category hooks
  */
-export const useRxValue = <A>(rx: Rx.Rx<A>): A => {
+export const useRxValue: {
+  <A>(rx: Rx.Rx<A>): A
+  <A, B>(rx: Rx.Rx<A>, f: (_: A) => B): B
+} = <A>(rx: Rx.Rx<A>, f?: (_: A) => A): A => {
   const registry = React.useContext(RegistryContext)
+  if (f) {
+    const rxB = React.useMemo(() => Rx.map(rx, f), [rx, f])
+    return useStore(registry, rxB)
+  }
   return useStore(registry, rx)
 }
 
@@ -284,7 +291,7 @@ export const useRxSuspenseSuccess = <E, A>(
  * @since 1.0.0
  * @category hooks
  */
-export const useRxSubcribe = <A>(
+export const useRxSubscribe = <A>(
   rx: Rx.Rx<A>,
   f: (_: A) => void,
   options?: { readonly immediate?: boolean }
