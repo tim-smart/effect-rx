@@ -238,6 +238,22 @@ export const useRxSuspenseSuccess = <E, A>(
  * @since 1.0.0
  * @category hooks
  */
+export const useRxSubcribe = <A>(
+  rx: Rx.Rx<A>,
+  f: (_: A) => void,
+  options?: { readonly immediate?: boolean }
+): void => {
+  const registry = React.useContext(RegistryContext)
+  React.useEffect(
+    () => registry.subscribe(rx, f, options),
+    [registry, rx, f, options?.immediate]
+  )
+}
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
 export const useRxRef = <A>(ref: RxRef.ReadonlyRef<A>): A => {
   const [value, setValue] = React.useState(ref.value)
   React.useEffect(() => ref.subscribe(setValue), [ref])

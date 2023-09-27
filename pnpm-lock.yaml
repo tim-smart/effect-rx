@@ -119,11 +119,11 @@ importers:
         specifier: ^0.18.6
         version: 0.18.6
       '@effect/io':
-        specifier: ^0.41.0
-        version: 0.41.0(@effect/data@0.18.6)
+        specifier: ^0.41.1
+        version: 0.41.1(@effect/data@0.18.6)
       '@effect/stream':
         specifier: ^0.37.0
-        version: 0.37.0(@effect/data@0.18.6)(@effect/io@0.41.0)
+        version: 0.37.0(@effect/data@0.18.6)(@effect/io@0.41.1)
     publishDirectory: dist
 
   packages/rx-react:
@@ -136,11 +136,11 @@ importers:
         specifier: ^0.18.6
         version: 0.18.6
       '@effect/io':
-        specifier: ^0.41.0
-        version: 0.41.0(@effect/data@0.18.6)
+        specifier: ^0.41.1
+        version: 0.41.1(@effect/data@0.18.6)
       '@types/react':
-        specifier: ^18.2.22
-        version: 18.2.22
+        specifier: ^18.2.23
+        version: 18.2.23
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -704,8 +704,8 @@ packages:
       diff: 5.1.0
     dev: true
 
-  /@effect/io@0.41.0(@effect/data@0.18.6):
-    resolution: {integrity: sha512-gCjntDN3lbUh8wVQnwNoYlugNlWESZWsVkBFPfmOf2439EptHkvdEDNA47vR4OSB3lcqhH+J5jJHi2KWnEbRew==}
+  /@effect/io@0.41.1(@effect/data@0.18.6):
+    resolution: {integrity: sha512-gJ9fdN7GKkC1sryroy/bsFYugVFyjY2mhY/hwVQwLHxYluje0b5tRr7kpUnbG0ntSvuPS0JVe1604ppGUmym0g==}
     peerDependencies:
       '@effect/data': ^0.18.5
     dependencies:
@@ -716,14 +716,14 @@ packages:
     resolution: {integrity: sha512-e8vfKbjnbYiyneBincEFS0tzXluopGK77OkVFbPRtUbNDS5tJfb+jiwOQEiqASDsadcZmd+9J9+Q6v/z7GuN2g==}
     dev: true
 
-  /@effect/stream@0.37.0(@effect/data@0.18.6)(@effect/io@0.41.0):
+  /@effect/stream@0.37.0(@effect/data@0.18.6)(@effect/io@0.41.1):
     resolution: {integrity: sha512-fa5OeBCta/nmllMl3CZhgTUJseAlUsFFojMrEjIOW3HJrnz7VbJV1mceJuWSgNkrM2lhIXmWEVBBrZPjH63kEA==}
     peerDependencies:
       '@effect/data': ^0.18.6
       '@effect/io': ^0.41.0
     dependencies:
       '@effect/data': 0.18.6
-      '@effect/io': 0.41.0(@effect/data@0.18.6)
+      '@effect/io': 0.41.1(@effect/data@0.18.6)
     dev: true
 
   /@esbuild/android-arm64@0.18.20:
@@ -1221,20 +1221,20 @@ packages:
     resolution: {integrity: sha512-lqa4UEhhv/2sjjIQgjX8B+RBjj47eo0mzGasklVJ78UKGQY1r0VpB9XHDaZZO9qzEFDdy4MrXLuEaSmPrPSe/A==}
     dev: true
 
-  /@types/prop-types@15.7.6:
-    resolution: {integrity: sha512-RK/kBbYOQQHLYj9Z95eh7S6t7gq4Ojt/NT8HTk8bWVhA5DaF+5SMnxHKkP4gPNN3wAZkKP+VjAf0ebtYzf+fxg==}
+  /@types/prop-types@15.7.7:
+    resolution: {integrity: sha512-FbtmBWCcSa2J4zL781Zf1p5YUBXQomPEcep9QZCfRfQgTxz3pJWiDFLebohZ9fFntX5ibzOkSsrJ0TEew8cAog==}
     dev: true
 
-  /@types/react@18.2.22:
-    resolution: {integrity: sha512-60fLTOLqzarLED2O3UQImc/lsNRgG0jE/a1mPW9KjMemY0LMITWEsbS4VvZ4p6rorEHd5YKxxmMKSDK505GHpA==}
+  /@types/react@18.2.23:
+    resolution: {integrity: sha512-qHLW6n1q2+7KyBEYnrZpcsAmU/iiCh9WGCKgXvMxx89+TYdJWRjZohVIo9XTcoLhfX3+/hP0Pbulu3bCZQ9PSA==}
     dependencies:
-      '@types/prop-types': 15.7.6
-      '@types/scheduler': 0.16.3
+      '@types/prop-types': 15.7.7
+      '@types/scheduler': 0.16.4
       csstype: 3.1.2
     dev: true
 
-  /@types/scheduler@0.16.3:
-    resolution: {integrity: sha512-5cJ8CB4yAx7BH1oMvdU0Jh9lrEXyPkar6F9G/ERswkCuvP4KQZfZkSjcMbAICCpQTN4OuZn8tz0HiKv9TGZgrQ==}
+  /@types/scheduler@0.16.4:
+    resolution: {integrity: sha512-2L9ifAGl7wmXwP4v3pN4p2FLhD0O1qsJpvKmNin5VA8+UvNVb447UDaAEV6UdrkA+m/Xs58U1RFps44x6TFsVQ==}
     dev: true
 
   /@types/semver@7.5.3:

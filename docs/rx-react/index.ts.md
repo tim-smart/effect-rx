@@ -20,6 +20,7 @@ Added in v1.0.0
   - [useRxRef](#userxref)
   - [useRxRefresh](#userxrefresh)
   - [useRxSet](#userxset)
+  - [useRxSubcribe](#userxsubcribe)
   - [useRxSuspense](#userxsuspense)
   - [useRxSuspenseSuccess](#userxsuspensesuccess)
   - [useRxValue](#userxvalue)
@@ -93,6 +94,20 @@ Added in v1.0.0
 
 ```ts
 export declare const useRxSet: <R, W>(rx: Rx.Writable<R, W>) => (_: W | ((_: R) => W)) => void
+```
+
+Added in v1.0.0
+
+## useRxSubcribe
+
+**Signature**
+
+```ts
+export declare const useRxSubcribe: <A>(
+  rx: Rx.Rx<A>,
+  f: (_: A) => void,
+  options?: { readonly immediate?: boolean }
+) => void
 ```
 
 Added in v1.0.0
