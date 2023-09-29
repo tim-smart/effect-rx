@@ -1,9 +1,9 @@
 /**
  * @since 1.0.0
  */
-import * as Equal from "@effect/data/Equal"
-import { globalValue } from "@effect/data/GlobalValue"
-import * as Hash from "@effect/data/Hash"
+import * as Equal from "effect/Equal"
+import { globalValue } from "effect/GlobalValue"
+import * as Hash from "effect/Hash"
 
 /**
  * @since 1.0.0

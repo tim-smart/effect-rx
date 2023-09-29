@@ -1,12 +1,12 @@
 import type * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import type * as Rx from "@effect-rx/rx/Rx"
-import * as Equal from "@effect/data/Equal"
-import { globalValue } from "@effect/data/GlobalValue"
-import * as Option from "@effect/data/Option"
-import type { NoSuchElementException } from "@effect/io/Cause"
-import * as Effect from "@effect/io/Effect"
-import type { Exit } from "@effect/io/Exit"
+import type { NoSuchElementException } from "effect/Cause"
+import * as Effect from "effect/Effect"
+import * as Equal from "effect/Equal"
+import type { Exit } from "effect/Exit"
+import { globalValue } from "effect/GlobalValue"
+import * as Option from "effect/Option"
 
 const constImmediate = { immediate: true }
 function constListener(_: any) {}

@@ -1,12 +1,12 @@
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
-import * as Context from "@effect/data/Context"
-import * as Hash from "@effect/data/Hash"
-import * as Option from "@effect/data/Option"
-import * as Effect from "@effect/io/Effect"
-import * as Layer from "@effect/io/Layer"
-import * as Stream from "@effect/stream/Stream"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Hash from "effect/Hash"
+import * as Layer from "effect/Layer"
+import * as Option from "effect/Option"
+import * as Stream from "effect/Stream"
 
 describe("Rx", () => {
   it("get/set", () => {

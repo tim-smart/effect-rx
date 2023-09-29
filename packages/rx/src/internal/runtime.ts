@@ -1,11 +1,11 @@
 /**
  * @since 1.0.0
  */
-import { NoSuchElementException } from "@effect/io/Cause"
-import * as Effect from "@effect/io/Effect"
-import * as Exit from "@effect/io/Exit"
-import * as Runtime from "@effect/io/Runtime"
-import { SyncScheduler } from "@effect/io/Scheduler"
+import { NoSuchElementException } from "effect/Cause"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import * as Runtime from "effect/Runtime"
+import { SyncScheduler } from "effect/Scheduler"
 
 const fastPath = <R, E, A>(effect: Effect.Effect<R, E, A>): Exit.Exit<E, A> | undefined => {
   const op = effect as any

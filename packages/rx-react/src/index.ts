@@ -5,9 +5,9 @@ import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
 import type * as RxRef from "@effect-rx/rx/RxRef"
-import { globalValue } from "@effect/data/GlobalValue"
-import * as Cause from "@effect/io/Cause"
-import type * as Exit from "@effect/io/Exit"
+import * as Cause from "effect/Cause"
+import type * as Exit from "effect/Exit"
+import { globalValue } from "effect/GlobalValue"
 import * as React from "react"
 
 /**

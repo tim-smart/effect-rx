@@ -1,12 +1,12 @@
 /**
  * @since 1.0.0
  */
-import * as Data from "@effect/data/Data"
-import { dual, identity } from "@effect/data/Function"
-import * as Option from "@effect/data/Option"
-import { type Pipeable, pipeArguments } from "@effect/data/Pipeable"
-import * as Cause from "@effect/io/Cause"
-import * as Exit from "@effect/io/Exit"
+import * as Cause from "effect/Cause"
+import * as Data from "effect/Data"
+import * as Exit from "effect/Exit"
+import { dual, identity } from "effect/Function"
+import * as Option from "effect/Option"
+import { type Pipeable, pipeArguments } from "effect/Pipeable"
 
 /**
  * @since 1.0.0
