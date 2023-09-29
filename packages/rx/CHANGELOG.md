@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.4.0
+
+### Minor Changes
+
+- [`4e93d76`](https://github.com/tim-smart/effect-rx/commit/4e93d76a5804599805ff7652113d0b7e38288b8e) Thanks [@tim-smart](https://github.com/tim-smart)! - update to effect package
+
 ## 0.3.2
 
 ### Patch Changes
