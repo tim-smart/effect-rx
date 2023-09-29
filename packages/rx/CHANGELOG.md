@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.4.1
+
+### Patch Changes
+
+- [`dbfeeba`](https://github.com/tim-smart/effect-rx/commit/dbfeeba12522415ed132996a11a9e3a6e44bb6fb) Thanks [@tim-smart](https://github.com/tim-smart)! - update effect
+
 ## 0.4.0
 
 ### Minor Changes
