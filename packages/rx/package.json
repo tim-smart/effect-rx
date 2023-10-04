@@ -1,6 +1,6 @@
 {
   "name": "@effect-rx/rx",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Reactive toolkit for Effect",
   "main": "dist/effect-rx-rx.cjs.js",
   "module": "dist/effect-rx-rx.esm.js",
