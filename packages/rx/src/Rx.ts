@@ -1,9 +1,6 @@
 /**
  * @since 1.0.0
  */
-import * as internalRegistry from "@effect-rx/rx/internal/registry"
-import { runCallbackSync, runCallbackSyncDefault } from "@effect-rx/rx/internal/runtime"
-import * as Result from "@effect-rx/rx/Result"
 import { NoSuchElementException } from "effect/Cause"
 import * as Chunk from "effect/Chunk"
 import * as Effect from "effect/Effect"
@@ -17,6 +14,9 @@ import { type Pipeable, pipeArguments } from "effect/Pipeable"
 import type * as Runtime from "effect/Runtime"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
+import * as internalRegistry from "./internal/registry"
+import { runCallbackSync, runCallbackSyncDefault } from "./internal/runtime"
+import * as Result from "./Result"
 
 /**
  * @since 1.0.0

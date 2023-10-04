@@ -10,8 +10,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "preserveSymlinks": true,
-    "moduleResolution": "node",
-    "noEmit": false,
+    "moduleResolution": "NodeNext",
     "lib": ["ES2021", "DOM", "DOM.Iterable"],
     "sourceMap": true,
     "declarationMap": true,
@@ -30,20 +29,20 @@
     "noImplicitThis": true,
     "noUncheckedIndexedAccess": false,
     "strictNullChecks": true,
-    "baseUrl": ".",
     "target": "ES2021",
-    "module": "ES6",
+    "module": "NodeNext",
     "incremental": true,
     "removeComments": false,
+    "baseUrl": ".",
     "paths": {
       "@effect-rx/rx/test/*": ["./packages/rx/test/*"],
-      "@effect-rx/rx/examples/*": ["./packages/rx/examples/*"],
-      "@effect-rx/rx/*": ["./packages/rx/src/*"],
-
+      "@effect-rx/rx/*": ["./packages/rx/src/*.ts"],
+      "@effect-rx/rx": ["./packages/rx/src/index.ts"],
       "@effect-rx/rx-react/test/*": ["./packages/rx-react/test/*"],
-      "@effect-rx/rx-react/examples/*": ["./packages/rx-react/examples/*"],
-      "@effect-rx/rx-react/*": ["./packages/rx-react/src/*"]
+      "@effect-rx/rx-react/*": ["./packages/rx-react/src/*.ts"],
+      "@effect-rx/rx-react": ["./packages/rx-react/src/index.ts"]
     },
+    "types": ["vitest/globals", "node"],
     "plugins": [{ "name": "@effect/language-service" }]
   },
   "include": [],

@@ -1,7 +1,0 @@
-{
-  "plugins": [
-    ["@effect/babel-plugin"],
-    ["@babel/transform-modules-commonjs"],
-    ["annotate-pure-calls"]
-  ]
-}

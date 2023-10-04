@@ -1,3 +1,0 @@
-{
-  "plugins": [["@effect/babel-plugin"], ["annotate-pure-calls"]]
-}
