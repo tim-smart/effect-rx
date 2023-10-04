@@ -16,7 +16,6 @@
   },
   "scripts": {
     "changeset": "changeset",
-    "release": "changeset publish",
     "clean": "node scripts/clean.mjs",
     "gen": "build-utils prepare-v1",
     "build": "pnpm gen && preconstruct fix && preconstruct build && pnpm gen",

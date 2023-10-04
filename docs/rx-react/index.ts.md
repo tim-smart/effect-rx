@@ -165,48 +165,48 @@ Added in v1.0.0
 
 ## From "@effect-rx/rx/Registry"
 
-Re-exports all named exports from the "@effect-rx/rx/Registry" module.
+Re-exports all named exports from the "@effect-rx/rx/Registry" module as "Registry".
 
 **Signature**
 
 ```ts
-export * from '@effect-rx/rx/Registry'
+export * as Registry from '@effect-rx/rx/Registry'
 ```
 
 Added in v1.0.0
 
 ## From "@effect-rx/rx/Result"
 
-Re-exports all named exports from the "@effect-rx/rx/Result" module.
+Re-exports all named exports from the "@effect-rx/rx/Result" module as "Result".
 
 **Signature**
 
 ```ts
-export * from '@effect-rx/rx/Result'
+export * as Result from '@effect-rx/rx/Result'
 ```
 
 Added in v1.0.0
 
 ## From "@effect-rx/rx/Rx"
 
-Re-exports all named exports from the "@effect-rx/rx/Rx" module.
+Re-exports all named exports from the "@effect-rx/rx/Rx" module as "Rx".
 
 **Signature**
 
 ```ts
-export * from '@effect-rx/rx/Rx'
+export * as Rx from '@effect-rx/rx/Rx'
 ```
 
 Added in v1.0.0
 
 ## From "@effect-rx/rx/RxRef"
 
-Re-exports all named exports from the "@effect-rx/rx/RxRef" module.
+Re-exports all named exports from the "@effect-rx/rx/RxRef" module as "RxRef".
 
 **Signature**
 
 ```ts
-export * from '@effect-rx/rx/RxRef'
+export * as RxRef from '@effect-rx/rx/RxRef'
 ```
 
 Added in v1.0.0
