@@ -134,11 +134,13 @@ class Node<A> {
   constructor(
     readonly registry: RegistryImpl,
     readonly rx: Rx.Rx<A>
-  ) {}
+  ) {
+    this.writeContext = new WriteContextImpl(registry, this)
+  }
 
   state: NodeState = NodeState.uninitialized
   lifetime: Lifetime<A> | undefined
-  writeContext = new WriteContextImpl(this.registry, this)
+  writeContext: WriteContextImpl<A>
 
   parents: Array<Node<any>> = []
   previousParents: Array<Node<any>> | undefined
