@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.5.1
+
+### Patch Changes
+
+- [`120408c`](https://github.com/tim-smart/effect-rx/commit/120408ca45d997e14104807cba8ead94333f3479) Thanks [@tim-smart](https://github.com/tim-smart)! - update effect
+
 ## 0.5.0
 
 ### Minor Changes
