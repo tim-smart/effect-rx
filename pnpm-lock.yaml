@@ -113,8 +113,8 @@ importers:
   packages/rx:
     devDependencies:
       effect:
-        specifier: 2.0.0-next.44
-        version: 2.0.0-next.44
+        specifier: 2.0.0-next.45
+        version: 2.0.0-next.45
 
   packages/rx-react:
     dependencies:
@@ -123,11 +123,11 @@ importers:
         version: link:../rx
     devDependencies:
       '@types/react':
-        specifier: ^18.2.24
-        version: 18.2.24
+        specifier: ^18.2.25
+        version: 18.2.25
       effect:
-        specifier: 2.0.0-next.44
-        version: 2.0.0-next.44
+        specifier: 2.0.0-next.45
+        version: 2.0.0-next.45
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1405,8 +1405,8 @@ packages:
     resolution: {integrity: sha512-kMpQpfZKSCBqltAJwskgePRaYRFukDkm1oItcAbC3gNELR20XIBcN9VRgg4+m8DKsTfkWeA4m4Imp4DDuWy7FQ==}
     dev: true
 
-  /@types/react@18.2.24:
-    resolution: {integrity: sha512-Ee0Jt4sbJxMu1iDcetZEIKQr99J1Zfb6D4F3qfUWoR1JpInkY1Wdg4WwCyBjL257D0+jGqSl1twBjV8iCaC0Aw==}
+  /@types/react@18.2.25:
+    resolution: {integrity: sha512-24xqse6+VByVLIr+xWaQ9muX1B4bXJKXBbjszbld/UEDslGLY53+ZucF44HCmLbMPejTzGG9XgR+3m2/Wqu1kw==}
     dependencies:
       '@types/prop-types': 15.7.8
       '@types/scheduler': 0.16.4
@@ -2570,8 +2570,8 @@ packages:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
     dev: true
 
-  /effect@2.0.0-next.44:
-    resolution: {integrity: sha512-0oBnoqWW5u1b0AhmDiGZ/TX8La697YcCrTacEBU7v+gKZeH+bbVJwPEqesGagot0sErBrvyE0H9h7Si4lHhkuA==}
+  /effect@2.0.0-next.45:
+    resolution: {integrity: sha512-cSapc9midRXsOJUx8o9lIzTPJW2NSviQ1jjHlSZM8UJbteLLqcb02ung+4pLjGyouP2AMQlgo02F7b2MvTWxcQ==}
     dev: true
 
   /electron-to-chromium@1.4.540:
