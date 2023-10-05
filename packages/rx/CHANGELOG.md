@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.5.2
+
+### Patch Changes
+
+- [`34a2d12`](https://github.com/tim-smart/effect-rx/commit/34a2d124050fe08ff097171e4f1d0e88b09a1dcb) Thanks [@tim-smart](https://github.com/tim-smart)! - fix for hermes
+
 ## 0.5.1
 
 ### Patch Changes
