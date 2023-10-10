@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.7.2
+
+### Patch Changes
+
+- [`1f3398e`](https://github.com/tim-smart/effect-rx/commit/1f3398e508c7d633f778782d8f508f47c5365dd2) Thanks [@tim-smart](https://github.com/tim-smart)! - add useRxRefProp hook
+
 ## 0.7.1
 
 ### Patch Changes
