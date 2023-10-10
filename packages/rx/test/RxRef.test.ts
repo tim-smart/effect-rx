@@ -19,6 +19,30 @@ describe("RxRef", () => {
       ref.set(0)
       assert.deepEqual(updates, [-1, -2, -3])
     })
+
+    test("prop", () => {
+      const parent = RxRef.make({
+        a: 0,
+        b: 1,
+        c: 2
+      })
+      const ref = parent.prop("a")
+
+      const updates: Array<number> = []
+      const cancel = ref.subscribe((_) => updates.push(_))
+
+      parent.update((_) => ({ ..._, a: -1 }))
+      parent.update((_) => ({ ..._, b: -2 }))
+
+      assert.deepEqual(updates, [-1])
+
+      ref.set(0)
+
+      assert.deepEqual(updates, [-1, 0])
+      assert.deepEqual(parent.value, { a: 0, b: -2, c: 2 })
+
+      cancel()
+    })
   })
 
   describe("collection", () => {

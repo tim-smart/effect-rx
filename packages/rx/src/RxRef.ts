@@ -34,6 +34,7 @@ export interface ReadonlyRef<A> extends Equal.Equal {
  * @category models
  */
 export interface RxRef<A> extends ReadonlyRef<A> {
+  readonly prop: <K extends keyof A>(prop: K) => RxRef<A[K]>
   readonly set: (value: A) => RxRef<A>
   readonly update: (f: (value: A) => A) => RxRef<A>
 }
@@ -112,6 +113,9 @@ class ReadonlyRefImpl<A> implements ReadonlyRef<A> {
 }
 
 class RxRefImpl<A> extends ReadonlyRefImpl<A> implements RxRef<A> {
+  prop<K extends keyof A>(prop: K): RxRef<A[K]> {
+    return new PropRefImpl(this, prop)
+  }
   set(value: A) {
     if (Equal.equals(value, this.value)) {
       return this
@@ -154,6 +158,54 @@ class MapRefImpl<A, B> implements ReadonlyRef<B> {
   }
   map<C>(f: (a: B) => C): ReadonlyRef<C> {
     return new MapRefImpl(this, f)
+  }
+}
+
+class PropRefImpl<A, K extends keyof A> implements RxRef<A[K]> {
+  readonly [TypeId]: TypeId
+  readonly key = keyState.generate()
+  constructor(readonly parent: RxRef<A>, readonly _prop: K) {
+    this[TypeId] = TypeId
+  }
+  [Equal.symbol](that: ReadonlyRef<A>) {
+    return Equal.equals(this.value, that.value)
+  }
+  [Hash.symbol]() {
+    return Hash.hash(this.value)
+  }
+  get value() {
+    return this.parent.value[this._prop]
+  }
+  subscribe(f: (a: A[K]) => void): () => void {
+    let previous = this.value
+    return this.parent.subscribe((a) => {
+      const next = a[this._prop]
+      if (Equal.equals(next, previous)) {
+        return
+      }
+      previous = next
+      f(next)
+    })
+  }
+  map<C>(f: (a: A[K]) => C): ReadonlyRef<C> {
+    return new MapRefImpl(this, f)
+  }
+  prop<CK extends keyof A[K]>(prop: CK): RxRef<A[K][CK]> {
+    return new PropRefImpl(this, prop)
+  }
+  set(value: A[K]): RxRef<A[K]> {
+    this.parent.set({
+      ...this.parent.value,
+      [this._prop]: value
+    })
+    return this
+  }
+  update(f: (value: A[K]) => A[K]): RxRef<A[K]> {
+    this.parent.set({
+      ...this.parent.value,
+      [this._prop]: f(this.parent.value[this._prop])
+    })
+    return this
   }
 }
 
