@@ -312,3 +312,11 @@ export const useRxRef = <A>(ref: RxRef.ReadonlyRef<A>): A => {
   React.useEffect(() => ref.subscribe(setValue), [ref])
   return value
 }
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
+export const useRxRefProp = <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K): RxRef.RxRef<A[K]> => {
+  return React.useMemo(() => ref.prop(prop), [ref, prop])
+}
