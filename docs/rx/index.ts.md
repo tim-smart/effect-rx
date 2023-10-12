@@ -24,7 +24,7 @@ Added in v1.0.0
 
 ## From "@effect-rx/rx/Registry"
 
-Re-exports all named exports from the "@effect-rx/rx/Registry" module as "Registry".
+Re-exports all named exports from the "@effect-rx/rx/Registry" module as `Registry`.
 
 **Signature**
 
@@ -36,7 +36,7 @@ Added in v1.0.0
 
 ## From "@effect-rx/rx/Result"
 
-Re-exports all named exports from the "@effect-rx/rx/Result" module as "Result".
+Re-exports all named exports from the "@effect-rx/rx/Result" module as `Result`.
 
 **Signature**
 
@@ -48,7 +48,7 @@ Added in v1.0.0
 
 ## From "@effect-rx/rx/Rx"
 
-Re-exports all named exports from the "@effect-rx/rx/Rx" module as "Rx".
+Re-exports all named exports from the "@effect-rx/rx/Rx" module as `Rx`.
 
 **Signature**
 
@@ -60,7 +60,7 @@ Added in v1.0.0
 
 ## From "@effect-rx/rx/RxRef"
 
-Re-exports all named exports from the "@effect-rx/rx/RxRef" module as "RxRef".
+Re-exports all named exports from the "@effect-rx/rx/RxRef" module as `RxRef`.
 
 **Signature**
 

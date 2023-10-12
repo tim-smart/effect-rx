@@ -18,6 +18,7 @@ Added in v1.0.0
   - [useRx](#userx)
   - [useRxMount](#userxmount)
   - [useRxRef](#userxref)
+  - [useRxRefProp](#userxrefprop)
   - [useRxRefresh](#userxrefresh)
   - [useRxSet](#userxset)
   - [useRxSetPromise](#userxsetpromise)
@@ -79,12 +80,22 @@ export declare const useRxRef: <A>(ref: RxRef.ReadonlyRef<A>) => A
 
 Added in v1.0.0
 
+## useRxRefProp
+
+**Signature**
+
+```ts
+export declare const useRxRefProp: <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K) => RxRef.RxRef<A[K]>
+```
+
+Added in v1.0.0
+
 ## useRxRefresh
 
 **Signature**
 
 ```ts
-export declare const useRxRefresh: <A>(rx: Rx.Rx<A> & Rx.Refreshable) => () => void
+export declare const useRxRefresh: <A>(rx: any) => () => void
 ```
 
 Added in v1.0.0
@@ -133,7 +144,7 @@ Added in v1.0.0
 export declare const useRxSuspense: <E, A>(
   rx: Rx.Rx<Result.Result<E, A>>,
   options?: { readonly suspendOnWaiting?: boolean }
-) => { readonly isWaiting: boolean; readonly value: Result.Success<E, A> | Result.Failure<E, A> }
+) => { readonly isWaiting: boolean; readonly value: any }
 ```
 
 Added in v1.0.0
@@ -165,7 +176,7 @@ Added in v1.0.0
 
 ## From "@effect-rx/rx/Registry"
 
-Re-exports all named exports from the "@effect-rx/rx/Registry" module as "Registry".
+Re-exports all named exports from the "@effect-rx/rx/Registry" module as `Registry`.
 
 **Signature**
 
@@ -177,7 +188,7 @@ Added in v1.0.0
 
 ## From "@effect-rx/rx/Result"
 
-Re-exports all named exports from the "@effect-rx/rx/Result" module as "Result".
+Re-exports all named exports from the "@effect-rx/rx/Result" module as `Result`.
 
 **Signature**
 
@@ -189,7 +200,7 @@ Added in v1.0.0
 
 ## From "@effect-rx/rx/Rx"
 
-Re-exports all named exports from the "@effect-rx/rx/Rx" module as "Rx".
+Re-exports all named exports from the "@effect-rx/rx/Rx" module as `Rx`.
 
 **Signature**
 
@@ -201,7 +212,7 @@ Added in v1.0.0
 
 ## From "@effect-rx/rx/RxRef"
 
-Re-exports all named exports from the "@effect-rx/rx/RxRef" module as "RxRef".
+Re-exports all named exports from the "@effect-rx/rx/RxRef" module as `RxRef`.
 
 **Signature**
 

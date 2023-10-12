@@ -86,6 +86,7 @@ Added in v1.0.0
 
 ```ts
 export interface RxRef<A> extends ReadonlyRef<A> {
+  readonly prop: <K extends keyof A>(prop: K) => RxRef<A[K]>
   readonly set: (value: A) => RxRef<A>
   readonly update: (f: (value: A) => A) => RxRef<A>
 }

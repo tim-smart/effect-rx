@@ -20,6 +20,7 @@ Added in v1.0.0
   - [map](#map)
   - [mapResult](#mapresult)
   - [refreshable](#refreshable)
+  - [setIdleTTL](#setidlettl)
   - [withLabel](#withlabel)
 - [constructors](#constructors)
   - [effect](#effect)
@@ -156,6 +157,19 @@ export declare const refreshable: <T extends Rx<any>>(self: T) => T & Refreshabl
 
 Added in v1.0.0
 
+## setIdleTTL
+
+**Signature**
+
+```ts
+export declare const setIdleTTL: {
+  (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, duration: Duration.DurationInput): A
+}
+```
+
+Added in v1.0.0
+
 ## withLabel
 
 **Signature**
@@ -163,7 +177,7 @@ Added in v1.0.0
 ```ts
 export declare const withLabel: {
   (name: string): <A extends Rx<any>>(self: A) => A
-  <A extends Rx<any>>(self: A, name: string): <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, name: string): A
 }
 ```
 
@@ -239,10 +253,19 @@ Added in v1.0.0
 
 ```ts
 export declare const runtime: {
-  <E, A>(layer: Layer.Layer<never, E, A>, options?: { readonly autoDispose?: boolean }): RxRuntime<E, A>
+  <E, A>(
+    layer: Layer.Layer<never, E, A>,
+    options?: { readonly autoDispose?: boolean; readonly idleTTL?: Duration.DurationInput }
+  ): RxRuntime<E, A>
   <R, E, A, RR extends R, RE>(
     layer: Layer.Layer<R, E, A>,
-    options?: { readonly autoDispose?: boolean | undefined; readonly runtime: RxRuntime<RE, RR> } | undefined
+    options?:
+      | {
+          readonly autoDispose?: boolean | undefined
+          readonly idleTTL?: Duration.DurationInput | undefined
+          readonly runtime: RxRuntime<RE, RR>
+        }
+      | undefined
   ): RxRuntime<E, A | RR>
 }
 ```
@@ -427,6 +450,7 @@ export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly read: Rx.Read<A>
   readonly refresh?: Rx.Refresh
   readonly label?: readonly [name: string, stack: string]
+  readonly idleTTL?: number
 }
 ```
 
