@@ -9,6 +9,7 @@ import * as Glob from "glob";
     ".ultra.cache.json",
     "build",
     "coverage",
+    "src/tsconfig.json",
     ...(pkg === "." ? [] : ["docs"]),
     ...files,
   ]

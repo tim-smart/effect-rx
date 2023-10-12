@@ -21,7 +21,10 @@ export const make = (options?: {
 
 class RegistryImpl implements Registry.Registry {
   readonly [TypeId]: Registry.TypeId
-  constructor(initialValues?: Iterable<readonly [Rx.Rx<any>, any]>) {
+  constructor(
+    initialValues?: Iterable<readonly [Rx.Rx<any>, any]>,
+    readonly timeoutResolution = 5000
+  ) {
     this[TypeId] = TypeId
     if (initialValues !== undefined) {
       for (const [rx, value] of initialValues) {
@@ -31,6 +34,9 @@ class RegistryImpl implements Registry.Registry {
   }
 
   private readonly nodes = new Map<Rx.Rx<any>, Node<any>>()
+  private readonly timeoutBuckets = new Map<number, readonly [nodes: Set<Node<any>>, handle: NodeJS.Timeout]>()
+  private readonly nodeTimeoutBucket = new Map<Node<any>, number>()
+  private disposed = false
 
   get<A>(rx: Rx.Rx<A>): A {
     return this.ensureNode(rx).value()
@@ -73,11 +79,17 @@ class RegistryImpl implements Registry.Registry {
     if (node === undefined) {
       node = this.createNode(rx)
       this.nodes.set(rx, node)
+    } else if (!rx.keepAlive && rx.idleTTL) {
+      this.removeNodeTimeout(node)
     }
     return node
   }
 
   createNode<A>(rx: Rx.Rx<A>): Node<A> {
+    if (this.disposed) {
+      throw new Error(`Cannot access Rx ${rx}: registry is disposed`)
+    }
+
     if (!rx.keepAlive) {
       this.scheduleRxRemoval(rx)
     }
@@ -106,14 +118,74 @@ class RegistryImpl implements Registry.Registry {
   }
 
   removeNode(node: Node<any>): void {
-    const parents = node.parents
-    this.nodes.delete(node.rx)
-    node.remove()
-    for (let i = 0; i < parents.length; i++) {
-      if (parents[i].canBeRemoved) {
-        this.removeNode(parents[i])
-      }
+    if (node.rx.idleTTL) {
+      this.setNodeTimeout(node)
+    } else {
+      this.nodes.delete(node.rx)
+      node.remove()
     }
+  }
+
+  setNodeTimeout(node: Node<any>): void {
+    if (this.nodeTimeoutBucket.has(node)) {
+      return
+    }
+
+    const ttl = Math.ceil(node.rx.idleTTL! / this.timeoutResolution) * this.timeoutResolution
+    const timestamp = Date.now() + ttl
+    const bucket = timestamp - (timestamp % this.timeoutResolution) + this.timeoutResolution
+
+    let entry = this.timeoutBuckets.get(bucket)
+    if (entry === undefined) {
+      entry = [
+        new Set<Node<any>>(),
+        setTimeout(() => this.sweepBucket(bucket), bucket - Date.now())
+      ]
+      this.timeoutBuckets.set(bucket, entry)
+    }
+    entry[0].add(node)
+    this.nodeTimeoutBucket.set(node, bucket)
+  }
+
+  removeNodeTimeout(node: Node<any>): void {
+    const bucket = this.nodeTimeoutBucket.get(node)
+    if (bucket === undefined) {
+      return
+    }
+    this.nodeTimeoutBucket.delete(node)
+    this.scheduleNodeRemoval(node)
+
+    const [nodes, handle] = this.timeoutBuckets.get(bucket)!
+    nodes.delete(node)
+    if (nodes.size === 0) {
+      clearTimeout(handle)
+      this.timeoutBuckets.delete(bucket)
+    }
+  }
+
+  sweepBucket(bucket: number): void {
+    const nodes = this.timeoutBuckets.get(bucket)![0]
+    this.timeoutBuckets.delete(bucket)
+
+    nodes.forEach((node) => {
+      if (!node.canBeRemoved) {
+        return
+      }
+      this.nodeTimeoutBucket.delete(node)
+      this.nodes.delete(node.rx)
+      node.remove()
+    })
+  }
+
+  dispose(): void {
+    this.disposed = true
+
+    this.timeoutBuckets.forEach(([, handle]) => clearTimeout(handle))
+    this.timeoutBuckets.clear()
+    this.nodeTimeoutBucket.clear()
+
+    this.nodes.forEach((node) => node.remove())
+    this.nodes.clear()
   }
 }
 
@@ -279,6 +351,7 @@ class Node<A> {
 
   remove() {
     this.state = NodeState.removed
+    this.listeners = []
 
     if (this.lifetime === undefined) {
       return

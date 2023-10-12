@@ -35,10 +35,10 @@
     "removeComments": false,
     "baseUrl": ".",
     "paths": {
-      "@effect-rx/rx/test/*": ["./packages/rx/test/*"],
+      "@effect-rx/rx/test/*": ["./packages/rx/test/*.ts"],
       "@effect-rx/rx/*": ["./packages/rx/src/*.ts"],
       "@effect-rx/rx": ["./packages/rx/src/index.ts"],
-      "@effect-rx/rx-react/test/*": ["./packages/rx-react/test/*"],
+      "@effect-rx/rx-react/test/*": ["./packages/rx-react/test/*.ts"],
       "@effect-rx/rx-react/*": ["./packages/rx-react/src/*.ts"],
       "@effect-rx/rx-react": ["./packages/rx-react/src/index.ts"]
     },

@@ -9,6 +9,13 @@ import * as Option from "effect/Option"
 import * as Stream from "effect/Stream"
 
 describe("Rx", () => {
+  beforeEach(() => {
+    vitest.useFakeTimers()
+  })
+  afterEach(() => {
+    vitest.useRealTimers()
+  })
+
   it("get/set", () => {
     const counter = Rx.state(0)
     const r = Registry.make()
@@ -236,7 +243,7 @@ describe("Rx", () => {
     let result = r.get(count)
     assert.strictEqual(result._tag, "Initial")
 
-    await new Promise((resolve) => setTimeout(resolve, 55))
+    await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert.strictEqual(result._tag, "Initial")
 
@@ -245,12 +252,12 @@ describe("Rx", () => {
     assert(Result.isWaiting(result))
     assert.strictEqual(result.previous._tag, "Initial")
 
-    await new Promise((resolve) => setTimeout(resolve, 55))
+    await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isWaiting(result))
     assert.deepEqual(Result.value(result), Option.some(1))
 
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isSuccess(result))
     assert.deepEqual(Result.value(result), Option.some(2))
@@ -260,12 +267,12 @@ describe("Rx", () => {
     assert(Result.isWaiting(result))
     assert.deepEqual(Result.value(result), Option.some(2))
 
-    await new Promise((resolve) => setTimeout(resolve, 55))
+    await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isWaiting(result))
     assert.deepEqual(Result.value(result), Option.some(5))
 
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isSuccess(result))
     assert.deepEqual(Result.value(result), Option.some(6))
@@ -289,7 +296,7 @@ describe("Rx", () => {
     assert(Result.isWaiting(result))
     assert(Option.isNone(Result.value(result)))
 
-    await new Promise((resolve) => setTimeout(resolve, 55))
+    await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isSuccess(result))
     assert.deepEqual(result.value, { done: false, items: [0] })
@@ -299,7 +306,7 @@ describe("Rx", () => {
     assert(Result.isWaiting(result))
     assert.deepEqual(Result.value(result), Option.some({ done: false, items: [0] }))
 
-    await new Promise((resolve) => setTimeout(resolve, 55))
+    await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isSuccess(result))
     assert.deepEqual(result.value, { done: false, items: [0, 1] })
@@ -314,7 +321,7 @@ describe("Rx", () => {
     assert(Result.isWaiting(result))
     assert.deepEqual(Result.value(result), Option.some({ done: true, items: [0, 1] }))
 
-    await new Promise((resolve) => setTimeout(resolve, 55))
+    await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isSuccess(result))
     assert.deepEqual(result.value, { done: false, items: [0] })
@@ -447,6 +454,42 @@ describe("Rx", () => {
     expect(r.get(state)).toEqual(10)
     await new Promise((resolve) => resolve(null))
     expect(r.get(state)).toEqual(0)
+  })
+
+  it("idleTTL", async () => {
+    const state = Rx.state(0).pipe(
+      Rx.setIdleTTL(2000)
+    )
+    const state2 = Rx.state(0).pipe(
+      Rx.setIdleTTL(10000)
+    )
+    const state3 = Rx.state(0).pipe(
+      Rx.setIdleTTL(3000)
+    )
+    const r = Registry.make()
+    r.set(state, 10)
+    r.set(state2, 10)
+    r.set(state3, 10)
+    expect(r.get(state)).toEqual(10)
+    expect(r.get(state2)).toEqual(10)
+    expect(r.get(state3)).toEqual(10)
+    await new Promise((resolve) => resolve(null))
+    expect(r.get(state)).toEqual(10)
+    expect(r.get(state2)).toEqual(10)
+    expect(r.get(state3)).toEqual(10)
+
+    await new Promise((resolve) => resolve(null))
+    console.log(r)
+    await vitest.advanceTimersByTimeAsync(10000)
+    expect(r.get(state)).toEqual(0)
+    expect(r.get(state2)).toEqual(10)
+    expect(r.get(state3)).toEqual(0)
+
+    await new Promise((resolve) => resolve(null))
+    await vitest.advanceTimersByTimeAsync(20000)
+    expect(r.get(state)).toEqual(0)
+    expect(r.get(state2)).toEqual(0)
+    expect(r.get(state3)).toEqual(0)
   })
 })
 

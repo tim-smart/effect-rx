@@ -3,6 +3,7 @@
  */
 import { NoSuchElementException } from "effect/Cause"
 import * as Chunk from "effect/Chunk"
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import { dual, pipe } from "effect/Function"
@@ -40,6 +41,7 @@ export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly read: Rx.Read<A>
   readonly refresh?: Rx.Refresh
   readonly label?: readonly [name: string, stack: string]
+  readonly idleTTL?: number
 }
 
 /**
@@ -484,16 +486,19 @@ export interface RxRuntime<E, A> extends Rx<Result.Result<E, Runtime.Runtime<A>>
 export const runtime: {
   <E, A>(layer: Layer.Layer<never, E, A>, options?: {
     readonly autoDispose?: boolean
+    readonly idleTTL?: Duration.DurationInput
   }): RxRuntime<E, A>
   <R, E, A, RR extends R, RE>(layer: Layer.Layer<R, E, A>, options?: {
     readonly autoDispose?: boolean
+    readonly idleTTL?: Duration.DurationInput
     readonly runtime: RxRuntime<RE, RR>
   }): RxRuntime<E, A | RR>
 } = <R, E, A, RE>(layer: Layer.Layer<R, E, A>, options?: {
   readonly autoDispose?: boolean
+  readonly idleTTL?: Duration.DurationInput
   readonly runtime?: RxRuntime<RE, R>
 }): RxRuntime<E | RE, A> => {
-  const rx = options?.runtime
+  let rx = options?.runtime
     ? scoped(() =>
       Effect.flatMap(
         Layer.build(layer),
@@ -501,7 +506,14 @@ export const runtime: {
       ), { runtime: options.runtime })
     : scoped(() => Layer.toRuntime(layer) as Effect.Effect<Scope.Scope, E, Runtime.Runtime<A>>)
 
-  return options?.autoDispose ? rx : keepAlive(rx)
+  if (options?.idleTTL !== undefined) {
+    rx = setIdleTTL(rx, options.idleTTL)
+  }
+  if (options?.autoDispose !== true) {
+    rx = keepAlive(rx)
+  }
+
+  return rx
 }
 
 function makeStream<E, A>(
@@ -766,7 +778,7 @@ export const refreshable = <T extends Rx<any>>(
  */
 export const withLabel: {
   (name: string): <A extends Rx<any>>(self: A) => A
-  <A extends Rx<any>>(self: A, name: string): <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, name: string): A
 } = dual<
   (name: string) => <A extends Rx<any>>(self: A) => A,
   <A extends Rx<any>>(self: A, name: string) => A
@@ -774,6 +786,22 @@ export const withLabel: {
   Object.assign(Object.create(Object.getPrototypeOf(self)), {
     ...self,
     label: [name, new Error().stack?.split("\n")[5] ?? ""]
+  }))
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const setIdleTTL: {
+  (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, duration: Duration.DurationInput): A
+} = dual<
+  (duration: Duration.DurationInput) => <A extends Rx<any>>(self: A) => A,
+  <A extends Rx<any>>(self: A, duration: Duration.DurationInput) => A
+>(2, (self, duration) =>
+  Object.assign(Object.create(Object.getPrototypeOf(self)), {
+    ...self,
+    idleTTL: Duration.toMillis(duration)
   }))
 
 /**
