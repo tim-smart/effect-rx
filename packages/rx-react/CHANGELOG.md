@@ -1,5 +1,12 @@
 # @effect-rx/rx-react
 
+## 0.7.3
+
+### Patch Changes
+
+- Updated dependencies [[`bb9c0f2`](https://github.com/tim-smart/effect-rx/commit/bb9c0f24258c6073439d5b817e137a61ae75ca41)]:
+  - @effect-rx/rx@0.7.2
+
 ## 0.7.2
 
 ### Patch Changes

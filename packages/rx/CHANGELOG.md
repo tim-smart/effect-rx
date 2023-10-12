@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.7.2
+
+### Patch Changes
+
+- [`bb9c0f2`](https://github.com/tim-smart/effect-rx/commit/bb9c0f24258c6073439d5b817e137a61ae75ca41) Thanks [@tim-smart](https://github.com/tim-smart)! - add idleTTL for non-keepAlive Rx's
+
 ## 0.7.1
 
 ### Patch Changes
