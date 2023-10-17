@@ -38,10 +38,10 @@
   "license": "MIT",
   "sideEffects": [],
   "devDependencies": {
-    "effect": "2.0.0-next.48"
+    "effect": "2.0.0-next.49"
   },
   "peerDependencies": {
-    "effect": "2.0.0-next.48"
+    "effect": "2.0.0-next.49"
   },
   "files": [
     "src",
