@@ -1,5 +1,16 @@
 # @effect-rx/rx-react
 
+## 0.9.0
+
+### Minor Changes
+
+- [`2bb0eae`](https://github.com/tim-smart/effect-rx/commit/2bb0eae545a47a368e655893f80a1a153bc756c9) Thanks [@tim-smart](https://github.com/tim-smart)! - update effect
+
+### Patch Changes
+
+- Updated dependencies [[`2bb0eae`](https://github.com/tim-smart/effect-rx/commit/2bb0eae545a47a368e655893f80a1a153bc756c9)]:
+  - @effect-rx/rx@0.9.0
+
 ## 0.8.0
 
 ### Minor Changes
