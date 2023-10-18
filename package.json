@@ -38,8 +38,8 @@
     "@effect/eslint-plugin": "^0.1.2",
     "@effect/language-service": "0.0.21",
     "@preconstruct/cli": "^2.8.1",
-    "@types/chai": "^4.3.8",
-    "@types/node": "^20.8.6",
+    "@types/chai": "^4.3.9",
+    "@types/node": "^20.8.7",
     "@typescript-eslint/eslint-plugin": "^6.8.0",
     "@typescript-eslint/parser": "^6.8.0",
     "@vitejs/plugin-react": "^4.1.0",
@@ -58,7 +58,7 @@
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2",
     "ultra-runner": "^3.10.5",
-    "vite": "^4.4.11",
+    "vite": "^4.5.0",
     "vitest": "0.34.6"
   },
   "pnpm": {
