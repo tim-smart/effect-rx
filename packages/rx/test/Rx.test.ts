@@ -1,6 +1,7 @@
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
+import { FiberRef } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Hash from "effect/Hash"
@@ -102,6 +103,17 @@ describe("Rx", () => {
     result = r.get(count)
     assert(Result.isSuccess(result))
     expect(result.value).toEqual(1)
+  })
+
+  it("runtime fiber ref", async () => {
+    const caching = Rx.effect(
+      () => FiberRef.get(FiberRef.currentRequestCacheEnabled),
+      { runtime: fiberRefRuntime }
+    )
+    const r = Registry.make()
+    const result = r.get(caching)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(true)
   })
 
   it("effect initial", async () => {
@@ -624,6 +636,10 @@ const counterRuntime = Rx.runtime(CounterLive, {
   autoDispose: true
 })
 const multiplierRuntime = Rx.runtime(MultiplierLive, {
+  runtime: counterRuntime,
+  autoDispose: true
+})
+const fiberRefRuntime = Rx.runtime(Layer.setRequestCaching(true), {
   runtime: counterRuntime,
   autoDispose: true
 })
