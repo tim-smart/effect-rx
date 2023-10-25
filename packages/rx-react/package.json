@@ -36,12 +36,12 @@
   "license": "MIT",
   "sideEffects": [],
   "devDependencies": {
-    "@types/react": "^18.2.29",
-    "effect": "2.0.0-next.50",
+    "@types/react": "^18.2.32",
+    "effect": "2.0.0-next.51",
     "react": "^18.2.0"
   },
   "peerDependencies": {
-    "effect": "2.0.0-next.50",
+    "effect": "2.0.0-next.51",
     "react": "^18"
   },
   "dependencies": {
