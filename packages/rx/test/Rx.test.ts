@@ -104,11 +104,42 @@ describe("Rx", () => {
     expect(result.value).toEqual(1)
   })
 
+  it("effect initial", async () => {
+    const count = Rx.effect(() =>
+      Effect.succeed(1).pipe(
+        Effect.delay(100)
+      ), { initialValue: 0 }).pipe(Rx.keepAlive)
+    const r = Registry.make()
+    let result = r.get(count)
+    result = Result.noWaiting(result)
+    assert(Result.isSuccess(result))
+    assert.strictEqual(result.value, 0)
+
+    await vitest.advanceTimersByTimeAsync(100)
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(1)
+  })
+
   it("effectFn", async () => {
     const count = Rx.effectFn((n: number) => Effect.succeed(n + 1))
     const r = Registry.make()
     let result = r.get(count)
     assert(Result.isInitial(result))
+    r.set(count, 1)
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(2)
+  })
+
+  it("effectFn initial", async () => {
+    const count = Rx.effectFn((n: number) => Effect.succeed(n + 1), {
+      initialValue: 0
+    })
+    const r = Registry.make()
+    let result = r.get(count)
+    assert(Result.isSuccess(result))
+    assert.strictEqual(result.value, 0)
     r.set(count, 1)
     result = r.get(count)
     assert(Result.isSuccess(result))
@@ -232,6 +263,31 @@ describe("Rx", () => {
     assert(Result.isInitial(result.previous))
   })
 
+  it("stream initial", async () => {
+    const count = Rx.stream(() =>
+      Stream.range(1, 2).pipe(
+        Stream.tap(() => Effect.sleep(50))
+      ), { initialValue: 0 })
+    const r = Registry.make()
+    const unmount = r.mount(count)
+    let result = r.get(count)
+    assert(Result.isWaiting(result))
+    assert(Result.isSuccess(result.previous))
+    assert.strictEqual(result.previous.value, 0)
+
+    await vitest.advanceTimersByTimeAsync(50)
+    result = r.get(count)
+    assert(Result.isWaiting(result))
+    assert(Result.isSuccess(result.previous))
+    assert.deepEqual(result.previous.value, 1)
+
+    unmount()
+    await new Promise((resolve) => resolve(null))
+    result = r.get(count)
+    assert(Result.isWaiting(result))
+    assert(Result.isSuccess(result.previous))
+  })
+
   it("streamFn", async () => {
     const count = Rx.streamFn((start: number) =>
       Stream.range(start, start + 1).pipe(
@@ -331,6 +387,30 @@ describe("Rx", () => {
     result = r.get(count)
     assert(Result.isWaiting(result))
     assert(Option.isNone(Result.value(result)))
+  })
+
+  it("streamPull initial", async () => {
+    const count = Rx.streamPull(() =>
+      Stream.range(1, 2, 1).pipe(
+        Stream.tap(() => Effect.sleep(50))
+      ), { initialValue: [0] }).pipe(Rx.refreshable)
+    const r = Registry.make()
+    const unmount = r.mount(count)
+
+    let result = r.get(count)
+    assert(Result.isWaiting(result))
+    assert(Result.isSuccess(result.previous))
+    assert.deepEqual(result.previous.value, { done: false, items: [0] })
+
+    await vitest.advanceTimersByTimeAsync(50)
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    assert.deepEqual(result.value, { done: false, items: [1] })
+
+    unmount()
+    await new Promise((resolve) => resolve(null))
+    result = r.get(count)
+    assert(Result.isWaiting(result))
   })
 
   it("family", async () => {
@@ -490,6 +570,24 @@ describe("Rx", () => {
     expect(r.get(state)).toEqual(0)
     expect(r.get(state2)).toEqual(0)
     expect(r.get(state3)).toEqual(0)
+  })
+
+  it("fn", async () => {
+    const count = Rx.fn((n: number) => n).pipe(Rx.keepAlive)
+    const r = Registry.make()
+    assert.deepEqual(r.get(count), Option.none())
+
+    r.set(count, 1)
+    assert.deepEqual(r.get(count), Option.some(1))
+  })
+
+  it("fn initial", async () => {
+    const count = Rx.fn((n: number) => n, { initialValue: 0 })
+    const r = Registry.make()
+    assert.deepEqual(r.get(count), 0)
+
+    r.set(count, 1)
+    assert.deepEqual(r.get(count), 1)
   })
 })
 

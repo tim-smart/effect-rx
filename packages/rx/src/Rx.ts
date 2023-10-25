@@ -288,6 +288,7 @@ export const state = <A>(
 function makeEffect<E, A>(
   ctx: Context,
   create: Rx.Read<Effect.Effect<never, E, A>>,
+  initialValue: Result.NoWaiting<E, A>,
   runCallback = runCallbackSyncDefault
 ): Result.Result<E, A> {
   const previous = ctx.self<Result.Result<E, A>>()
@@ -307,12 +308,13 @@ function makeEffect<E, A>(
   if (previous._tag === "Some") {
     return Result.waitingFrom(previous)
   }
-  return Result.waiting(Result.initial())
+  return Result.waiting(initialValue)
 }
 
 function makeEffectRuntime<R, E, A, RE>(
   ctx: Context,
   create: Rx.Read<Effect.Effect<R, E, A>>,
+  initialValue: Result.NoWaiting<E, A>,
   runtime: RxRuntime<RE, R>
 ): Result.Result<E, A> {
   const previous = ctx.self<Result.Result<E, A>>()
@@ -320,18 +322,21 @@ function makeEffectRuntime<R, E, A, RE>(
 
   if (runtimeResult._tag !== "Success") {
     if (runtimeResult._tag === "Waiting") {
-      return Result.waitingFrom(previous)
+      return previous._tag === "Some" ? Result.waitingFrom(previous) : Result.waiting(initialValue)
     }
     return runtimeResult as any
   }
 
-  return makeEffect(ctx, create as any, runCallbackSync(runtimeResult.value))
+  return makeEffect(ctx, create as any, initialValue, runCallbackSync(runtimeResult.value))
 }
 
 function makeScoped<R, E, A, RE>(
   ctx: Context,
   create: Rx.Read<Effect.Effect<R, E, A>>,
-  options?: { readonly runtime?: RxRuntime<RE, R> }
+  initialValue: Result.NoWaiting<E, A>,
+  options?: {
+    readonly runtime?: RxRuntime<RE, R>
+  }
 ): Result.Result<E, A> {
   function createScoped(ctx: Context) {
     const scope = Effect.runSync(Scope.make())
@@ -343,22 +348,33 @@ function makeScoped<R, E, A, RE>(
     )
   }
   return options?.runtime
-    ? makeEffectRuntime(ctx, createScoped, options.runtime)
-    : makeEffect(ctx, createScoped as any)
+    ? makeEffectRuntime(ctx, createScoped, initialValue, options.runtime)
+    : makeEffect(ctx, createScoped as any, initialValue)
 }
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const fn = <Arg, A>(f: Rx.ReadFn<Arg, A>): Writable<Option.Option<A>, Arg> => {
+export const fn: {
+  <Arg, A>(
+    f: Rx.ReadFn<Arg, A>
+  ): Writable<Option.Option<A>, Arg>
+  <Arg, A>(
+    f: Rx.ReadFn<Arg, A>,
+    options: { readonly initialValue: A }
+  ): Writable<A, Arg>
+} = <Arg, A>(f: Rx.ReadFn<Arg, A>, options?: {
+  readonly initialValue?: A
+}): Writable<Option.Option<A> | A, Arg> => {
   const argRx = state<[number, Arg]>([0, undefined as any])
+  const hasInitialValue = options?.initialValue !== undefined
   return writable(function(get) {
     const [counter, arg] = get(argRx)
     if (counter === 0) {
-      return Option.none()
+      return hasInitialValue ? options.initialValue : Option.none()
     }
-    return Option.some(f(arg, get))
+    return hasInitialValue ? f(arg, get) : Option.some(f(arg, get))
   }, function(ctx, arg) {
     ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
   })
@@ -390,38 +406,64 @@ function makeFn<Arg, A, B>(
  * @category constructors
  */
 export const effect: {
-  <E, A>(create: Rx.Read<Effect.Effect<never, E, A>>): Rx<Result.Result<E, A>>
+  <E, A>(create: Rx.Read<Effect.Effect<never, E, A>>, options?: {
+    readonly initialValue?: A
+    readonly runtime?: undefined
+  }): Rx<Result.Result<E, A>>
   <RR, R extends RR, E, A, RE>(
     create: Rx.Read<Effect.Effect<R, E, A>>,
-    options: { readonly runtime: RxRuntime<RE, RR> }
+    options: {
+      readonly runtime: RxRuntime<RE, RR>
+      readonly initialValue?: A
+    }
   ): Rx<Result.Result<RE | E, A>>
 } = <R, E, A, RE>(
   create: Rx.Read<Effect.Effect<R, E, A>>,
-  options?: { readonly runtime?: RxRuntime<RE, R> }
-) =>
-  readable<Result.Result<E, A>>(function(get) {
+  options?: {
+    readonly runtime?: RxRuntime<RE, R>
+    readonly initialValue?: A
+  }
+) => {
+  const initialValue = options?.initialValue !== undefined
+    ? Result.success<E, A>(options.initialValue)
+    : Result.initial<E, A>()
+  return readable<Result.Result<E, A>>(function(get) {
     return options?.runtime
-      ? makeEffectRuntime(get, create, options.runtime)
-      : makeEffect(get, create as any)
+      ? makeEffectRuntime(get, create, initialValue, options.runtime)
+      : makeEffect(get, create as any, initialValue)
   })
+}
 
 /**
  * @since 1.0.0
  * @category constructors
  */
 export const scoped: {
-  <E, A>(create: Rx.Read<Effect.Effect<Scope.Scope, E, A>>): Rx<Result.Result<E, A>>
+  <E, A>(create: Rx.Read<Effect.Effect<Scope.Scope, E, A>>, options?: {
+    readonly initialValue?: A
+    readonly runtime?: undefined
+  }): Rx<Result.Result<E, A>>
   <RR, R extends (RR | Scope.Scope), E, A, RE>(
     create: Rx.Read<Effect.Effect<R, E, A>>,
-    options: { readonly runtime: RxRuntime<RE, RR> }
+    options: {
+      readonly initialValue?: A
+      readonly runtime: RxRuntime<RE, RR>
+    }
   ): Rx<Result.Result<RE | E, A>>
 } = <R, E, A, RE>(
   create: Rx.Read<Effect.Effect<R, E, A>>,
-  options?: { readonly runtime?: RxRuntime<RE, R> }
-) =>
-  readable<Result.Result<E, A>>(function(get) {
-    return makeScoped(get, create, options)
+  options?: {
+    readonly initialValue?: A
+    readonly runtime?: RxRuntime<RE, R>
+  }
+) => {
+  const initialValue = options?.initialValue !== undefined
+    ? Result.success<E, A>(options.initialValue)
+    : Result.initial<E, A>()
+  return readable<Result.Result<E, A>>(function(get) {
+    return makeScoped(get, create, initialValue, options)
   })
+}
 
 /**
  * @since 1.0.0
@@ -434,44 +476,66 @@ export interface RxResultFn<E, A, Arg> extends Writable<Result.Result<E, A>, Arg
  * @category constructors
  */
 export const effectFn: {
-  <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<never, E, A>>): RxResultFn<E, A, Arg>
+  <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<never, E, A>>, options?: {
+    readonly initialValue?: A
+    readonly runtime?: undefined
+  }): RxResultFn<E, A, Arg>
   <Arg, RR, R extends RR, E, A, RE>(
     fn: Rx.ReadFn<Arg, Effect.Effect<R, E, A>>,
-    options: { readonly runtime: RxRuntime<RE, RR> }
+    options: {
+      readonly runtime: RxRuntime<RE, RR>
+      readonly initialValue?: A
+    }
   ): RxResultFn<RE | E, A, Arg>
 } = <Arg, R, E, A, RE>(
   f: Rx.ReadFn<Arg, Effect.Effect<R, E, A>>,
-  options?: { readonly runtime?: RxRuntime<RE, R> }
-) =>
-  makeFn(f, function(get, create) {
+  options?: {
+    readonly runtime?: RxRuntime<RE, R>
+    readonly initialValue?: A
+  }
+) => {
+  const initialValue = options?.initialValue !== undefined ? Result.success(options.initialValue) : Result.initial()
+  return makeFn(f, function(get, create) {
     if (create._tag === "None") {
-      return Result.initial()
+      return initialValue
     }
     return options?.runtime
-      ? makeEffectRuntime(get, create.value, options.runtime)
-      : makeEffect(get, create.value as any)
+      ? makeEffectRuntime(get, create.value, initialValue, options.runtime)
+      : makeEffect(get, create.value as any, initialValue)
   })
+}
 
 /**
  * @since 1.0.0
  * @category constructors
  */
 export const scopedFn: {
-  <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope, E, A>>): RxResultFn<E, A, Arg>
+  <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope, E, A>>, options?: {
+    readonly initialValue?: A
+    readonly runtime?: undefined
+  }): RxResultFn<E, A, Arg>
   <Arg, RR, R extends (RR | Scope.Scope), E, A, RE>(
     fn: Rx.ReadFn<Arg, Effect.Effect<R, E, A>>,
-    options: { readonly runtime: RxRuntime<RE, RR> }
+    options: {
+      readonly initialValue?: A
+      readonly runtime: RxRuntime<RE, RR>
+    }
   ): RxResultFn<RE | E, A, Arg>
 } = <Arg, R, E, A, RE>(
   f: Rx.ReadFn<Arg, Effect.Effect<R, E, A>>,
-  options?: { readonly runtime?: RxRuntime<RE, R> }
-) =>
-  makeFn(f, function(get, create) {
+  options?: {
+    readonly initialValue?: A
+    readonly runtime?: RxRuntime<RE, R>
+  }
+) => {
+  const initialValue = options?.initialValue !== undefined ? Result.success(options.initialValue) : Result.initial()
+  return makeFn(f, function(get, create) {
     if (create._tag === "None") {
-      return Result.initial()
+      return initialValue
     }
-    return makeScoped(get, create.value, options)
+    return makeScoped(get, create.value, initialValue, options)
   })
+}
 
 /**
  * @since 1.0.0
@@ -519,6 +583,7 @@ export const runtime: {
 function makeStream<E, A>(
   ctx: Context,
   create: Rx.Read<Stream.Stream<never, E, A>>,
+  initialValue: Result.NoWaiting<E | NoSuchElementException, A>,
   runCallback = runCallbackSyncDefault
 ): Result.Result<E | NoSuchElementException, A> {
   const previous = ctx.self<Result.Result<E | NoSuchElementException, A>>()
@@ -552,12 +617,13 @@ function makeStream<E, A>(
   if (previous._tag === "Some") {
     return Result.waitingFrom(previous)
   }
-  return Result.waiting(Result.initial())
+  return Result.waiting(initialValue)
 }
 
 function makeStreamRuntime<R, E, A, RE>(
   ctx: Context,
   create: Rx.Read<Stream.Stream<R, E, A>>,
+  initialValue: Result.NoWaiting<E | NoSuchElementException, A>,
   runtime: RxRuntime<RE, R>
 ): Result.Result<E | NoSuchElementException, A> {
   const previous = ctx.self<Result.Result<E | NoSuchElementException, A>>()
@@ -565,12 +631,12 @@ function makeStreamRuntime<R, E, A, RE>(
 
   if (runtimeResult._tag !== "Success") {
     if (runtimeResult._tag === "Waiting") {
-      return Result.waitingFrom(previous)
+      return previous._tag === "Some" ? Result.waitingFrom(previous) : Result.waiting(initialValue)
     }
     return runtimeResult as any
   }
 
-  return makeStream(ctx, create as any, runCallbackSync(runtimeResult.value))
+  return makeStream(ctx, create as any, initialValue, runCallbackSync(runtimeResult.value))
 }
 
 /**
@@ -579,44 +645,70 @@ function makeStreamRuntime<R, E, A, RE>(
  */
 export const stream: {
   <E, A>(
-    create: Rx.Read<Stream.Stream<never, E, A>>
+    create: Rx.Read<Stream.Stream<never, E, A>>,
+    options?: {
+      readonly initialValue?: A
+      readonly runtime?: undefined
+    }
   ): Rx<Result.Result<E | NoSuchElementException, A>>
   <RR, R extends RR, E, A, RE>(
     create: Rx.Read<Stream.Stream<R, E, A>>,
-    options: { readonly runtime: RxRuntime<RE, RR> }
+    options: {
+      readonly initialValue?: A
+      readonly runtime: RxRuntime<RE, RR>
+    }
   ): Rx<Result.Result<RE | E | NoSuchElementException, A>>
 } = <R, E, A, RE>(
   create: Rx.Read<Stream.Stream<R, E, A>>,
-  options?: { readonly runtime?: RxRuntime<RE, R> }
-) =>
-  readable<Result.Result<E | NoSuchElementException, A>>(function(get) {
+  options?: {
+    readonly initialValue?: A
+    readonly runtime?: RxRuntime<RE, R>
+  }
+) => {
+  const initialValue = options?.initialValue !== undefined
+    ? Result.success<E, A>(options.initialValue)
+    : Result.initial<E, A>()
+  return readable<Result.Result<E | NoSuchElementException, A>>(function(get) {
     return options?.runtime
-      ? makeStreamRuntime(get, create, options.runtime)
-      : makeStream(get, create as any)
+      ? makeStreamRuntime(get, create, initialValue, options.runtime)
+      : makeStream(get, create as any, initialValue)
   })
+}
 
 /**
  * @since 1.0.0
  * @category constructors
  */
 export const streamFn: {
-  <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<never, E, A>>): RxResultFn<E | NoSuchElementException, A, Arg>
+  <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<never, E, A>>, options?: {
+    readonly initialValue?: A
+  }): RxResultFn<E | NoSuchElementException, A, Arg>
   <Arg, RR, R extends RR, E, A, RE>(
     fn: Rx.ReadFn<Arg, Stream.Stream<R, E, A>>,
-    options: { readonly runtime: RxRuntime<RE, RR> }
+    options: {
+      readonly runtime: RxRuntime<RE, RR>
+      readonly initialValue?: A
+    }
   ): RxResultFn<RE | E | NoSuchElementException, A, Arg>
 } = <Arg, R, E, A, RE>(
   f: Rx.ReadFn<Arg, Stream.Stream<R, E, A>>,
-  options?: { readonly runtime?: RxRuntime<RE, R> }
-) =>
-  makeFn(f, function(get, create) {
+  options?: {
+    readonly runtime?: RxRuntime<RE, R>
+    readonly initialValue?: A
+  }
+) => {
+  const initialValue = options?.initialValue !== undefined
+    ? Result.success<E, A>(options.initialValue)
+    : Result.initial<E, A>()
+  return makeFn(f, function(get, create) {
     if (create._tag === "None") {
-      return Result.initial()
+      return initialValue
     }
     return options?.runtime
-      ? makeStreamRuntime(get, create.value, options.runtime)
-      : makeStream(get, create.value as any)
+      ? makeStreamRuntime(get, create.value, initialValue, options.runtime)
+      : makeStream(get, create.value as any, initialValue)
   })
+}
 
 /**
  * @since 1.0.0
@@ -634,12 +726,14 @@ export type StreamPullResult<E, A> = Result.Result<E | NoSuchElementException, {
 export const streamPull: {
   <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: {
     readonly disableAccumulation?: boolean
+    readonly initialValue?: ReadonlyArray<A>
   }): Writable<StreamPullResult<E, A>, void>
   <RR, R extends RR, E, A, RE>(
     create: Rx.Read<Stream.Stream<R, E, A>>,
     options: {
       readonly runtime: RxRuntime<RE, RR>
       readonly disableAccumulation?: boolean
+      readonly initialValue?: ReadonlyArray<A>
     }
   ): Writable<StreamPullResult<RE | E, A>, void>
 } = <R, E, A>(
@@ -647,8 +741,15 @@ export const streamPull: {
   options?: {
     readonly runtime?: RxRuntime<unknown, R>
     readonly disableAccumulation?: boolean
+    readonly initialValue?: ReadonlyArray<A>
   }
 ) => {
+  const initialValue: Result.NoWaiting<E | NoSuchElementException, {
+    readonly done: boolean
+    readonly items: Array<A>
+  }> = options?.initialValue !== undefined
+    ? Result.success({ done: false, items: options.initialValue as Array<A> })
+    : Result.initial()
   const pullRx = scoped(function(get) {
     const stream = create(get)
     return Stream.toPull(
@@ -668,7 +769,7 @@ export const streamPull: {
     const pullResult = get(pullRx)
     if (pullResult._tag !== "Success") {
       if (pullResult._tag === "Waiting") {
-        return Result.waitingFrom(previous)
+        return previous._tag === "Some" ? Result.waitingFrom(previous) : Result.waiting(initialValue)
       }
       return pullResult as any
     }
@@ -701,8 +802,8 @@ export const streamPull: {
       )
     )
     return options?.runtime
-      ? makeEffectRuntime(get, (_) => pull, options.runtime)
-      : makeEffect(get, (_) => pull as any)
+      ? makeEffectRuntime(get, (_) => pull, initialValue, options.runtime)
+      : makeEffect(get, (_) => pull as any, initialValue)
   }, function(ctx, _) {
     ctx.refreshSelf()
   }, function(refresh) {
