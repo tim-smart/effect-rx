@@ -551,8 +551,9 @@ export const runtime: {
   <E, A>(layer: Layer.Layer<never, E, A>, options?: {
     readonly autoDispose?: boolean
     readonly idleTTL?: Duration.DurationInput
+    readonly runtime?: undefined
   }): RxRuntime<E, A>
-  <R, E, A, RR extends R, RE>(layer: Layer.Layer<R, E, A>, options?: {
+  <RR, R extends RR, E, A, RE>(layer: Layer.Layer<R, E, A>, options?: {
     readonly autoDispose?: boolean
     readonly idleTTL?: Duration.DurationInput
     readonly runtime: RxRuntime<RE, RR>
@@ -682,6 +683,7 @@ export const stream: {
 export const streamFn: {
   <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<never, E, A>>, options?: {
     readonly initialValue?: A
+    readonly runtime?: undefined
   }): RxResultFn<E | NoSuchElementException, A, Arg>
   <Arg, RR, R extends RR, E, A, RE>(
     fn: Rx.ReadFn<Arg, Stream.Stream<R, E, A>>,
@@ -727,6 +729,7 @@ export const streamPull: {
   <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: {
     readonly disableAccumulation?: boolean
     readonly initialValue?: ReadonlyArray<A>
+    readonly runtime?: undefined
   }): Writable<StreamPullResult<E, A>, void>
   <RR, R extends RR, E, A, RE>(
     create: Rx.Read<Stream.Stream<R, E, A>>,
