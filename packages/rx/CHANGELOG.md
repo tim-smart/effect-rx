@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.9.1
+
+### Patch Changes
+
+- [`5f5450a`](https://github.com/tim-smart/effect-rx/commit/5f5450afda92ffc98cbc3a9dc96dccfbe110d178) Thanks [@tim-smart](https://github.com/tim-smart)! - add initialValue options
+
 ## 0.9.0
 
 ### Minor Changes
