@@ -601,6 +601,22 @@ describe("Rx", () => {
     r.set(count, 1)
     assert.deepEqual(r.get(count), 1)
   })
+
+  it("withFallback", async () => {
+    const count = Rx.effect(() =>
+      Effect.succeed(1).pipe(
+        Effect.delay(100)
+      )
+    ).pipe(
+      Rx.withFallback(Rx.effect(() => Effect.succeed(0))),
+      Rx.keepAlive
+    )
+    const r = Registry.make()
+    assert.deepEqual(r.get(count), Result.waiting(Result.success(0)))
+
+    await vitest.advanceTimersByTimeAsync(100)
+    assert.deepEqual(r.get(count), Result.success(1))
+  })
 })
 
 interface Counter {

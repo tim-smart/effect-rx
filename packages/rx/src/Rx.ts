@@ -858,6 +858,62 @@ export const family = typeof WeakRef === "undefined" || typeof FinalizationRegis
  * @since 1.0.0
  * @category combinators
  */
+export const withFallback: {
+  <E2, A2>(
+    fallback: Rx<Result.Result<E2, A2>>
+  ): <R extends Rx<Result.Result<any, any>>>(
+    self: R
+  ) => [R] extends [Writable<infer _, infer RW>]
+    ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>, RW>
+    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>>
+  <R extends Rx<Result.Result<any, any>>, E2, A2>(
+    self: R,
+    fallback: Rx<Result.Result<E2, A2>>
+  ): [R] extends [Writable<infer _, infer RW>]
+    ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>, RW>
+    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>>
+} = dual<
+  <E2, A2>(
+    fallback: Rx<Result.Result<E2, A2>>
+  ) => <R extends Rx<Result.Result<any, any>>>(
+    self: R
+  ) => [R] extends [Writable<infer _, infer RW>]
+    ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>, RW>
+    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>>,
+  <R extends Rx<Result.Result<any, any>>, E2, A2>(
+    self: R,
+    fallback: Rx<Result.Result<E2, A2>>
+  ) => [R] extends [Writable<infer _, infer RW>]
+    ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>, RW>
+    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>>
+>(2, (self, fallback) => {
+  function withFallback(get: Context) {
+    const result = get(self)
+    if (result._tag === "Initial" || (result._tag === "Waiting" && result.previous._tag === "Initial")) {
+      return Result.waiting(Result.noWaiting(get(fallback)))
+    }
+    return result
+  }
+  return isWritable(self)
+    ? writable(
+      withFallback,
+      self.write,
+      self.refresh ?? function(refresh) {
+        refresh(self)
+      }
+    )
+    : readable(
+      withFallback,
+      self.refresh ?? function(refresh) {
+        refresh(self)
+      }
+    ) as any
+})
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
 export const keepAlive = <A extends Rx<any>>(self: A): A =>
   Object.assign(Object.create(Object.getPrototypeOf(self)), {
     ...self,
