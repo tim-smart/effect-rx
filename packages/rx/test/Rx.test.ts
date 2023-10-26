@@ -240,7 +240,6 @@ describe("Rx", () => {
   })
 
   it("stream", async () => {
-    vi.useRealTimers()
     const count = Rx.stream(() =>
       Stream.range(0, 2).pipe(
         Stream.tap(() => Effect.sleep(50))
@@ -252,18 +251,18 @@ describe("Rx", () => {
     assert(Result.isWaiting(result))
     assert(Result.isInitial(result.previous))
 
-    await new Promise((resolve) => setTimeout(resolve, 55))
+    await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isWaiting(result))
     assert(Result.isSuccess(result.previous))
     assert.deepEqual(result.previous.value, 0)
 
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isWaiting(result))
     assert.deepEqual(Result.value(result), Option.some(1))
 
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
     assert(Result.isSuccess(result))
     assert.deepEqual(Result.value(result), Option.some(2))
@@ -571,7 +570,6 @@ describe("Rx", () => {
     expect(r.get(state3)).toEqual(10)
 
     await new Promise((resolve) => resolve(null))
-    console.log(r)
     await vitest.advanceTimersByTimeAsync(10000)
     expect(r.get(state)).toEqual(0)
     expect(r.get(state2)).toEqual(10)
