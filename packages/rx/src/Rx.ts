@@ -1,7 +1,6 @@
 /**
  * @since 1.0.0
  */
-import { accumulateChunks } from "@effect-rx/rx/internal/channel"
 import { NoSuchElementException } from "effect/Cause"
 import * as Chunk from "effect/Chunk"
 import * as Duration from "effect/Duration"
@@ -757,7 +756,7 @@ export const streamPull: {
   const pullRx = scoped(function(get) {
     const stream = create(get)
     return Stream.toPull(
-      options?.disableAccumulation ? stream : accumulateChunks(stream)
+      options?.disableAccumulation ? stream : Stream.accumulateChunks(stream)
     )
   }, options as any)
 
