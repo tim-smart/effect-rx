@@ -113,8 +113,8 @@ importers:
   packages/rx:
     devDependencies:
       effect:
-        specifier: 2.0.0-next.53
-        version: 2.0.0-next.53
+        specifier: 2.0.0-next.54
+        version: 2.0.0-next.54
 
   packages/rx-react:
     dependencies:
@@ -126,8 +126,8 @@ importers:
         specifier: ^18.2.34
         version: 18.2.34
       effect:
-        specifier: 2.0.0-next.53
-        version: 2.0.0-next.53
+        specifier: 2.0.0-next.54
+        version: 2.0.0-next.54
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -2660,8 +2660,8 @@ packages:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
     dev: true
 
-  /effect@2.0.0-next.53:
-    resolution: {integrity: sha512-WQQ0Ha1Hn8x1adOWfcpUPu/xRlekwSY39pCbsZ/Gu3nSdLocY8rQiKmHNRTrMG8xoGoZmh5MKhUPdcsbrpSKAA==}
+  /effect@2.0.0-next.54:
+    resolution: {integrity: sha512-qROhKMxlm6fpa90YRfWSgKeelDfhaDq2igPK+pIKupGehiCnZH4vd2qrY71HVZ10qZgXxh0VXpGyDQxJC+EQqw==}
     dev: true
 
   /electron-to-chromium@1.4.553:
