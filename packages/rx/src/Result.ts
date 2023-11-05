@@ -122,9 +122,33 @@ const constInitial: Initial<never, never> = Object.assign(Object.create(ResultPr
  * @since 1.0.0
  * @category models
  */
-export interface Waiting<E, A> extends Result.Proto<E, A> {
+export type Waiting<E, A> = Refreshing<E, A> | Retrying<E, A> | Loading<E, A>
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export interface Refreshing<E, A> extends Result.Proto<E, A> {
   readonly _tag: "Waiting"
-  readonly previous: Initial<E, A> | Success<E, A> | Failure<E, A>
+  readonly previous: Success<E, A>
+}
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export interface Retrying<E, A> extends Result.Proto<E, A> {
+  readonly _tag: "Waiting"
+  readonly previous: Failure<E, A>
+}
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export interface Loading<E, A> extends Result.Proto<E, A> {
+  readonly _tag: "Waiting"
+  readonly previous: Initial<E, A>
 }
 
 /**
@@ -132,6 +156,27 @@ export interface Waiting<E, A> extends Result.Proto<E, A> {
  * @category refinements
  */
 export const isWaiting = <E, A>(result: Result<E, A>): result is Waiting<E, A> => result._tag === "Waiting"
+
+/**
+ * @since 1.0.0
+ * @category refinements
+ */
+export const isLoading = <E, A>(result: Result<E, A>): result is Loading<E, A> =>
+  result._tag === "Waiting" && result.previous._tag === "Initial"
+
+/**
+ * @since 1.0.0
+ * @category refinements
+ */
+export const isRetrying = <E, A>(result: Result<E, A>): result is Retrying<E, A> =>
+  result._tag === "Waiting" && result.previous._tag === "Failure"
+
+/**
+ * @since 1.0.0
+ * @category refinements
+ */
+export const isRefreshing = <E, A>(result: Result<E, A>): result is Refreshing<E, A> =>
+  result._tag === "Waiting" && result.previous._tag === "Success"
 
 /**
  * @since 1.0.0

@@ -30,17 +30,23 @@ Added in v1.0.0
 - [models](#models)
   - [Failure (interface)](#failure-interface)
   - [Initial (interface)](#initial-interface)
+  - [Loading (interface)](#loading-interface)
   - [NoWaiting (type alias)](#nowaiting-type-alias)
+  - [Refreshing (interface)](#refreshing-interface)
   - [Result (type alias)](#result-type-alias)
   - [Result (namespace)](#result-namespace)
     - [Proto (interface)](#proto-interface)
     - [Failure (type alias)](#failure-type-alias)
     - [Success (type alias)](#success-type-alias)
+  - [Retrying (interface)](#retrying-interface)
   - [Success (interface)](#success-interface)
-  - [Waiting (interface)](#waiting-interface)
+  - [Waiting (type alias)](#waiting-type-alias)
 - [refinements](#refinements)
   - [isFailure](#isfailure)
   - [isInitial](#isinitial)
+  - [isLoading](#isloading)
+  - [isRefreshing](#isrefreshing)
+  - [isRetrying](#isretrying)
   - [isSuccess](#issuccess)
   - [isWaiting](#iswaiting)
 - [type ids](#type-ids)
@@ -203,12 +209,38 @@ export interface Initial<E, A> extends Result.Proto<E, A> {
 
 Added in v1.0.0
 
+## Loading (interface)
+
+**Signature**
+
+```ts
+export interface Loading<E, A> extends Result.Proto<E, A> {
+  readonly _tag: 'Waiting'
+  readonly previous: Initial<E, A>
+}
+```
+
+Added in v1.0.0
+
 ## NoWaiting (type alias)
 
 **Signature**
 
 ```ts
 export type NoWaiting<E, A> = Initial<E, A> | Success<E, A> | Failure<E, A>
+```
+
+Added in v1.0.0
+
+## Refreshing (interface)
+
+**Signature**
+
+```ts
+export interface Refreshing<E, A> extends Result.Proto<E, A> {
+  readonly _tag: 'Waiting'
+  readonly previous: Success<E, A>
+}
 ```
 
 Added in v1.0.0
@@ -262,6 +294,19 @@ export type Success<R extends Result<any, any>> = R extends Result<infer _, infe
 
 Added in v1.0.0
 
+## Retrying (interface)
+
+**Signature**
+
+```ts
+export interface Retrying<E, A> extends Result.Proto<E, A> {
+  readonly _tag: 'Waiting'
+  readonly previous: Failure<E, A>
+}
+```
+
+Added in v1.0.0
+
 ## Success (interface)
 
 **Signature**
@@ -275,15 +320,12 @@ export interface Success<E, A> extends Result.Proto<E, A> {
 
 Added in v1.0.0
 
-## Waiting (interface)
+## Waiting (type alias)
 
 **Signature**
 
 ```ts
-export interface Waiting<E, A> extends Result.Proto<E, A> {
-  readonly _tag: 'Waiting'
-  readonly previous: Initial<E, A> | Success<E, A> | Failure<E, A>
-}
+export type Waiting<E, A> = Refreshing<E, A> | Retrying<E, A> | Loading<E, A>
 ```
 
 Added in v1.0.0
@@ -306,6 +348,36 @@ Added in v1.0.0
 
 ```ts
 export declare const isInitial: <E, A>(result: Result<E, A>) => result is Initial<E, A>
+```
+
+Added in v1.0.0
+
+## isLoading
+
+**Signature**
+
+```ts
+export declare const isLoading: <E, A>(result: Result<E, A>) => result is Loading<E, A>
+```
+
+Added in v1.0.0
+
+## isRefreshing
+
+**Signature**
+
+```ts
+export declare const isRefreshing: <E, A>(result: Result<E, A>) => result is Refreshing<E, A>
+```
+
+Added in v1.0.0
+
+## isRetrying
+
+**Signature**
+
+```ts
+export declare const isRetrying: <E, A>(result: Result<E, A>) => result is Retrying<E, A>
 ```
 
 Added in v1.0.0
