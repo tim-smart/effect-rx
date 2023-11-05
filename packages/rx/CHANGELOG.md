@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.11.3
+
+### Patch Changes
+
+- [`3a97ec2`](https://github.com/tim-smart/effect-rx/commit/3a97ec2643c1c246c508b5a6313875ec5e4a61be) Thanks [@tim-smart](https://github.com/tim-smart)! - add previousValue to result failure
+
 ## 0.11.2
 
 ### Patch Changes
