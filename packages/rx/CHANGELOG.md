@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.11.2
+
+### Patch Changes
+
+- [`77e19f5`](https://github.com/tim-smart/effect-rx/commit/77e19f55da6d0e491708db1b4f73798ba4a2e7a4) Thanks [@tim-smart](https://github.com/tim-smart)! - break up Result waiting states
+
 ## 0.11.1
 
 ### Patch Changes
