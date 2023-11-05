@@ -21,8 +21,11 @@ Added in v1.0.0
   - [toExit](#toexit)
 - [constructors](#constructors)
   - [fail](#fail)
+  - [failWithPrevious](#failwithprevious)
   - [failure](#failure)
+  - [failureWithPrevious](#failurewithprevious)
   - [fromExit](#fromexit)
+  - [fromExitWithPrevious](#fromexitwithprevious)
   - [initial](#initial)
   - [success](#success)
   - [waiting](#waiting)
@@ -117,7 +120,17 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const fail: <E, A>(error: E) => Failure<E, A>
+export declare const fail: <E, A>(error: E, previousData?: Option.Option<A> | undefined) => Failure<E, A>
+```
+
+Added in v1.0.0
+
+## failWithPrevious
+
+**Signature**
+
+```ts
+export declare const failWithPrevious: <E, A>(error: E, previous: Option.Option<Result<E, A>>) => Failure<E, A>
 ```
 
 Added in v1.0.0
@@ -127,7 +140,20 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const failure: <E, A>(cause: Cause.Cause<E>) => Failure<E, A>
+export declare const failure: <E, A>(cause: Cause.Cause<E>, previousValue?: Option.Option<A>) => Failure<E, A>
+```
+
+Added in v1.0.0
+
+## failureWithPrevious
+
+**Signature**
+
+```ts
+export declare const failureWithPrevious: <E, A>(
+  cause: Cause.Cause<E>,
+  previous: Option.Option<Result<E, A>>
+) => Failure<E, A>
 ```
 
 Added in v1.0.0
@@ -138,6 +164,19 @@ Added in v1.0.0
 
 ```ts
 export declare const fromExit: <E, A>(exit: Exit.Exit<E, A>) => Success<E, A> | Failure<E, A>
+```
+
+Added in v1.0.0
+
+## fromExitWithPrevious
+
+**Signature**
+
+```ts
+export declare const fromExitWithPrevious: <E, A>(
+  exit: Exit.Exit<E, A>,
+  previous: Option.Option<Result<E, A>>
+) => Success<E, A> | Failure<E, A>
 ```
 
 Added in v1.0.0
@@ -192,6 +231,7 @@ Added in v1.0.0
 export interface Failure<E, A> extends Result.Proto<E, A> {
   readonly _tag: 'Failure'
   readonly cause: Cause.Cause<E>
+  readonly previousValue: Option.Option<A>
 }
 ```
 

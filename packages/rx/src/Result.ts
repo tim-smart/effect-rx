@@ -88,6 +88,16 @@ export const fromExit = <E, A>(exit: Exit.Exit<E, A>): Success<E, A> | Failure<E
  * @since 1.0.0
  * @category constructors
  */
+export const fromExitWithPrevious = <E, A>(
+  exit: Exit.Exit<E, A>,
+  previous: Option.Option<Result<E, A>>
+): Success<E, A> | Failure<E, A> =>
+  exit._tag === "Success" ? success(exit.value) : failureWithPrevious(exit.cause, previous)
+
+/**
+ * @since 1.0.0
+ * @category constructors
+ */
 export const waitingFrom = <E, A>(previous: Option.Option<Result<E, A>>): Waiting<E, A> => {
   if (previous._tag === "None") {
     return waiting(constInitial)
@@ -222,6 +232,7 @@ export const success = <E, A>(value: A): Success<E, A> => {
 export interface Failure<E, A> extends Result.Proto<E, A> {
   readonly _tag: "Failure"
   readonly cause: Cause.Cause<E>
+  readonly previousValue: Option.Option<A>
 }
 
 /**
@@ -234,10 +245,14 @@ export const isFailure = <E, A>(result: Result<E, A>): result is Failure<E, A> =
  * @since 1.0.0
  * @category constructors
  */
-export const failure = <E, A>(cause: Cause.Cause<E>): Failure<E, A> => {
+export const failure = <E, A>(
+  cause: Cause.Cause<E>,
+  previousValue: Option.Option<A> = Option.none()
+): Failure<E, A> => {
   const result = Object.create(ResultProto)
   result._tag = "Failure"
   result.cause = cause
+  result.previousValue = previousValue
   return result
 }
 
@@ -245,7 +260,26 @@ export const failure = <E, A>(cause: Cause.Cause<E>): Failure<E, A> => {
  * @since 1.0.0
  * @category constructors
  */
-export const fail = <E, A>(error: E): Failure<E, A> => failure(Cause.fail(error))
+export const failureWithPrevious = <E, A>(
+  cause: Cause.Cause<E>,
+  previous: Option.Option<Result<E, A>>
+): Failure<E, A> => failure(cause, Option.flatMap(previous, value))
+
+/**
+ * @since 1.0.0
+ * @category constructors
+ */
+export const fail = <E, A>(error: E, previousData?: Option.Option<A>): Failure<E, A> =>
+  failure(Cause.fail(error), previousData)
+
+/**
+ * @since 1.0.0
+ * @category constructors
+ */
+export const failWithPrevious = <E, A>(
+  error: E,
+  previous: Option.Option<Result<E, A>>
+): Failure<E, A> => fail(error, Option.flatMap(previous, value))
 
 /**
  * @since 1.0.0
@@ -270,6 +304,8 @@ export const value = <E, A>(result: Result<E, A>): Option.Option<A> => {
   const noWaitingResult = noWaiting(result)
   if (noWaitingResult._tag === "Success") {
     return Option.some(noWaitingResult.value)
+  } else if (noWaitingResult._tag === "Failure") {
+    return noWaitingResult.previousValue
   }
   return Option.none()
 }

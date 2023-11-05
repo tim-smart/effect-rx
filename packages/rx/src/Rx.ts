@@ -297,7 +297,7 @@ function makeEffect<E, A>(
     create(ctx),
     function(exit) {
       if (!Exit.isInterrupted(exit)) {
-        ctx.setSelfSync(Result.fromExit(exit))
+        ctx.setSelfSync(Result.fromExitWithPrevious(exit, previous))
       }
     }
   )
@@ -597,14 +597,14 @@ function makeStream<E, A>(
     (exit) => {
       if (exit._tag === "Failure") {
         if (!Exit.isInterrupted(exit)) {
-          ctx.setSelfSync(Result.failure(exit.cause))
+          ctx.setSelfSync(Result.failureWithPrevious(exit.cause, previous))
         }
       } else {
         pipe(
           ctx.self<Result.Result<E | NoSuchElementException, A>>(),
           Option.flatMap(Result.value),
           Option.match({
-            onNone: () => ctx.setSelfSync(Result.fail(NoSuchElementException())),
+            onNone: () => ctx.setSelfSync(Result.failWithPrevious(NoSuchElementException(), previous)),
             onSome: (a) => ctx.setSelfSync(Result.success(a))
           })
         )

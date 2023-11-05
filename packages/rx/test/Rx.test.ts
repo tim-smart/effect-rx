@@ -1,7 +1,7 @@
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
-import { FiberRef } from "effect"
+import { Cause, FiberRef } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Hash from "effect/Hash"
@@ -614,6 +614,29 @@ describe("Rx", () => {
 
     await vitest.advanceTimersByTimeAsync(100)
     assert.deepEqual(r.get(count), Result.success(1))
+  })
+
+  it("failure with previousValue", async () => {
+    const count = Rx.effectFn((i: number) => i === 1 ? Effect.fail("fail") : Effect.succeed(i))
+    const r = Registry.make()
+
+    let result = r.get(count)
+    assert(Result.isInitial(result))
+
+    r.set(count, 0)
+    result = r.get(count)
+    assert(Result.isSuccess(result))
+    assert.strictEqual(result.value, 0)
+
+    r.set(count, 1)
+    result = r.get(count)
+    assert(Result.isFailure(result))
+    assert(Cause.isFailType(result.cause))
+    assert.strictEqual(result.cause.error, "fail")
+
+    const value = Result.value(result)
+    assert(Option.isSome(value))
+    assert.strictEqual(value.value, 0)
   })
 })
 
