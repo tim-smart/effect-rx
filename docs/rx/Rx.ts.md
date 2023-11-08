@@ -132,18 +132,18 @@ Added in v1.0.0
 
 ```ts
 export declare const mapResult: (<R extends Rx<Result.Result<any, any>>, B>(
-  f: (_: Result.Result.Success<Rx.Infer<R>>) => B
+  f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
 ) => (
   self: R
 ) => [R] extends [Writable<infer _, infer RW>]
-  ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>, RW>
-  : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>>) &
+  ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>, RW>
+  : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>>) &
   (<R extends Rx<Result.Result<any, any>>, B>(
     self: R,
-    f: (_: Result.Result.Success<Rx.Infer<R>>) => B
+    f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
   ) => [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>, RW>
-    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>>)
+    ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>, RW>
+    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>>)
 ```
 
 Added in v1.0.0
@@ -180,13 +180,13 @@ export declare const withFallback: {
   <E2, A2>(fallback: Rx<Result.Result<E2, A2>>): <R extends Rx<Result.Result<any, any>>>(
     self: R
   ) => [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<E2 | Result.Result.Failure<Rx.Infer<R>>, A2 | Result.Result.Success<Rx.Infer<R>>>, RW>
-    : Rx<Result.Result<E2 | Result.Result.Failure<Rx.Infer<R>>, A2 | Result.Result.Success<Rx.Infer<R>>>>
+    ? Writable<Result.Result<E2 | Result.Result.InferE<Rx.Infer<R>>, A2 | Result.Result.InferA<Rx.Infer<R>>>, RW>
+    : Rx<Result.Result<E2 | Result.Result.InferE<Rx.Infer<R>>, A2 | Result.Result.InferA<Rx.Infer<R>>>>
   <R extends Rx<Result.Result<any, any>>, E2, A2>(self: R, fallback: Rx<Result.Result<E2, A2>>): [R] extends [
     Writable<infer _, infer RW>
   ]
-    ? Writable<Result.Result<E2 | Result.Result.Failure<Rx.Infer<R>>, A2 | Result.Result.Success<Rx.Infer<R>>>, RW>
-    : Rx<Result.Result<E2 | Result.Result.Failure<Rx.Infer<R>>, A2 | Result.Result.Success<Rx.Infer<R>>>>
+    ? Writable<Result.Result<E2 | Result.Result.InferE<Rx.Infer<R>>, A2 | Result.Result.InferA<Rx.Infer<R>>>, RW>
+    : Rx<Result.Result<E2 | Result.Result.InferE<Rx.Infer<R>>, A2 | Result.Result.InferA<Rx.Infer<R>>>>
 }
 ```
 
