@@ -1,5 +1,13 @@
 # @effect-rx/rx
 
+## 0.12.0
+
+### Minor Changes
+
+- [`b00fa8d`](https://github.com/tim-smart/effect-rx/commit/b00fa8d6cf06c0eeda5587f549ad712d2d7cbc58) Thanks [@tim-smart](https://github.com/tim-smart)! - allow context in Rx.runtime
+
+- [#74](https://github.com/tim-smart/effect-rx/pull/74) [`1495465`](https://github.com/tim-smart/effect-rx/commit/14954655c21d2e63c17e24068776ef42d194b17a) Thanks [@tim-smart](https://github.com/tim-smart)! - remove Result.Waiting state
+
 ## 0.11.3
 
 ### Patch Changes
