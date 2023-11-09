@@ -288,7 +288,7 @@ export const state = <A>(
 function makeEffect<E, A>(
   ctx: Context,
   create: Rx.Read<Effect.Effect<never, E, A>>,
-  initialValue: Result.NoWaiting<E, A>,
+  initialValue: Result.Result<E, A>,
   runCallback = runCallbackSyncDefault
 ): Result.Result<E, A> {
   const previous = ctx.self<Result.Result<E, A>>()
@@ -314,17 +314,14 @@ function makeEffect<E, A>(
 function makeEffectRuntime<R, E, A, RE>(
   ctx: Context,
   create: Rx.Read<Effect.Effect<R, E, A>>,
-  initialValue: Result.NoWaiting<E, A>,
+  initialValue: Result.Result<E, A>,
   runtime: RxRuntime<RE, R>
-): Result.Result<E, A> {
+): Result.Result<E | RE, A> {
   const previous = ctx.self<Result.Result<E, A>>()
   const runtimeResult = ctx.get(runtime)
 
   if (runtimeResult._tag !== "Success") {
-    if (runtimeResult._tag === "Waiting") {
-      return previous._tag === "Some" ? Result.waitingFrom(previous) : Result.waiting(initialValue)
-    }
-    return runtimeResult as any
+    return Result.replacePrevious(runtimeResult, previous)
   }
 
   return makeEffect(ctx, create as any, initialValue, runCallbackSync(runtimeResult.value))
@@ -333,11 +330,11 @@ function makeEffectRuntime<R, E, A, RE>(
 function makeScoped<R, E, A, RE>(
   ctx: Context,
   create: Rx.Read<Effect.Effect<R, E, A>>,
-  initialValue: Result.NoWaiting<E, A>,
+  initialValue: Result.Result<E, A>,
   options?: {
     readonly runtime?: RxRuntime<RE, R>
   }
-): Result.Result<E, A> {
+): Result.Result<E | RE, A> {
   function createScoped(ctx: Context) {
     const scope = Effect.runSync(Scope.make())
     ctx.addFinalizer(() => Effect.runFork(Scope.close(scope, Exit.unit)))
@@ -427,7 +424,7 @@ export const effect: {
   const initialValue = options?.initialValue !== undefined
     ? Result.success<E, A>(options.initialValue)
     : Result.initial<E, A>()
-  return readable<Result.Result<E, A>>(function(get) {
+  return readable<Result.Result<E | RE, A>>(function(get) {
     return options?.runtime
       ? makeEffectRuntime(get, create, initialValue, options.runtime)
       : makeEffect(get, create as any, initialValue)
@@ -460,7 +457,7 @@ export const scoped: {
   const initialValue = options?.initialValue !== undefined
     ? Result.success<E, A>(options.initialValue)
     : Result.initial<E, A>()
-  return readable<Result.Result<E, A>>(function(get) {
+  return readable<Result.Result<E | RE, A>>(function(get) {
     return makeScoped(get, create, initialValue, options)
   })
 }
@@ -584,7 +581,7 @@ export const runtime: {
 function makeStream<E, A>(
   ctx: Context,
   create: Rx.Read<Stream.Stream<never, E, A>>,
-  initialValue: Result.NoWaiting<E | NoSuchElementException, A>,
+  initialValue: Result.Result<E | NoSuchElementException, A>,
   runCallback = runCallbackSyncDefault
 ): Result.Result<E | NoSuchElementException, A> {
   const previous = ctx.self<Result.Result<E | NoSuchElementException, A>>()
@@ -624,17 +621,14 @@ function makeStream<E, A>(
 function makeStreamRuntime<R, E, A, RE>(
   ctx: Context,
   create: Rx.Read<Stream.Stream<R, E, A>>,
-  initialValue: Result.NoWaiting<E | NoSuchElementException, A>,
+  initialValue: Result.Result<E | RE | NoSuchElementException, A>,
   runtime: RxRuntime<RE, R>
-): Result.Result<E | NoSuchElementException, A> {
-  const previous = ctx.self<Result.Result<E | NoSuchElementException, A>>()
+): Result.Result<E | RE | NoSuchElementException, A> {
+  const previous = ctx.self<Result.Result<E | RE | NoSuchElementException, A>>()
   const runtimeResult = ctx.get(runtime)
 
   if (runtimeResult._tag !== "Success") {
-    if (runtimeResult._tag === "Waiting") {
-      return previous._tag === "Some" ? Result.waitingFrom(previous) : Result.waiting(initialValue)
-    }
-    return runtimeResult as any
+    return Result.replacePrevious(runtimeResult, previous)
   }
 
   return makeStream(ctx, create as any, initialValue, runCallbackSync(runtimeResult.value))
@@ -669,7 +663,7 @@ export const stream: {
   const initialValue = options?.initialValue !== undefined
     ? Result.success<E, A>(options.initialValue)
     : Result.initial<E, A>()
-  return readable<Result.Result<E | NoSuchElementException, A>>(function(get) {
+  return readable<Result.Result<E | RE | NoSuchElementException, A>>(function(get) {
     return options?.runtime
       ? makeStreamRuntime(get, create, initialValue, options.runtime)
       : makeStream(get, create as any, initialValue)
@@ -739,15 +733,15 @@ export const streamPull: {
       readonly initialValue?: ReadonlyArray<A>
     }
   ): Writable<StreamPullResult<RE | E, A>, void>
-} = <R, E, A>(
+} = <R, E, A, RE>(
   create: Rx.Read<Stream.Stream<R, E, A>>,
   options?: {
-    readonly runtime?: RxRuntime<unknown, R>
+    readonly runtime?: RxRuntime<RE, R>
     readonly disableAccumulation?: boolean
     readonly initialValue?: ReadonlyArray<A>
   }
 ) => {
-  const initialValue: Result.NoWaiting<E | NoSuchElementException, {
+  const initialValue: Result.Result<E | RE | NoSuchElementException, {
     readonly done: boolean
     readonly items: Array<A>
   }> = options?.initialValue !== undefined
@@ -758,16 +752,13 @@ export const streamPull: {
     return Stream.toPull(
       options?.disableAccumulation ? stream : Stream.accumulateChunks(stream)
     )
-  }, options as any)
+  }, options as { readonly runtime: RxRuntime<RE, R> })
 
-  return writable<StreamPullResult<E, A>, void>(function(get) {
-    const previous = get.self<Result.Result<E, A>>()
+  return writable<StreamPullResult<E | RE, A>, void>(function(get) {
+    const previous = get.self<StreamPullResult<E | RE, A>>()
     const pullResult = get(pullRx)
     if (pullResult._tag !== "Success") {
-      if (pullResult._tag === "Waiting") {
-        return previous._tag === "Some" ? Result.waitingFrom(previous) : Result.waiting(initialValue)
-      }
-      return pullResult as any
+      return Result.replacePrevious(pullResult, previous)
     }
     const pull = pipe(
       pullResult.value,
@@ -857,33 +848,33 @@ export const withFallback: {
   ): <R extends Rx<Result.Result<any, any>>>(
     self: R
   ) => [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>, RW>
-    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>>
+    ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>, RW>
+    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>>
   <R extends Rx<Result.Result<any, any>>, E2, A2>(
     self: R,
     fallback: Rx<Result.Result<E2, A2>>
   ): [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>, RW>
-    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>>
+    ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>, RW>
+    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>>
 } = dual<
   <E2, A2>(
     fallback: Rx<Result.Result<E2, A2>>
   ) => <R extends Rx<Result.Result<any, any>>>(
     self: R
   ) => [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>, RW>
-    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>>,
+    ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>, RW>
+    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>>,
   <R extends Rx<Result.Result<any, any>>, E2, A2>(
     self: R,
     fallback: Rx<Result.Result<E2, A2>>
   ) => [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>, RW>
-    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>> | E2, Result.Result.Success<Rx.Infer<R>> | A2>>
+    ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>, RW>
+    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>>
 >(2, (self, fallback) => {
   function withFallback(get: Context) {
     const result = get(self)
-    if (result._tag === "Initial" || (result._tag === "Waiting" && result.previous._tag === "Initial")) {
-      return Result.waiting(Result.noWaiting(get(fallback)))
+    if (result._tag === "Initial") {
+      return Result.waiting(get(fallback))
     }
     return result
   }
@@ -1006,16 +997,16 @@ export const map = dual<
  */
 export const mapResult = dual<
   <R extends Rx<Result.Result<any, any>>, B>(
-    f: (_: Result.Result.Success<Rx.Infer<R>>) => B
+    f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
   ) => (
     self: R
-  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>, RW>
-    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>>,
+  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>, RW>
+    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>>,
   <R extends Rx<Result.Result<any, any>>, B>(
     self: R,
-    f: (_: Result.Result.Success<Rx.Infer<R>>) => B
-  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>, RW>
-    : Rx<Result.Result<Result.Result.Failure<Rx.Infer<R>>, B>>
+    f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
+  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>, RW>
+    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>>
 >(2, (self, f) => map(self, Result.map(f)) as any)
 
 /**
