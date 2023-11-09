@@ -198,35 +198,32 @@ type SuspenseResult<E, A> =
   }
   | {
     readonly _tag: "Value"
-    readonly isWaiting: boolean
     readonly value: Result.Success<E, A> | Result.Failure<E, A>
   }
 
 const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
   Rx.readable((get): SuspenseResult<any, any> => {
     const result = get(rx)
-    const value = Result.noWaiting(result)
-    if (value._tag === "Initial") {
+    if (result._tag === "Initial") {
       return {
         _tag: "Suspended",
         promise: new Promise<void>((resolve) => get.addFinalizer(resolve))
       } as const
     }
-    const isWaiting = Result.isWaiting(result)
-    return { _tag: "Value", isWaiting, value } as const
+    return { _tag: "Value", value: result } as const
   })
 )
 
 const suspenseRxWaiting = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
   Rx.readable((get): SuspenseResult<any, any> => {
     const result = get(rx)
-    if (result._tag === "Waiting" || result._tag === "Initial") {
+    if (result.waiting || result._tag === "Initial") {
       return {
         _tag: "Suspended",
         promise: new Promise<void>((resolve) => get.addFinalizer(resolve))
       } as const
     }
-    return { _tag: "Value", isWaiting: false, value: result } as const
+    return { _tag: "Value", value: result } as const
   })
 )
 
@@ -239,10 +236,7 @@ const suspenseMounts = globalValue("@effect-rx/rx-react/suspenseMounts", () => n
 export const useRxSuspense = <E, A>(
   rx: Rx.Rx<Result.Result<E, A>>,
   options?: { readonly suspendOnWaiting?: boolean }
-): {
-  readonly isWaiting: boolean
-  readonly value: Result.Success<E, A> | Result.Failure<E, A>
-} => {
+): Result.Success<E, A> | Result.Failure<E, A> => {
   const registry = React.useContext(RegistryContext)
   const resultRx = React.useMemo(
     () => (options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)),
@@ -263,7 +257,7 @@ export const useRxSuspense = <E, A>(
     throw result.promise
   }
 
-  return result
+  return result.value
 }
 
 /**
@@ -273,18 +267,12 @@ export const useRxSuspense = <E, A>(
 export const useRxSuspenseSuccess = <E, A>(
   rx: Rx.Rx<Result.Result<E, A>>,
   options?: { readonly suspendOnWaiting?: boolean }
-): {
-  readonly isWaiting: boolean
-  readonly value: A
-} => {
+): Result.Success<E, A> => {
   const result = useRxSuspense(rx, options)
-  if (result.value._tag === "Failure") {
-    throw Cause.squash(result.value.cause)
+  if (result._tag === "Failure") {
+    throw Cause.squash(result.cause)
   }
-  return {
-    isWaiting: result.isWaiting,
-    value: result.value.value
-  }
+  return result
 }
 
 /**

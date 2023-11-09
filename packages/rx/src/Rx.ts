@@ -176,20 +176,20 @@ export interface Writable<R, W> extends Rx<R> {
  */
 export interface Context {
   <A>(rx: Rx<A>): A
-  readonly get: Rx.Get
-  readonly result: Rx.GetResult
-  readonly once: Rx.Get
+  readonly get: <A>(rx: Rx<A>) => A
+  readonly result: <E, A>(rx: Rx<Result.Result<E, A>>) => Exit.Exit<E | NoSuchElementException, A>
+  readonly once: <A>(rx: Rx<A>) => A
   readonly addFinalizer: (f: () => void) => void
   readonly mount: <A>(rx: Rx<A>) => void
-  readonly refreshSync: Rx.RefreshRxSync
-  readonly refresh: Rx.RefreshRx
+  readonly refreshSync: <A>(rx: Rx<A> & Refreshable) => void
+  readonly refresh: <A>(rx: Rx<A> & Refreshable) => Effect.Effect<never, never, void>
   readonly refreshSelfSync: () => void
   readonly refreshSelf: Effect.Effect<never, never, void>
   readonly self: <A>() => Option.Option<A>
   readonly setSelfSync: <A>(a: A) => void
   readonly setSelf: <A>(a: A) => Effect.Effect<never, never, void>
-  readonly setSync: Rx.Set
-  readonly set: Rx.SetEffect
+  readonly setSync: <R, W>(rx: Writable<R, W>, value: W) => void
+  readonly set: <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<never, never, void>
   readonly subscribe: <A>(rx: Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }) => void
@@ -200,10 +200,10 @@ export interface Context {
  * @category context
  */
 export interface WriteContext<A> {
-  readonly get: Rx.Get
+  readonly get: <A>(rx: Rx<A>) => A
   readonly refreshSelf: () => void
   readonly setSelf: (a: A) => void
-  readonly set: Rx.Set
+  readonly set: <R, W>(rx: Writable<R, W>, value: W) => void
 }
 
 const RxProto = {
@@ -545,28 +545,28 @@ export interface RxRuntime<E, A> extends Rx<Result.Result<E, Runtime.Runtime<A>>
  * @category constructors
  */
 export const runtime: {
-  <E, A>(layer: Layer.Layer<never, E, A>, options?: {
+  <E, A>(create: (get: Context) => Layer.Layer<never, E, A>, options?: {
     readonly autoDispose?: boolean
     readonly idleTTL?: Duration.DurationInput
     readonly runtime?: undefined
   }): RxRuntime<E, A>
-  <RR, R extends RR, E, A, RE>(layer: Layer.Layer<R, E, A>, options?: {
+  <RR, R extends RR, E, A, RE>(create: (get: Context) => Layer.Layer<R, E, A>, options?: {
     readonly autoDispose?: boolean
     readonly idleTTL?: Duration.DurationInput
     readonly runtime: RxRuntime<RE, RR>
   }): RxRuntime<E, A | RR>
-} = <R, E, A, RE>(layer: Layer.Layer<R, E, A>, options?: {
+} = <R, E, A, RE>(create: (get: Context) => Layer.Layer<R, E, A>, options?: {
   readonly autoDispose?: boolean
   readonly idleTTL?: Duration.DurationInput
   readonly runtime?: RxRuntime<RE, R>
 }): RxRuntime<E | RE, A> => {
   let rx = options?.runtime
-    ? scoped(() =>
+    ? scoped((get) =>
       Effect.flatMap(
-        Layer.build(layer),
+        Layer.build(create(get)),
         (context) => Effect.provide(Effect.runtime<A>(), context)
       ), { runtime: options.runtime })
-    : scoped(() => Layer.toRuntime(layer) as Effect.Effect<Scope.Scope, E, Runtime.Runtime<A>>)
+    : scoped((get) => Layer.toRuntime(create(get)) as Effect.Effect<Scope.Scope, E, Runtime.Runtime<A>>)
 
   if (options?.idleTTL !== undefined) {
     rx = setIdleTTL(rx, options.idleTTL)

@@ -144,7 +144,7 @@ Added in v1.0.0
 export declare const useRxSuspense: <E, A>(
   rx: Rx.Rx<Result.Result<E, A>>,
   options?: { readonly suspendOnWaiting?: boolean }
-) => { readonly isWaiting: boolean; readonly value: any }
+) => any
 ```
 
 Added in v1.0.0
@@ -157,7 +157,7 @@ Added in v1.0.0
 export declare const useRxSuspenseSuccess: <E, A>(
   rx: Rx.Rx<Result.Result<E, A>>,
   options?: { readonly suspendOnWaiting?: boolean }
-) => { readonly isWaiting: boolean; readonly value: A }
+) => Result.Success<E, A>
 ```
 
 Added in v1.0.0

@@ -680,14 +680,14 @@ const MultiplierLive = Layer.effect(
   })
 )
 
-const counterRuntime = Rx.runtime(CounterLive, {
+const counterRuntime = Rx.runtime(() => CounterLive, {
   autoDispose: true
 })
-const multiplierRuntime = Rx.runtime(MultiplierLive, {
+const multiplierRuntime = Rx.runtime(() => MultiplierLive, {
   runtime: counterRuntime,
   autoDispose: true
 })
-const fiberRefRuntime = Rx.runtime(Layer.setRequestCaching(true), {
+const fiberRefRuntime = Rx.runtime(() => Layer.setRequestCaching(true), {
   runtime: counterRuntime,
   autoDispose: true
 })

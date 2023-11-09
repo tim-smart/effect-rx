@@ -285,7 +285,7 @@ Added in v1.0.0
 ```ts
 export declare const runtime: {
   <E, A>(
-    layer: Layer.Layer<never, E, A>,
+    create: (get: Context) => Layer.Layer<never, E, A>,
     options?: {
       readonly autoDispose?: boolean
       readonly idleTTL?: Duration.DurationInput
@@ -293,7 +293,7 @@ export declare const runtime: {
     }
   ): RxRuntime<E, A>
   <RR, R extends RR, E, A, RE>(
-    layer: Layer.Layer<R, E, A>,
+    create: (get: Context) => Layer.Layer<R, E, A>,
     options?:
       | {
           readonly autoDispose?: boolean | undefined
@@ -441,20 +441,20 @@ Added in v1.0.0
 ```ts
 export interface Context {
   <A>(rx: Rx<A>): A
-  readonly get: Rx.Get
-  readonly result: Rx.GetResult
-  readonly once: Rx.Get
+  readonly get: <A>(rx: Rx<A>) => A
+  readonly result: <E, A>(rx: Rx<Result.Result<E, A>>) => Exit.Exit<E | NoSuchElementException, A>
+  readonly once: <A>(rx: Rx<A>) => A
   readonly addFinalizer: (f: () => void) => void
   readonly mount: <A>(rx: Rx<A>) => void
-  readonly refreshSync: Rx.RefreshRxSync
-  readonly refresh: Rx.RefreshRx
+  readonly refreshSync: <A>(rx: Rx<A> & Refreshable) => void
+  readonly refresh: <A>(rx: Rx<A> & Refreshable) => Effect.Effect<never, never, void>
   readonly refreshSelfSync: () => void
   readonly refreshSelf: Effect.Effect<never, never, void>
   readonly self: <A>() => Option.Option<A>
   readonly setSelfSync: <A>(a: A) => void
   readonly setSelf: <A>(a: A) => Effect.Effect<never, never, void>
-  readonly setSync: Rx.Set
-  readonly set: Rx.SetEffect
+  readonly setSync: <R, W>(rx: Writable<R, W>, value: W) => void
+  readonly set: <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<never, never, void>
   readonly subscribe: <A>(
     rx: Rx<A>,
     f: (_: A) => void,
@@ -473,10 +473,10 @@ Added in v1.0.0
 
 ```ts
 export interface WriteContext<A> {
-  readonly get: Rx.Get
+  readonly get: <A>(rx: Rx<A>) => A
   readonly refreshSelf: () => void
   readonly setSelf: (a: A) => void
-  readonly set: Rx.Set
+  readonly set: <R, W>(rx: Writable<R, W>, value: W) => void
 }
 ```
 
