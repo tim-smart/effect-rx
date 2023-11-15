@@ -1,4 +1,5 @@
 import * as RxRef from "@effect-rx/rx/RxRef"
+import { assert, describe, expect, test } from "vitest"
 
 describe("RxRef", () => {
   describe("make", () => {

@@ -4,9 +4,9 @@ import * as Equal from "effect/Equal"
 import type { Exit } from "effect/Exit"
 import { globalValue } from "effect/GlobalValue"
 import * as Option from "effect/Option"
-import type * as Registry from "../Registry"
-import * as Result from "../Result"
-import type * as Rx from "../Rx"
+import type * as Registry from "../Registry.js"
+import * as Result from "../Result.js"
+import type * as Rx from "../Rx.js"
 
 const constImmediate = { immediate: true }
 function constListener(_: any) {}
@@ -34,7 +34,7 @@ class RegistryImpl implements Registry.Registry {
   }
 
   private readonly nodes = new Map<Rx.Rx<any>, Node<any>>()
-  private readonly timeoutBuckets = new Map<number, readonly [nodes: Set<Node<any>>, handle: NodeJS.Timeout]>()
+  private readonly timeoutBuckets = new Map<number, readonly [nodes: Set<Node<any>>, handle: number]>()
   private readonly nodeTimeoutBucket = new Map<Node<any>, number>()
   private disposed = false
 

@@ -76,8 +76,8 @@ class ReadonlyRefImpl<A> implements ReadonlyRef<A> {
     this[TypeId] = TypeId
   }
 
-  [Equal.symbol](that: ReadonlyRef<A>) {
-    return Equal.equals(this.value, that.value)
+  [Equal.symbol](that: Equal.Equal) {
+    return Equal.equals(this.value, (that as ReadonlyRef<A>).value)
   }
 
   [Hash.symbol]() {
@@ -136,8 +136,8 @@ class MapRefImpl<A, B> implements ReadonlyRef<B> {
   constructor(readonly parent: ReadonlyRef<A>, readonly transform: (a: A) => B) {
     this[TypeId] = TypeId
   }
-  [Equal.symbol](that: ReadonlyRef<A>) {
-    return Equal.equals(this.value, that.value)
+  [Equal.symbol](that: Equal.Equal) {
+    return Equal.equals(this.value, (that as ReadonlyRef<B>).value)
   }
   [Hash.symbol]() {
     return Hash.hash(this.value)
@@ -167,8 +167,8 @@ class PropRefImpl<A, K extends keyof A> implements RxRef<A[K]> {
   constructor(readonly parent: RxRef<A>, readonly _prop: K) {
     this[TypeId] = TypeId
   }
-  [Equal.symbol](that: ReadonlyRef<A>) {
-    return Equal.equals(this.value, that.value)
+  [Equal.symbol](that: Equal.Equal) {
+    return Equal.equals(this.value, (that as ReadonlyRef<A>).value)
   }
   [Hash.symbol]() {
     return Hash.hash(this.value)

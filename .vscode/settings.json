@@ -22,11 +22,7 @@
   "[typescriptreact]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
   },
-  "eslint.validate": [
-    "markdown",
-    "javascript",
-    "typescript"
-  ],
+  "eslint.validate": ["markdown", "javascript", "typescript"],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
@@ -48,15 +44,5 @@
     "**/target": true
   },
   "files.insertFinalNewline": true,
-  "nixEnvSelector.nixFile": "${workspaceRoot}/flake.nix",
-  "testing.automaticallyOpenPeekView": "never",
-  "files.exclude": {
-    "packages/rx-react/dist": true,
-    "packages/rx/dist": true,
-    "packages/rx/internal": true,
-    "packages/rx/Registry": true,
-    "packages/rx/Result": true,
-    "packages/rx/Rx": true,
-    "packages/rx/RxRef": true
-  }
+  "testing.automaticallyOpenPeekView": "never"
 }

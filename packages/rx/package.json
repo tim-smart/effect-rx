@@ -2,87 +2,31 @@
   "name": "@effect-rx/rx",
   "version": "0.11.3",
   "description": "Reactive toolkit for Effect",
-  "main": "dist/effect-rx-rx.cjs.js",
-  "module": "dist/effect-rx-rx.esm.js",
+  "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "dist"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/effect-ts/rx.git"
   },
   "homepage": "https://github.com/effect-ts/rx",
-  "preconstruct": {
-    "entrypoints": [
-      "*.ts"
-    ],
-    "distFilenameStrategy": "full",
-    "exports": {
-      "importConditionDefaultExport": "default"
-    }
-  },
-  "effect": {
-    "generateIndex": true,
-    "includeInternal": true
-  },
   "scripts": {
-    "example": "ts-node --project tsconfig.examples.json",
-    "lint": "eslint src/**/*.ts test/**/*.ts",
-    "docs": "docgen",
-    "tc": "tsc --noEmit",
-    "test": "vitest",
-    "coverage": "vitest run --coverage"
+    "build": "pnpm build-prepare && pnpm build-esm && pnpm build-cjs && pnpm build-annotate && build-utils pack-v2",
+    "build-prepare": "build-utils prepare-v2",
+    "build-esm": "tsc -b tsconfig.build.json",
+    "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
+    "build-annotate": "babel build --plugins annotate-pure-calls --out-dir build --source-maps"
   },
   "keywords": [],
   "author": "Effect contributors",
   "license": "MIT",
-  "sideEffects": [],
+  "sideEffects": false,
   "devDependencies": {
-    "effect": "2.0.0-next.54"
+    "effect": "2.0.0-next.55"
   },
   "peerDependencies": {
-    "effect": "2.0.0-next.54"
-  },
-  "files": [
-    "src",
-    "dist",
-    "internal",
-    "Registry",
-    "Result",
-    "Rx",
-    "RxRef"
-  ],
-  "exports": {
-    ".": {
-      "types": "./dist/declarations/src/index.d.ts",
-      "module": "./dist/effect-rx-rx.esm.js",
-      "import": "./dist/effect-rx-rx.cjs.mjs",
-      "default": "./dist/effect-rx-rx.cjs.js"
-    },
-    "./package.json": "./package.json",
-    "./Registry": {
-      "types": "./dist/declarations/src/Registry.d.ts",
-      "module": "./Registry/dist/effect-rx-rx-Registry.esm.js",
-      "import": "./Registry/dist/effect-rx-rx-Registry.cjs.mjs",
-      "default": "./Registry/dist/effect-rx-rx-Registry.cjs.js"
-    },
-    "./Result": {
-      "types": "./dist/declarations/src/Result.d.ts",
-      "module": "./Result/dist/effect-rx-rx-Result.esm.js",
-      "import": "./Result/dist/effect-rx-rx-Result.cjs.mjs",
-      "default": "./Result/dist/effect-rx-rx-Result.cjs.js"
-    },
-    "./Rx": {
-      "types": "./dist/declarations/src/Rx.d.ts",
-      "module": "./Rx/dist/effect-rx-rx-Rx.esm.js",
-      "import": "./Rx/dist/effect-rx-rx-Rx.cjs.mjs",
-      "default": "./Rx/dist/effect-rx-rx-Rx.cjs.js"
-    },
-    "./RxRef": {
-      "types": "./dist/declarations/src/RxRef.d.ts",
-      "module": "./RxRef/dist/effect-rx-rx-RxRef.esm.js",
-      "import": "./RxRef/dist/effect-rx-rx-RxRef.cjs.mjs",
-      "default": "./RxRef/dist/effect-rx-rx-RxRef.cjs.js"
-    }
+    "effect": "2.0.0-next.55"
   }
 }

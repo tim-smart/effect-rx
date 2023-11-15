@@ -1,70 +1,56 @@
 {
-  "name": "rx",
   "private": true,
-  "author": "The Effect contributors",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/effect-ts/rx.git"
-  },
+  "packageManager": "pnpm@8.10.0",
   "workspaces": [
     "packages/*"
   ],
-  "preconstruct": {
-    "packages": [
-      "packages/*"
-    ]
-  },
   "scripts": {
-    "changeset": "changeset",
     "clean": "node scripts/clean.mjs",
-    "gen": "build-utils prepare-v1",
-    "build": "pnpm gen && preconstruct fix && preconstruct build && pnpm gen",
-    "circular": "madge --circular --extensions ts --no-color --no-spinner --warning packages/*/src",
+    "build": "tsc -b tsconfig.build.json && pnpm -r run build",
+    "circular": "madge --extensions ts --circular --no-color --no-spinner packages/*/src",
     "test": "vitest",
-    "autofix": "ultra -r autofix",
-    "docs": "ultra -r docs && pnpm docs-cp",
-    "docs-cp": "node scripts/docs-cp.js",
-    "lint": "ultra -r lint",
-    "tc": "ultra -r tsc -b",
-    "version": "changeset version"
+    "coverage": "vitest --coverage",
+    "check": "tsc -b tsconfig.json",
+    "indexgen": "pnpm -r exec build-utils prepare-v2",
+    "docgen": "pnpm -r exec docgen && pnpm docgen-cp",
+    "docgen-cp": "node scripts/docs-cp.js",
+    "lint": "eslint \"packages/*/{src,test,examples}/**/*.ts\"",
+    "lint-fix": "pnpm lint --fix"
   },
   "devDependencies": {
-    "@babel/core": "^7.23.2",
-    "@babel/preset-typescript": "^7.23.2",
+    "@babel/cli": "^7.23.0",
+    "@babel/core": "^7.23.3",
+    "@babel/plugin-transform-export-namespace-from": "^7.23.3",
+    "@babel/plugin-transform-modules-commonjs": "^7.23.3",
     "@changesets/changelog-github": "^0.4.8",
     "@changesets/cli": "^2.26.2",
-    "@effect/build-utils": "^0.1.9",
-    "@effect/docgen": "^0.2.1",
+    "@effect/build-utils": "^0.4.1",
+    "@effect/docgen": "^0.3.2",
     "@effect/eslint-plugin": "^0.1.2",
-    "@effect/language-service": "0.0.21",
-    "@preconstruct/cli": "^2.8.1",
-    "@types/chai": "^4.3.9",
-    "@types/node": "^20.8.10",
-    "@typescript-eslint/eslint-plugin": "^6.9.1",
-    "@typescript-eslint/parser": "^6.9.1",
-    "@vitejs/plugin-react": "^4.1.1",
+    "@effect/language-service": "^0.0.21",
+    "@typescript-eslint/eslint-plugin": "^6.11.0",
+    "@typescript-eslint/parser": "^6.11.0",
     "@vitest/coverage-v8": "^0.34.6",
-    "@vitest/expect": "^0.34.6",
+    "@vitest/web-worker": "^0.34.6",
     "babel-plugin-annotate-pure-calls": "^0.4.0",
-    "eslint": "^8.52.0",
+    "eslint": "^8.53.0",
     "eslint-import-resolver-typescript": "^3.6.1",
-    "eslint-plugin-codegen": "0.17.0",
+    "eslint-plugin-codegen": "^0.18.1",
     "eslint-plugin-deprecation": "^2.0.0",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-sort-destructure-keys": "^1.5.0",
+    "fast-check": "^3.13.2",
     "glob": "^10.3.10",
     "madge": "^6.1.0",
-    "ts-node": "^10.9.1",
+    "prettier": "^3.1.0",
+    "tsx": "^4.1.2",
     "typescript": "^5.2.2",
-    "ultra-runner": "^3.10.5",
-    "vite": "^4.5.0",
-    "vitest": "0.34.6"
+    "vitest": "^0.34.6"
   },
   "pnpm": {
     "patchedDependencies": {
-      "@changesets/assemble-release-plan@5.2.4": "patches/@changesets__assemble-release-plan@5.2.4.patch",
-      "@preconstruct/cli@2.8.1": "patches/@preconstruct__cli@2.8.1.patch"
+      "@changesets/assemble-release-plan@5.2.4": "patches/@changesets__assemble-release-plan@5.2.4.patch"
     }
   }
 }

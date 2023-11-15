@@ -1,19 +1,19 @@
 /**
  * @since 1.0.0
  */
-export * as Registry from "@effect-rx/rx/Registry"
+export * as Registry from "./Registry.js"
 
 /**
  * @since 1.0.0
  */
-export * as Result from "@effect-rx/rx/Result"
+export * as Result from "./Result.js"
 
 /**
  * @since 1.0.0
  */
-export * as Rx from "@effect-rx/rx/Rx"
+export * as Rx from "./Rx.js"
 
 /**
  * @since 1.0.0
  */
-export * as RxRef from "@effect-rx/rx/RxRef"
+export * as RxRef from "./RxRef.js"

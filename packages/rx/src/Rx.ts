@@ -15,9 +15,9 @@ import { type Pipeable, pipeArguments } from "effect/Pipeable"
 import type * as Runtime from "effect/Runtime"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
-import * as internalRegistry from "./internal/registry"
-import { runCallbackSync, runCallbackSyncDefault } from "./internal/runtime"
-import * as Result from "./Result"
+import * as internalRegistry from "./internal/registry.js"
+import { runCallbackSync, runCallbackSyncDefault } from "./internal/runtime.js"
+import * as Result from "./Result.js"
 
 /**
  * @since 1.0.0

@@ -1,8 +1,8 @@
 /**
  * @since 1.0.0
  */
-import * as internal from "./internal/registry"
-import type * as Rx from "./Rx"
+import * as internal from "./internal/registry.js"
+import type * as Rx from "./Rx.js"
 
 /**
  * @since 1.0.0
