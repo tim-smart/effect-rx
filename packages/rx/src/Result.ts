@@ -278,7 +278,7 @@ export const toExit = <E, A>(
       return Exit.failCause(self.cause)
     }
     default: {
-      return Exit.fail(Cause.NoSuchElementException())
+      return Exit.fail(new Cause.NoSuchElementException())
     }
   }
 }

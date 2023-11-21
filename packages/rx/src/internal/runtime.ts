@@ -25,7 +25,7 @@ const fastPath = <R, E, A>(effect: Effect.Effect<R, E, A>): Exit.Exit<E, A> | un
     }
     case "None": {
       // @ts-expect-error
-      return Exit.fail(NoSuchElementException())
+      return Exit.fail(new NoSuchElementException())
     }
   }
 }

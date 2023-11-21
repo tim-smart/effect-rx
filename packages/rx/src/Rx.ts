@@ -601,7 +601,7 @@ function makeStream<E, A>(
           ctx.self<Result.Result<E | NoSuchElementException, A>>(),
           Option.flatMap(Result.value),
           Option.match({
-            onNone: () => ctx.setSelfSync(Result.failWithPrevious(NoSuchElementException(), previous)),
+            onNone: () => ctx.setSelfSync(Result.failWithPrevious(new NoSuchElementException(), previous)),
             onSome: (a) => ctx.setSelfSync(Result.success(a))
           })
         )
@@ -776,7 +776,7 @@ export const streamPull: {
               get.self<StreamPullResult<E, A>>(),
               Option.flatMap(Result.value),
               Option.match({
-                onNone: () => Effect.fail(NoSuchElementException()),
+                onNone: () => Effect.fail(new NoSuchElementException()),
                 onSome: ({ items }) =>
                   Effect.succeed({
                     done: true,
