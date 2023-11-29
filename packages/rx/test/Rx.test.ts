@@ -698,6 +698,12 @@ describe("Rx", () => {
     assert(Option.isSome(value))
     assert.strictEqual(value.value, 0)
   })
+
+  it("read non-object", () => {
+    const bool = Rx.make(() => true)
+    const r = Registry.make()
+    assert.strictEqual(r.get(bool), true)
+  })
 })
 
 interface Counter {

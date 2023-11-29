@@ -393,12 +393,14 @@ const makeRead: {
     const create = arg as Rx.Read<any>
     return function(get: Context) {
       const value = create(get)
-      if (Effect.EffectTypeId in value) {
-        return effect(get, value, options, providedRuntime)
-      } else if (Stream.StreamTypeId in value) {
-        return stream(get, value, options, providedRuntime)
-      } else if (Layer.LayerTypeId in value) {
-        return runtime(get, value, providedRuntime)
+      if (typeof value === "object" && value !== null) {
+        if (Effect.EffectTypeId in value) {
+          return effect(get, value, options, providedRuntime)
+        } else if (Stream.StreamTypeId in value) {
+          return stream(get, value, options, providedRuntime)
+        } else if (Layer.LayerTypeId in value) {
+          return runtime(get, value, providedRuntime)
+        }
       }
       return value
     }
