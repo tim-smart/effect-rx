@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.15.0
+
+### Minor Changes
+
+- [#78](https://github.com/tim-smart/effect-rx/pull/78) [`c7dfc46`](https://github.com/tim-smart/effect-rx/commit/c7dfc468c3407f67e4d73cebbd77ae67ef10f25e) Thanks [@tim-smart](https://github.com/tim-smart)! - consolidate Rx constructors
+
 ## 0.14.0
 
 ### Minor Changes
