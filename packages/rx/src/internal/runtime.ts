@@ -52,6 +52,3 @@ export const runCallbackSync =
       Effect.runFork(fiberRuntime.interruptAsFork(fiberRuntime.id()))
     }
   }
-
-/** @internal */
-export const runCallbackSyncDefault = runCallbackSync(Runtime.defaultRuntime)

@@ -13,59 +13,59 @@ Added in v1.0.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [exports](#exports)
-  - [From "@effect-rx/rx/Registry"](#from-effect-rxrxregistry)
-  - [From "@effect-rx/rx/Result"](#from-effect-rxrxresult)
-  - [From "@effect-rx/rx/Rx"](#from-effect-rxrxrx)
-  - [From "@effect-rx/rx/RxRef"](#from-effect-rxrxrxref)
+  - [From "./Registry.js"](#from-registryjs)
+  - [From "./Result.js"](#from-resultjs)
+  - [From "./Rx.js"](#from-rxjs)
+  - [From "./RxRef.js"](#from-rxrefjs)
 
 ---
 
 # exports
 
-## From "@effect-rx/rx/Registry"
+## From "./Registry.js"
 
-Re-exports all named exports from the "@effect-rx/rx/Registry" module as `Registry`.
+Re-exports all named exports from the "./Registry.js" module as `Registry`.
 
 **Signature**
 
 ```ts
-export * as Registry from '@effect-rx/rx/Registry'
+export * as Registry from "./Registry.js"
 ```
 
 Added in v1.0.0
 
-## From "@effect-rx/rx/Result"
+## From "./Result.js"
 
-Re-exports all named exports from the "@effect-rx/rx/Result" module as `Result`.
+Re-exports all named exports from the "./Result.js" module as `Result`.
 
 **Signature**
 
 ```ts
-export * as Result from '@effect-rx/rx/Result'
+export * as Result from "./Result.js"
 ```
 
 Added in v1.0.0
 
-## From "@effect-rx/rx/Rx"
+## From "./Rx.js"
 
-Re-exports all named exports from the "@effect-rx/rx/Rx" module as `Rx`.
+Re-exports all named exports from the "./Rx.js" module as `Rx`.
 
 **Signature**
 
 ```ts
-export * as Rx from '@effect-rx/rx/Rx'
+export * as Rx from "./Rx.js"
 ```
 
 Added in v1.0.0
 
-## From "@effect-rx/rx/RxRef"
+## From "./RxRef.js"
 
-Re-exports all named exports from the "@effect-rx/rx/RxRef" module as `RxRef`.
+Re-exports all named exports from the "./RxRef.js" module as `RxRef`.
 
 **Signature**
 
 ```ts
-export * as RxRef from '@effect-rx/rx/RxRef'
+export * as RxRef from "./RxRef.js"
 ```
 
 Added in v1.0.0

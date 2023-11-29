@@ -237,7 +237,7 @@ Added in v1.0.0
 
 ```ts
 export interface Failure<E, A> extends Result.Proto<E, A> {
-  readonly _tag: 'Failure'
+  readonly _tag: "Failure"
   readonly cause: Cause.Cause<E>
   readonly previousValue: Option.Option<A>
 }
@@ -251,7 +251,7 @@ Added in v1.0.0
 
 ```ts
 export interface Initial<E, A> extends Result.Proto<E, A> {
-  readonly _tag: 'Initial'
+  readonly _tag: "Initial"
 }
 ```
 
@@ -315,10 +315,10 @@ Added in v1.0.0
 export type With<R extends Result<any, any>, E, A> = R extends Initial<infer _E, infer _A>
   ? Initial<E, A>
   : R extends Success<infer _E, infer _A>
-  ? Success<E, A>
-  : R extends Failure<infer _E, infer _A>
-  ? Failure<E, A>
-  : never
+    ? Success<E, A>
+    : R extends Failure<infer _E, infer _A>
+      ? Failure<E, A>
+      : never
 ```
 
 Added in v1.0.0
@@ -329,7 +329,7 @@ Added in v1.0.0
 
 ```ts
 export interface Success<E, A> extends Result.Proto<E, A> {
-  readonly _tag: 'Success'
+  readonly _tag: "Success"
   readonly value: A
 }
 ```
