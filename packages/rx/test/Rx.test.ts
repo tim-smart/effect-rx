@@ -19,7 +19,7 @@ describe("Rx", () => {
   })
 
   it("get/set", () => {
-    const counter = Rx.state(0)
+    const counter = Rx.make(0)
     const r = Registry.make()
     expect(r.get(counter)).toEqual(0)
     r.set(counter, 1)
@@ -27,7 +27,7 @@ describe("Rx", () => {
   })
 
   it("keepAlive false", async () => {
-    const counter = Rx.state(0)
+    const counter = Rx.make(0)
     const r = Registry.make()
     r.set(counter, 1)
     expect(r.get(counter)).toEqual(1)
@@ -36,7 +36,7 @@ describe("Rx", () => {
   })
 
   it("keepAlive true", async () => {
-    const counter = Rx.state(0).pipe(
+    const counter = Rx.make(0).pipe(
       Rx.keepAlive
     )
     const r = Registry.make()
@@ -47,7 +47,7 @@ describe("Rx", () => {
   })
 
   it("subscribe", async () => {
-    const counter = Rx.state(0)
+    const counter = Rx.make(0)
     const r = Registry.make()
     let count = 0
     const cancel = r.subscribe(counter, (_) => {
@@ -64,10 +64,7 @@ describe("Rx", () => {
   })
 
   it("runtime", async () => {
-    const count = Rx.effect(
-      () => Effect.flatMap(Counter, (_) => _.get),
-      { runtime: counterRuntime }
-    )
+    const count = counterRuntime.rx(Effect.flatMap(Counter, (_) => _.get))
     const r = Registry.make()
     const result = r.get(count)
     assert(Result.isSuccess(result))
@@ -75,20 +72,15 @@ describe("Rx", () => {
   })
 
   it("runtime multiple", async () => {
-    const count = Rx.effect(
-      () => Effect.flatMap(Counter, (_) => _.get),
-      { runtime: counterRuntime }
-    )
-    const timesTwo = Rx.effect(
-      (get) =>
-        Effect.gen(function*(_) {
-          const counter = yield* _(Counter)
-          const multiplier = yield* _(Multiplier)
-          yield* _(counter.inc)
-          expect(yield* _(get.result(count))).toEqual(2)
-          return yield* _(multiplier.times(2))
-        }),
-      { runtime: multiplierRuntime }
+    const count = counterRuntime.rx(Effect.flatMap(Counter, (_) => _.get))
+    const timesTwo = multiplierRuntime.rx((get) =>
+      Effect.gen(function*(_) {
+        const counter = yield* _(Counter)
+        const multiplier = yield* _(Multiplier)
+        yield* _(counter.inc)
+        expect(yield* _(get.result(count))).toEqual(2)
+        return yield* _(multiplier.times(2))
+      })
     )
     const r = Registry.make()
     let result = r.get(timesTwo)
@@ -107,10 +99,7 @@ describe("Rx", () => {
   })
 
   it("runtime fiber ref", async () => {
-    const caching = Rx.effect(
-      () => FiberRef.get(FiberRef.currentRequestCacheEnabled),
-      { runtime: fiberRefRuntime }
-    )
+    const caching = fiberRefRuntime.rx(FiberRef.get(FiberRef.currentRequestCacheEnabled))
     const r = Registry.make()
     const result = r.get(caching)
     assert(Result.isSuccess(result))
@@ -118,10 +107,10 @@ describe("Rx", () => {
   })
 
   it("effect initial", async () => {
-    const count = Rx.effect(() =>
-      Effect.succeed(1).pipe(
-        Effect.delay(100)
-      ), { initialValue: 0 }).pipe(Rx.keepAlive)
+    const count = Rx.make(
+      Effect.succeed(1).pipe(Effect.delay(100)),
+      { initialValue: 0 }
+    ).pipe(Rx.keepAlive)
     const r = Registry.make()
     let result = r.get(count)
     assert(Result.isSuccess(result))
@@ -134,7 +123,7 @@ describe("Rx", () => {
   })
 
   it("effectFn", async () => {
-    const count = Rx.effectFn((n: number) => Effect.succeed(n + 1))
+    const count = Rx.fn((n: number) => Effect.succeed(n + 1))
     const r = Registry.make()
     let result = r.get(count)
     assert(Result.isInitial(result))
@@ -145,7 +134,7 @@ describe("Rx", () => {
   })
 
   it("effectFn initial", async () => {
-    const count = Rx.effectFn((n: number) => Effect.succeed(n + 1), {
+    const count = Rx.fn((n: number) => Effect.succeed(n + 1), {
       initialValue: 0
     })
     const r = Registry.make()
@@ -159,7 +148,7 @@ describe("Rx", () => {
   })
 
   it("effect mapResult", async () => {
-    const count = Rx.effectFn((n: number) => Effect.succeed(n + 1)).pipe(
+    const count = Rx.fn((n: number) => Effect.succeed(n + 1)).pipe(
       Rx.mapResult((_) => _ + 1)
     )
     const r = Registry.make()
@@ -172,8 +161,8 @@ describe("Rx", () => {
   })
 
   it("effect double mapResult", async () => {
-    const seed = Rx.state(0)
-    const count = Rx.effect((get) => Effect.succeed(get(seed) + 1)).pipe(
+    const seed = Rx.make(0)
+    const count = Rx.make((get) => Effect.succeed(get(seed) + 1)).pipe(
       Rx.mapResult((_) => _ + 10),
       Rx.mapResult((_) => _ + 100)
     )
@@ -189,7 +178,7 @@ describe("Rx", () => {
 
   it("effect double mapResult refresh", async () => {
     let rebuilds = 0
-    const count = Rx.effect(() => {
+    const count = Rx.make(() => {
       rebuilds++
       return Effect.succeed(1)
     }).pipe(
@@ -211,7 +200,7 @@ describe("Rx", () => {
 
   it("scopedFn", async () => {
     let finalized = 0
-    const count = Rx.scopedFn((n: number) =>
+    const count = Rx.fn((n: number) =>
       Effect.succeed(n + 1).pipe(
         Effect.zipLeft(
           Effect.addFinalizer(() =>
@@ -240,7 +229,7 @@ describe("Rx", () => {
   })
 
   it("stream", async () => {
-    const count = Rx.stream(() =>
+    const count = Rx.make(
       Stream.range(0, 2).pipe(
         Stream.tap(() => Effect.sleep(50))
       )
@@ -277,10 +266,12 @@ describe("Rx", () => {
   })
 
   it("stream initial", async () => {
-    const count = Rx.stream(() =>
+    const count = Rx.make(
       Stream.range(1, 2).pipe(
         Stream.tap(() => Effect.sleep(50))
-      ), { initialValue: 0 })
+      ),
+      { initialValue: 0 }
+    )
     const r = Registry.make()
     const unmount = r.mount(count)
     let result = r.get(count)
@@ -302,7 +293,7 @@ describe("Rx", () => {
   })
 
   it("streamFn", async () => {
-    const count = Rx.streamFn((start: number) =>
+    const count = Rx.fn((start: number) =>
       Stream.range(start, start + 1).pipe(
         Stream.tap(() => Effect.sleep(50))
       )
@@ -357,8 +348,8 @@ describe("Rx", () => {
     assert(Result.isInitial(result))
   })
 
-  it("streamPull", async () => {
-    const count = Rx.streamPull(() =>
+  it("pull", async () => {
+    const count = Rx.pull(
       Stream.range(0, 1, 1).pipe(
         Stream.tap(() => Effect.sleep(50))
       )
@@ -411,8 +402,65 @@ describe("Rx", () => {
     assert(Option.isNone(Result.value(result)))
   })
 
-  it("streamPull initial", async () => {
-    const count = Rx.streamPull(() =>
+  it("pull runtime", async () => {
+    const count = counterRuntime.pull(
+      Counter.pipe(
+        Effect.flatMap((_) => _.get),
+        Effect.map((_) => Stream.range(_, 2, 1)),
+        Stream.unwrap,
+        Stream.tap(() => Effect.sleep(50))
+      )
+    ).pipe(Rx.refreshable)
+    const r = Registry.make()
+    const unmount = r.mount(count)
+
+    let result = r.get(count)
+    assert(result.waiting)
+    assert(Option.isNone(Result.value(result)))
+
+    await vitest.advanceTimersByTimeAsync(50)
+    result = r.get(count)
+    assert(!result.waiting)
+    assert(Result.isSuccess(result))
+    assert.deepEqual(result.value, { done: false, items: [1] })
+
+    r.set(count, void 0)
+    result = r.get(count)
+    assert(result.waiting)
+    assert.deepEqual(Result.value(result), Option.some({ done: false, items: [1] }))
+
+    await vitest.advanceTimersByTimeAsync(50)
+    result = r.get(count)
+    assert(!result.waiting)
+    assert(Result.isSuccess(result))
+    assert.deepEqual(result.value, { done: false, items: [1, 2] })
+
+    r.set(count, void 0)
+    result = r.get(count)
+    assert(!result.waiting)
+    assert(Result.isSuccess(result))
+    assert.deepEqual(result.value, { done: true, items: [1, 2] })
+
+    r.refresh(count)
+    result = r.get(count)
+    assert(result.waiting)
+    assert.deepEqual(Result.value(result), Option.some({ done: true, items: [1, 2] }))
+
+    await vitest.advanceTimersByTimeAsync(50)
+    result = r.get(count)
+    assert(!result.waiting)
+    assert(Result.isSuccess(result))
+    assert.deepEqual(result.value, { done: false, items: [1] })
+
+    unmount()
+    await new Promise((resolve) => resolve(null))
+    result = r.get(count)
+    assert(result.waiting)
+    assert(Option.isNone(Result.value(result)))
+  })
+
+  it("pull initial", async () => {
+    const count = Rx.pull(() =>
       Stream.range(1, 2, 1).pipe(
         Stream.tap(() => Effect.sleep(50))
       ), { initialValue: [0] }).pipe(Rx.refreshable)
@@ -439,13 +487,13 @@ describe("Rx", () => {
   it("family", async () => {
     const r = Registry.make()
 
-    const count = Rx.family((n: number) => Rx.state(n))
+    const count = Rx.family((n: number) => Rx.make(n))
     const hash = Hash.hash(count(1))
     assert.strictEqual(count(1), count(1))
     r.set(count(1), 2)
     assert.strictEqual(r.get(count(1)), 2)
 
-    const countKeep = Rx.family((n: number) => Rx.state(n).pipe(Rx.keepAlive))
+    const countKeep = Rx.family((n: number) => Rx.make(n).pipe(Rx.keepAlive))
     assert.strictEqual(countKeep(1), countKeep(1))
     r.get(countKeep(1))
     const hashKeep = Hash.hash(countKeep(1))
@@ -461,14 +509,14 @@ describe("Rx", () => {
 
   it("label", async () => {
     expect(
-      Rx.state(0).pipe(Rx.withLabel("counter")).label![1]
+      Rx.make(0).pipe(Rx.withLabel("counter")).label![1]
     ).toMatch(/Rx.test.ts:\d+:\d+/)
   })
 
   it("batching", async () => {
     const r = Registry.make()
-    const state = Rx.state(1).pipe(Rx.keepAlive)
-    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    const state = Rx.make(1).pipe(Rx.keepAlive)
+    const state2 = Rx.make("a").pipe(Rx.keepAlive)
     let count = 0
     const derived = Rx.readable((get) => {
       count++
@@ -486,8 +534,8 @@ describe("Rx", () => {
 
   it("nested batch", async () => {
     const r = Registry.make()
-    const state = Rx.state(1).pipe(Rx.keepAlive)
-    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    const state = Rx.make(1).pipe(Rx.keepAlive)
+    const state2 = Rx.make("a").pipe(Rx.keepAlive)
     let count = 0
     const derived = Rx.readable((get) => {
       count++
@@ -507,8 +555,8 @@ describe("Rx", () => {
 
   it("read correct updated state in batch", async () => {
     const r = Registry.make()
-    const state = Rx.state(1).pipe(Rx.keepAlive)
-    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    const state = Rx.make(1).pipe(Rx.keepAlive)
+    const state2 = Rx.make("a").pipe(Rx.keepAlive)
     let count = 0
     const derived = Rx.readable((get) => {
       count++
@@ -528,8 +576,8 @@ describe("Rx", () => {
 
   it("notifies listeners after batch commit", async () => {
     const r = Registry.make()
-    const state = Rx.state(1).pipe(Rx.keepAlive)
-    const state2 = Rx.state("a").pipe(Rx.keepAlive)
+    const state = Rx.make(1).pipe(Rx.keepAlive)
+    const state2 = Rx.make("a").pipe(Rx.keepAlive)
     let count = 0
     const derived = Rx.readable((get) => {
       return get(state) + get(state2)
@@ -548,7 +596,7 @@ describe("Rx", () => {
   })
 
   it("initialValues", async () => {
-    const state = Rx.state(0)
+    const state = Rx.make(0)
     const r = Registry.make({
       initialValues: [
         Rx.initialValue(state, 10)
@@ -560,13 +608,13 @@ describe("Rx", () => {
   })
 
   it("idleTTL", async () => {
-    const state = Rx.state(0).pipe(
+    const state = Rx.make(0).pipe(
       Rx.setIdleTTL(2000)
     )
-    const state2 = Rx.state(0).pipe(
+    const state2 = Rx.make(0).pipe(
       Rx.setIdleTTL(10000)
     )
-    const state3 = Rx.state(0).pipe(
+    const state3 = Rx.make(0).pipe(
       Rx.setIdleTTL(3000)
     )
     const r = Registry.make()
@@ -595,7 +643,7 @@ describe("Rx", () => {
   })
 
   it("fn", async () => {
-    const count = Rx.fn((n: number) => n).pipe(Rx.keepAlive)
+    const count = Rx.fnSync((n: number) => n).pipe(Rx.keepAlive)
     const r = Registry.make()
     assert.deepEqual(r.get(count), Option.none())
 
@@ -604,7 +652,7 @@ describe("Rx", () => {
   })
 
   it("fn initial", async () => {
-    const count = Rx.fn((n: number) => n, { initialValue: 0 })
+    const count = Rx.fnSync((n: number) => n, { initialValue: 0 })
     const r = Registry.make()
     assert.deepEqual(r.get(count), 0)
 
@@ -613,12 +661,12 @@ describe("Rx", () => {
   })
 
   it("withFallback", async () => {
-    const count = Rx.effect(() =>
+    const count = Rx.make(() =>
       Effect.succeed(1).pipe(
         Effect.delay(100)
       )
     ).pipe(
-      Rx.withFallback(Rx.effect(() => Effect.succeed(0))),
+      Rx.withFallback(Rx.make(() => Effect.succeed(0))),
       Rx.keepAlive
     )
     const r = Registry.make()
@@ -629,7 +677,7 @@ describe("Rx", () => {
   })
 
   it("failure with previousValue", async () => {
-    const count = Rx.effectFn((i: number) => i === 1 ? Effect.fail("fail") : Effect.succeed(i))
+    const count = Rx.fn((i: number) => i === 1 ? Effect.fail("fail") : Effect.succeed(i))
     const r = Registry.make()
 
     let result = r.get(count)
@@ -681,14 +729,6 @@ const MultiplierLive = Layer.effect(
   })
 )
 
-const counterRuntime = Rx.runtime(() => CounterLive, {
-  autoDispose: true
-})
-const multiplierRuntime = Rx.runtime(() => MultiplierLive, {
-  runtime: counterRuntime,
-  autoDispose: true
-})
-const fiberRefRuntime = Rx.runtime(() => Layer.setRequestCaching(true), {
-  runtime: counterRuntime,
-  autoDispose: true
-})
+const counterRuntime = Rx.make(CounterLive)
+const multiplierRuntime = counterRuntime.rx(MultiplierLive)
+const fiberRefRuntime = counterRuntime.rx(Layer.setRequestCaching(true))

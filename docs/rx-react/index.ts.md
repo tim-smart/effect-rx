@@ -95,7 +95,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRxRefresh: <A>(rx: any) => () => void
+export declare const useRxRefresh: <A>(rx: Rx.Rx<A> & Rx.Refreshable) => () => void
 ```
 
 Added in v1.0.0
@@ -144,7 +144,7 @@ Added in v1.0.0
 export declare const useRxSuspense: <E, A>(
   rx: Rx.Rx<Result.Result<E, A>>,
   options?: { readonly suspendOnWaiting?: boolean }
-) => any
+) => Result.Success<E, A> | Result.Failure<E, A>
 ```
 
 Added in v1.0.0
@@ -181,7 +181,7 @@ Re-exports all named exports from the "@effect-rx/rx/Registry" module as `Regist
 **Signature**
 
 ```ts
-export * as Registry from '@effect-rx/rx/Registry'
+export * as Registry from "@effect-rx/rx/Registry"
 ```
 
 Added in v1.0.0
@@ -193,7 +193,7 @@ Re-exports all named exports from the "@effect-rx/rx/Result" module as `Result`.
 **Signature**
 
 ```ts
-export * as Result from '@effect-rx/rx/Result'
+export * as Result from "@effect-rx/rx/Result"
 ```
 
 Added in v1.0.0
@@ -205,7 +205,7 @@ Re-exports all named exports from the "@effect-rx/rx/Rx" module as `Rx`.
 **Signature**
 
 ```ts
-export * as Rx from '@effect-rx/rx/Rx'
+export * as Rx from "@effect-rx/rx/Rx"
 ```
 
 Added in v1.0.0
@@ -217,7 +217,7 @@ Re-exports all named exports from the "@effect-rx/rx/RxRef" module as `RxRef`.
 **Signature**
 
 ```ts
-export * as RxRef from '@effect-rx/rx/RxRef'
+export * as RxRef from "@effect-rx/rx/RxRef"
 ```
 
 Added in v1.0.0
