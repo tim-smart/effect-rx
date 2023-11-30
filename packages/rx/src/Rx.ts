@@ -219,7 +219,8 @@ const RxProto = {
     }
   },
   toString() {
-    return Inspectable.toString(this)
+    // TODO: remove any when fix lands
+    return (Inspectable as any).format(this)
   },
   [Inspectable.NodeInspectSymbol](this: Rx<any>) {
     return this.toJSON()
@@ -234,19 +235,19 @@ const RxProto = {
       if (runtimeResult._tag !== "Success") {
         return Result.replacePrevious(runtimeResult, previous)
       }
-      return read(runtimeResult.value)(get)
+      return read(get, runtimeResult.value)
     })
   },
 
   fn(this: RxRuntime<any, any>, arg: any, options?: { readonly initialValue?: unknown }) {
-    const [makeRead, write] = makeResultFn(arg, options)
+    const [read, write] = makeResultFn(arg, options)
     return writable((get) => {
       const previous = get.self<Result.Result<any, any>>()
       const runtimeResult = get(this)
       if (runtimeResult._tag !== "Success") {
         return Result.replacePrevious(runtimeResult, previous)
       }
-      return makeRead(runtimeResult.value)(get)
+      return read(get, runtimeResult.value)
     }, write)
   },
 
@@ -344,7 +345,7 @@ export const make: {
   <A>(create: Rx.Read<A>): Rx<A>
   <A>(initialValue: A): Writable<A, A>
 } = (arg: any, options?: { readonly initialValue?: unknown }) => {
-  const readOrRx = makeRead(arg, options)()
+  const readOrRx = makeRead(arg, options)
   if (TypeId in readOrRx) {
     return readOrRx as any
   }
@@ -358,24 +359,24 @@ export const make: {
 const makeRead: {
   <E, A>(effect: Effect.Effect<Scope.Scope, E, A>, options?: {
     readonly initialValue?: A
-  }): (runtime?: Runtime.Runtime<any>) => Rx.Read<Result.Result<E, A>>
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
   <E, A>(create: Rx.Read<Effect.Effect<Scope.Scope, E, A>>, options?: {
     readonly initialValue?: A
-  }): (runtime?: Runtime.Runtime<any>) => Rx.Read<Result.Result<E, A>>
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
   <E, A>(stream: Stream.Stream<never, E, A>, options?: {
     readonly initialValue?: A
-  }): (runtime?: Runtime.Runtime<any>) => Rx.Read<Result.Result<E, A>>
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
   <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: {
     readonly initialValue?: A
-  }): (runtime?: Runtime.Runtime<any>) => Rx.Read<Result.Result<E, A>>
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
   <E, A>(
     layer: Layer.Layer<never, E, A>
-  ): (runtime?: Runtime.Runtime<any>) => Rx.Read<Result.Result<E, Runtime.Runtime<any>>>
+  ): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, Runtime.Runtime<any>>
   <E, A>(
     create: Rx.Read<Layer.Layer<never, E, A>>
-  ): (runtime?: Runtime.Runtime<any>) => Rx.Read<Result.Result<E, Runtime.Runtime<any>>>
-  <A>(create: Rx.Read<A>): (runtime?: Runtime.Runtime<any>) => Rx.Read<A>
-  <A>(initialValue: A): (runtime?: Runtime.Runtime<any>) => Writable<A, A>
+  ): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, Runtime.Runtime<any>>
+  <A>(create: Rx.Read<A>): (get: Context, runtime?: Runtime.Runtime<any>) => A
+  <A>(initialValue: A): Writable<A, A>
 } = <E, A>(
   arg:
     | Effect.Effect<Scope.Scope, E, A>
@@ -387,11 +388,10 @@ const makeRead: {
     | Rx.Read<A>
     | A,
   options?: { readonly initialValue?: unknown }
-) =>
-(providedRuntime?: Runtime.Runtime<any>) => {
+) => {
   if (typeof arg === "function") {
     const create = arg as Rx.Read<any>
-    return function(get: Context) {
+    return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
       const value = create(get)
       if (typeof value === "object" && value !== null) {
         if (Effect.EffectTypeId in value) {
@@ -406,15 +406,15 @@ const makeRead: {
     }
   } else if (typeof arg === "object" && arg !== null) {
     if (Effect.EffectTypeId in arg) {
-      return function(get: Context) {
+      return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
         return effect(get, arg, options, providedRuntime)
       }
     } else if (Stream.StreamTypeId in arg) {
-      return function(get: Context) {
+      return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
         return stream(get, arg, options, providedRuntime)
       }
     } else if (Layer.LayerTypeId in arg) {
-      return function(get: Context) {
+      return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
         return runtime(get, arg, providedRuntime)
       }
     }
@@ -639,8 +639,8 @@ export const fn: {
 } = <Arg, E, A>(f: Rx.ReadFn<Arg, Stream.Stream<never, E, A> | Effect.Effect<Scope.Scope, E, A>>, options?: {
   readonly initialValue?: A
 }): RxResultFn<E | NoSuchElementException, A, Arg> => {
-  const [makeRead, write] = makeResultFn(f, options)
-  return writable(makeRead(), write)
+  const [read, write] = makeResultFn(f, options)
+  return writable(read, write)
 }
 
 function makeResultFn<Arg, E, A>(
@@ -652,23 +652,21 @@ function makeResultFn<Arg, E, A>(
     ? Result.success<E, A>(options.initialValue)
     : Result.initial<E, A>()
 
-  function makeRead(runtime?: Runtime.Runtime<never>): Rx.Read<Result.Result<E | NoSuchElementException, A>> {
-    return function(get) {
-      const [counter, arg] = get(argRx)
-      if (counter === 0) {
-        return initialValue
-      }
-      const value = f(arg, get)
-      if (Effect.EffectTypeId in value) {
-        return makeEffect(get, value, initialValue, runtime)
-      }
-      return makeStream(get, value, initialValue, runtime)
+  function read(get: Context, runtime?: Runtime.Runtime<never>): Result.Result<E | NoSuchElementException, A> {
+    const [counter, arg] = get(argRx)
+    if (counter === 0) {
+      return initialValue
     }
+    const value = f(arg, get)
+    if (Effect.EffectTypeId in value) {
+      return makeEffect(get, value, initialValue, runtime)
+    }
+    return makeStream(get, value, initialValue, runtime)
   }
   function write(ctx: WriteContext<Result.Result<E | NoSuchElementException, A>>, arg: Arg) {
     ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
   }
-  return [makeRead, write] as const
+  return [read, write] as const
 }
 
 /**
@@ -691,7 +689,7 @@ export const pull = <E, A>(create: Rx.Read<Stream.Stream<never, E, A>> | Stream.
   const pullRx = readable(
     makeRead(function(get) {
       return makeStreamPullEffect(get, create, options)
-    })()
+    })
   )
   return makeStreamPull(pullRx, options)
 }
