@@ -1,5 +1,13 @@
 # @effect-rx/rx
 
+## 0.18.1
+
+### Patch Changes
+
+- [`a642c93`](https://github.com/tim-smart/effect-rx/commit/a642c939cf82b65b0cd1af55b490d45ebbd33b31) Thanks [@tim-smart](https://github.com/tim-smart)! - allow Rx.family to return anything
+
+- [`e4da41a`](https://github.com/tim-smart/effect-rx/commit/e4da41a70b991ec170bd585b3ea4dc0e6a571b50) Thanks [@tim-smart](https://github.com/tim-smart)! - default fn arg type to void
+
 ## 0.18.0
 
 ### Minor Changes
