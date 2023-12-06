@@ -7,6 +7,7 @@ import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import { dual, pipe } from "effect/Function"
+import { globalValue } from "effect/GlobalValue"
 import * as Hash from "effect/Hash"
 import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
@@ -538,7 +539,7 @@ export const context: () => <E, R>(
  */
 export const defaultContext: <E, R>(
   create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>
-) => RxRuntime<E, R> = context()
+) => RxRuntime<E, R> = globalValue("@effect-rx/rx/Rx/defaultContext", () => context())
 
 // -----------------------------------------------------------------------------
 // constructors - stream
