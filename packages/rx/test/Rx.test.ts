@@ -751,6 +751,8 @@ const CounterLive = Layer.effect(
       })
     })
   })
+).pipe(
+  Layer.provide(BuildCounterLive)
 )
 
 interface Multiplier {
@@ -765,9 +767,13 @@ const MultiplierLive = Layer.effect(
       times: (n) => Effect.map(counter.get, (_) => _ * n)
     })
   })
+).pipe(
+  Layer.provideMerge(CounterLive)
 )
 
-const buildCounterRuntime = Rx.make(BuildCounterLive)
-const counterRuntime = buildCounterRuntime.rx(CounterLive)
-const multiplierRuntime = counterRuntime.rx(MultiplierLive.pipe(Layer.provide(CounterLive)))
-const fiberRefRuntime = counterRuntime.rx(Layer.setRequestCaching(true))
+const rxContext = Rx.context()
+
+const buildCounterRuntime = rxContext(BuildCounterLive)
+const counterRuntime = rxContext(CounterLive)
+const multiplierRuntime = rxContext(MultiplierLive)
+const fiberRefRuntime = rxContext(Layer.setRequestCaching(true))

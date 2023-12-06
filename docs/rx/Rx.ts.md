@@ -24,6 +24,7 @@ Added in v1.0.0
   - [withFallback](#withfallback)
   - [withLabel](#withlabel)
 - [constructors](#constructors)
+  - [context](#context)
   - [family](#family)
   - [fn](#fn)
   - [fnSync](#fnsync)
@@ -31,7 +32,7 @@ Added in v1.0.0
   - [pull](#pull)
   - [readable](#readable)
   - [writable](#writable)
-- [context](#context)
+- [context](#context-1)
   - [Context (interface)](#context-interface)
   - [WriteContext (interface)](#writecontext-interface)
 - [models](#models)
@@ -204,6 +205,16 @@ Added in v1.0.0
 
 # constructors
 
+## context
+
+**Signature**
+
+```ts
+export declare const context: () => <E, R>(layer: Layer.Layer<never, E, R>) => RxRuntime<E, R>
+```
+
+Added in v1.0.0
+
 ## family
 
 **Signature**
@@ -268,8 +279,6 @@ export declare const make: {
     create: Rx.Read<Stream.Stream<never, E, A>>,
     options?: { readonly initialValue?: A | undefined } | undefined
   ): Rx<Result.Result<E, A>>
-  <E, A>(layer: Layer.Layer<never, E, A>): RxRuntime<E, A>
-  <E, A>(create: Rx.Read<Layer.Layer<never, E, A>>): RxRuntime<E, A>
   <A>(create: Rx.Read<A>): Rx<A>
   <A>(initialValue: A): Writable<A, A>
 }
@@ -590,8 +599,6 @@ export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, Runtime.Runtime<R
         readonly initialValue?: A
       }
     ): Rx<Result.Result<E | ER, A>>
-    <E, A>(layer: Layer.Layer<R, E, A>): RxRuntime<E | ER, A | R>
-    <E, A>(create: Rx.Read<Layer.Layer<R, E, A>>): RxRuntime<E | ER, A | R>
   }
 
   readonly fn: {

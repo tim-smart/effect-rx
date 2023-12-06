@@ -262,9 +262,9 @@ const RxProto = {
       }
       return makeEffect(
         get,
-        makeStreamPullEffect(get, arg, options, runtimeResult.value[0]),
+        makeStreamPullEffect(get, arg, options, runtimeResult.value),
         Result.initial(true),
-        runtimeResult.value[0]
+        runtimeResult.value
       )
     })
     return makeStreamPull(pullRx as any, options)
@@ -339,8 +339,6 @@ export const make: {
   <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: {
     readonly initialValue?: A
   }): Rx<Result.Result<E, A>>
-  <E, A>(layer: Layer.Layer<never, E, A>): RxRuntime<E, A>
-  <E, A>(create: Rx.Read<Layer.Layer<never, E, A>>): RxRuntime<E, A>
   <A>(create: Rx.Read<A>): Rx<A>
   <A>(initialValue: A): Writable<A, A>
 } = (arg: any, options?: { readonly initialValue?: unknown }) => {
@@ -358,23 +356,17 @@ export const make: {
 const makeRead: {
   <E, A>(effect: Effect.Effect<Scope.Scope, E, A>, options?: {
     readonly initialValue?: A
-  }): (get: Context, runtime?: RuntimeTuple) => Result.Result<E, A>
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
   <E, A>(create: Rx.Read<Effect.Effect<Scope.Scope, E, A>>, options?: {
     readonly initialValue?: A
-  }): (get: Context, runtime?: RuntimeTuple) => Result.Result<E, A>
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
   <E, A>(stream: Stream.Stream<never, E, A>, options?: {
     readonly initialValue?: A
-  }): (get: Context, runtime?: RuntimeTuple) => Result.Result<E, A>
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
   <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: {
     readonly initialValue?: A
-  }): (get: Context, runtime?: RuntimeTuple) => Result.Result<E, A>
-  <E, A>(
-    layer: Layer.Layer<never, E, A>
-  ): (get: Context, runtime?: RuntimeTuple) => Result.Result<E, RuntimeTuple>
-  <E, A>(
-    create: Rx.Read<Layer.Layer<never, E, A>>
-  ): (get: Context, runtime?: RuntimeTuple) => Result.Result<E, RuntimeTuple>
-  <A>(create: Rx.Read<A>): (get: Context, runtime?: RuntimeTuple) => A
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
+  <A>(create: Rx.Read<A>): (get: Context, runtime?: Runtime.Runtime<any>) => A
   <A>(initialValue: A): Writable<A, A>
 } = <E, A>(
   arg:
@@ -382,39 +374,31 @@ const makeRead: {
     | Rx.Read<Effect.Effect<Scope.Scope, E, A>>
     | Stream.Stream<never, E, A>
     | Rx.Read<Stream.Stream<never, E, A>>
-    | Layer.Layer<never, E, A>
-    | Rx.Read<Layer.Layer<never, E, A>>
     | Rx.Read<A>
     | A,
   options?: { readonly initialValue?: unknown }
 ) => {
   if (typeof arg === "function") {
     const create = arg as Rx.Read<any>
-    return function(get: Context, providedRuntime?: RuntimeTuple) {
+    return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
       const value = create(get)
       if (typeof value === "object" && value !== null) {
         if (Effect.EffectTypeId in value) {
-          return effect(get, value, options, providedRuntime ? providedRuntime[0] : undefined)
+          return effect(get, value, options, providedRuntime)
         } else if (Stream.StreamTypeId in value) {
-          return stream(get, value, options, providedRuntime ? providedRuntime[0] : undefined)
-        } else if (Layer.LayerTypeId in value) {
-          return runtime(get, value, providedRuntime)
+          return stream(get, value, options, providedRuntime)
         }
       }
       return value
     }
   } else if (typeof arg === "object" && arg !== null) {
     if (Effect.EffectTypeId in arg) {
-      return function(get: Context, providedRuntime?: RuntimeTuple) {
-        return effect(get, arg, options, providedRuntime ? providedRuntime[0] : undefined)
+      return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
+        return effect(get, arg, options, providedRuntime)
       }
     } else if (Stream.StreamTypeId in arg) {
-      return function(get: Context, providedRuntime?: RuntimeTuple) {
-        return stream(get, arg, options, providedRuntime ? providedRuntime[0] : undefined)
-      }
-    } else if (Layer.LayerTypeId in arg) {
-      return function(get: Context, providedRuntime?: RuntimeTuple) {
-        return runtime(get, arg, providedRuntime)
+      return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
+        return stream(get, arg, options, providedRuntime)
       }
     }
   }
@@ -473,16 +457,14 @@ function makeEffect<E, A>(
 }
 
 // -----------------------------------------------------------------------------
-// constructors - layer
+// context
 // -----------------------------------------------------------------------------
-
-type RuntimeTuple<R = any> = readonly [Runtime.Runtime<R>, Layer.MemoMap]
 
 /**
  * @since 1.0.0
  * @category models
  */
-export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, RuntimeTuple<R>>> {
+export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, Runtime.Runtime<R>>> {
   readonly rx: {
     <E, A>(effect: Effect.Effect<Scope.Scope | R, E, A>, options?: {
       readonly initialValue?: A
@@ -496,8 +478,6 @@ export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, RuntimeTuple<R>>>
     <E, A>(create: Rx.Read<Stream.Stream<never | R, E, A>>, options?: {
       readonly initialValue?: A
     }): Rx<Result.Result<E | ER, A>>
-    <E, A>(layer: Layer.Layer<R, E, A>): RxRuntime<E | ER, A | R>
-    <E, A>(create: Rx.Read<Layer.Layer<R, E, A>>): RxRuntime<E | ER, A | R>
   }
 
   readonly fn: {
@@ -515,30 +495,25 @@ export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, RuntimeTuple<R>>>
   }) => Writable<PullResult<E | ER, A>, void>
 }
 
-const runtime = <E, A>(
-  get: Context,
-  layer: Layer.Layer<never, E, A>,
-  runtime?: RuntimeTuple
-): Result.Result<E, RuntimeTuple<A>> => {
-  if (runtime) {
-    const buildEffect = pipe(
-      Effect.flatMap(Effect.scope, (scope) => {
-        return Layer.buildWithMemoMap(layer, runtime[1], scope)
-      }),
-      Effect.flatMap((context) => Effect.provide(Effect.runtime<A>(), context)),
-      Effect.map((rt) => [rt, runtime[1]] as const)
-    )
-
-    return effect(get, buildEffect, undefined, runtime[0])
-  }
-
-  const buildEffect = Effect.flatMap(Layer.makeMemoMap, (memoMap) =>
-    pipe(
-      Effect.flatMap(Effect.scope, (scope) => Layer.buildWithMemoMap(layer, memoMap, scope)),
-      Effect.flatMap((context) => Effect.provide(Effect.runtime<A>(), context)),
-      Effect.map((rt) => [rt, memoMap] as const)
-    ))
-  return effect(get, buildEffect)
+/**
+ * @since 1.0.0
+ * @category constructors
+ */
+export const context: () => <E, R>(layer: Layer.Layer<never, E, R>) => RxRuntime<E, R> = () => {
+  const memoMapRx = make(Layer.makeMemoMap)
+  return <E, R>(layer: Layer.Layer<never, E, R>): RxRuntime<E, R> =>
+    readable(function(get) {
+      const memoMapResult = get(memoMapRx)
+      if (memoMapResult._tag !== "Success") {
+        return Result.initial(true)
+      }
+      const memoMap = memoMapResult.value
+      const build = Effect.flatMap(
+        Effect.flatMap(Effect.scope, (scope) => Layer.buildWithMemoMap(layer, memoMap, scope)),
+        (context) => Effect.provide(Effect.runtime<R>(), context)
+      )
+      return effect(get, build)
+    }) as any
 }
 
 // -----------------------------------------------------------------------------
@@ -662,16 +637,16 @@ function makeResultFn<Arg, E, A>(
     ? Result.success<E, A>(options.initialValue)
     : Result.initial<E, A>()
 
-  function read(get: Context, runtime?: RuntimeTuple): Result.Result<E | NoSuchElementException, A> {
+  function read(get: Context, runtime?: Runtime.Runtime<any>): Result.Result<E | NoSuchElementException, A> {
     const [counter, arg] = get(argRx)
     if (counter === 0) {
       return initialValue
     }
     const value = f(arg, get)
     if (Effect.EffectTypeId in value) {
-      return makeEffect(get, value, initialValue, runtime ? runtime[0] : undefined)
+      return makeEffect(get, value, initialValue, runtime)
     }
-    return makeStream(get, value, initialValue, runtime ? runtime[0] : undefined)
+    return makeStream(get, value, initialValue, runtime)
   }
   function write(ctx: WriteContext<Result.Result<E | NoSuchElementException, A>>, arg: Arg) {
     ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
