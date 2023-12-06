@@ -71,7 +71,8 @@ describe("Rx", () => {
     expect(result.value).toEqual(1)
   })
 
-  it("runtime multiple", async () => {
+  it.only("runtime multiple", async () => {
+    const buildCount = buildCounterRuntime.fn((_: void) => Effect.flatMap(BuildCounter, (_) => _.get))
     const count = counterRuntime.rx(Effect.flatMap(Counter, (_) => _.get))
     const timesTwo = multiplierRuntime.rx((get) =>
       Effect.gen(function*(_) {
@@ -83,6 +84,8 @@ describe("Rx", () => {
       })
     )
     const r = Registry.make()
+    const cancel = r.mount(buildCount)
+
     let result = r.get(timesTwo)
     assert(Result.isSuccess(result))
     expect(result.value).toEqual(4)
@@ -91,11 +94,20 @@ describe("Rx", () => {
     assert(Result.isSuccess(result))
     expect(result.value).toEqual(2)
 
+    r.set(buildCount, void 0)
+    assert.deepStrictEqual(r.get(buildCount), Result.success(1))
+
+    await new Promise((resolve) => resolve(null))
     await new Promise((resolve) => resolve(null))
 
     result = r.get(count)
     assert(Result.isSuccess(result))
     expect(result.value).toEqual(1)
+
+    r.set(buildCount, void 0)
+    assert.deepStrictEqual(r.get(buildCount), Result.success(2))
+
+    cancel()
   })
 
   it("runtime fiber ref", async () => {
@@ -706,20 +718,41 @@ describe("Rx", () => {
   })
 })
 
-interface Counter {
+interface BuildCounter {
   readonly get: Effect.Effect<never, never, number>
   readonly inc: Effect.Effect<never, never, void>
 }
-const Counter = Context.Tag<Counter>("Counter")
-const CounterLive = Layer.sync(Counter, () => {
-  let count = 1
-  return Counter.of({
+const BuildCounter = Context.Tag<BuildCounter>("BuildCounter")
+const BuildCounterLive = Layer.sync(BuildCounter, () => {
+  let count = 0
+  return BuildCounter.of({
     get: Effect.sync(() => count),
     inc: Effect.sync(() => {
       count++
     })
   })
 })
+
+interface Counter {
+  readonly get: Effect.Effect<never, never, number>
+  readonly inc: Effect.Effect<never, never, void>
+}
+const Counter = Context.Tag<Counter>("Counter")
+const CounterLive = Layer.effect(
+  Counter,
+  Effect.gen(function*(_) {
+    console.log("Counter")
+    const buildCounter = yield* _(BuildCounter)
+    yield* _(buildCounter.inc)
+    let count = 1
+    return Counter.of({
+      get: Effect.sync(() => count),
+      inc: Effect.sync(() => {
+        count++
+      })
+    })
+  })
+)
 
 interface Multiplier {
   readonly times: (n: number) => Effect.Effect<never, never, number>
@@ -735,6 +768,7 @@ const MultiplierLive = Layer.effect(
   })
 )
 
-const counterRuntime = Rx.make(CounterLive)
-const multiplierRuntime = counterRuntime.rx(MultiplierLive)
+const buildCounterRuntime = Rx.make(BuildCounterLive)
+const counterRuntime = buildCounterRuntime.rx(CounterLive)
+const multiplierRuntime = counterRuntime.rx(MultiplierLive.pipe(Layer.provide(CounterLive)))
 const fiberRefRuntime = counterRuntime.rx(Layer.setRequestCaching(true))
