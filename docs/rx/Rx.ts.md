@@ -234,11 +234,11 @@ export declare const fn: {
   <Arg, E, A>(
     fn: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope, E, A>>,
     options?: { readonly initialValue?: A | undefined } | undefined
-  ): RxResultFn<E, A, Arg>
+  ): RxResultFn<E, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
   <Arg, E, A>(
     fn: Rx.ReadFn<Arg, Stream.Stream<never, E, A>>,
     options?: { readonly initialValue?: A | undefined } | undefined
-  ): RxResultFn<E | NoSuchElementException, A, Arg>
+  ): RxResultFn<E | NoSuchElementException, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
 }
 ```
 
@@ -607,13 +607,13 @@ export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, Runtime.Runtime<R
       options?: {
         readonly initialValue?: A
       }
-    ): RxResultFn<E | ER, A, Arg>
+    ): RxResultFn<E | ER, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
     <Arg, E, A>(
       fn: Rx.ReadFn<Arg, Stream.Stream<R, E, A>>,
       options?: {
         readonly initialValue?: A
       }
-    ): RxResultFn<E | ER | NoSuchElementException, A, Arg>
+    ): RxResultFn<E | ER | NoSuchElementException, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
   }
 
   readonly pull: <E, A>(

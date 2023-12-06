@@ -15,6 +15,7 @@ import { type Pipeable, pipeArguments } from "effect/Pipeable"
 import * as Runtime from "effect/Runtime"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
+import type * as Types from "effect/Types"
 import * as internalRegistry from "./internal/registry.js"
 import { runCallbackSync } from "./internal/runtime.js"
 import * as Result from "./Result.js"
@@ -483,10 +484,10 @@ export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, Runtime.Runtime<R
   readonly fn: {
     <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope | R, E, A>>, options?: {
       readonly initialValue?: A
-    }): RxResultFn<E | ER, A, Arg>
+    }): RxResultFn<E | ER, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
     <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<R, E, A>>, options?: {
       readonly initialValue?: A
-    }): RxResultFn<E | ER | NoSuchElementException, A, Arg>
+    }): RxResultFn<E | ER | NoSuchElementException, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
   }
 
   readonly pull: <E, A>(create: Rx.Read<Stream.Stream<R, E, A>> | Stream.Stream<R, E, A>, options?: {
@@ -617,15 +618,15 @@ export const fnSync: {
 export const fn: {
   <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope, E, A>>, options?: {
     readonly initialValue?: A
-  }): RxResultFn<E, A, Arg>
+  }): RxResultFn<E, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
   <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<never, E, A>>, options?: {
     readonly initialValue?: A
-  }): RxResultFn<E | NoSuchElementException, A, Arg>
+  }): RxResultFn<E | NoSuchElementException, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
 } = <Arg, E, A>(f: Rx.ReadFn<Arg, Stream.Stream<never, E, A> | Effect.Effect<Scope.Scope, E, A>>, options?: {
   readonly initialValue?: A
-}): RxResultFn<E | NoSuchElementException, A, Arg> => {
+}): RxResultFn<E | NoSuchElementException, A, Types.Equals<Arg, unknown> extends true ? void : Arg> => {
   const [read, write] = makeResultFn(f, options)
-  return writable(read, write)
+  return writable(read, write) as any
 }
 
 function makeResultFn<Arg, E, A>(
