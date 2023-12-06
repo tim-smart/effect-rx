@@ -759,7 +759,7 @@ const makeStreamPull = <E, A>(
  * @category constructors
  */
 export const family = typeof WeakRef === "undefined" || typeof FinalizationRegistry === "undefined" ?
-  <Arg, T extends Rx<any>>(
+  <Arg, T extends object>(
     f: (arg: Arg) => T
   ): (arg: Arg) => T => {
     const atoms = new Map<number, T>()
@@ -774,7 +774,7 @@ export const family = typeof WeakRef === "undefined" || typeof FinalizationRegis
       return newAtom
     }
   } :
-  <Arg, T extends Rx<any>>(
+  <Arg, T extends object>(
     f: (arg: Arg) => T
   ): (arg: Arg) => T => {
     const atoms = new Map<number, WeakRef<T>>()

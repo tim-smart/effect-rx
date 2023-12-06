@@ -220,7 +220,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const family: <Arg, T extends Rx<any>>(f: (arg: Arg) => T) => (arg: Arg) => T
+export declare const family: <Arg, T extends object>(f: (arg: Arg) => T) => (arg: Arg) => T
 ```
 
 Added in v1.0.0
