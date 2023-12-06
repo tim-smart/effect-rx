@@ -35,6 +35,7 @@ Added in v1.0.0
 - [context](#context-1)
   - [Context (interface)](#context-interface)
   - [WriteContext (interface)](#writecontext-interface)
+  - [defaultContext](#defaultcontext)
 - [models](#models)
   - [PullResult (type alias)](#pullresult-type-alias)
   - [Refreshable (interface)](#refreshable-interface)
@@ -210,7 +211,9 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const context: () => <E, R>(layer: Layer.Layer<never, E, R>) => RxRuntime<E, R>
+export declare const context: () => <E, R>(
+  create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>
+) => RxRuntime<E, R>
 ```
 
 Added in v1.0.0
@@ -279,6 +282,8 @@ export declare const make: {
     create: Rx.Read<Stream.Stream<never, E, A>>,
     options?: { readonly initialValue?: A | undefined } | undefined
   ): Rx<Result.Result<E, A>>
+  <E, A>(layer: Layer.Layer<never, E, A>): RxRuntime<E, A>
+  <E, A>(create: Rx.Read<Layer.Layer<never, E, A>>): RxRuntime<E, A>
   <A>(create: Rx.Read<A>): Rx<A>
   <A>(initialValue: A): Writable<A, A>
 }
@@ -367,6 +372,18 @@ export interface WriteContext<A> {
   readonly setSelf: (a: A) => void
   readonly set: <R, W>(rx: Writable<R, W>, value: W) => void
 }
+```
+
+Added in v1.0.0
+
+## defaultContext
+
+**Signature**
+
+```ts
+export declare const defaultContext: <E, R>(
+  create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>
+) => RxRuntime<E, R>
 ```
 
 Added in v1.0.0

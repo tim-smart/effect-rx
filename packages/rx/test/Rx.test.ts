@@ -771,9 +771,7 @@ const MultiplierLive = Layer.effect(
   Layer.provideMerge(CounterLive)
 )
 
-const rxContext = Rx.context()
-
-const buildCounterRuntime = rxContext(BuildCounterLive)
-const counterRuntime = rxContext(CounterLive)
-const multiplierRuntime = rxContext(MultiplierLive)
-const fiberRefRuntime = rxContext(Layer.setRequestCaching(true))
+const buildCounterRuntime = Rx.make(() => BuildCounterLive)
+const counterRuntime = Rx.make(CounterLive)
+const multiplierRuntime = Rx.make(MultiplierLive)
+const fiberRefRuntime = Rx.make(Layer.setRequestCaching(true))
