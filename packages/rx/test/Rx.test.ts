@@ -71,7 +71,7 @@ describe("Rx", () => {
     expect(result.value).toEqual(1)
   })
 
-  it.only("runtime multiple", async () => {
+  it("runtime multiple", async () => {
     const buildCount = buildCounterRuntime.fn((_: void) => Effect.flatMap(BuildCounter, (_) => _.get))
     const count = counterRuntime.rx(Effect.flatMap(Counter, (_) => _.get))
     const timesTwo = multiplierRuntime.rx((get) =>
@@ -741,7 +741,6 @@ const Counter = Context.Tag<Counter>("Counter")
 const CounterLive = Layer.effect(
   Counter,
   Effect.gen(function*(_) {
-    console.log("Counter")
     const buildCounter = yield* _(BuildCounter)
     yield* _(buildCounter.inc)
     let count = 1
