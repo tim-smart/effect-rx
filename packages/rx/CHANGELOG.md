@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.18.3
+
+### Patch Changes
+
+- [`e8734bc`](https://github.com/tim-smart/effect-rx/commit/e8734bc4cb525daaccd318f4e22f4ef04cd8383b) Thanks [@tim-smart](https://github.com/tim-smart)! - wrap defaultContext with globalValue
+
 ## 0.18.2
 
 ### Patch Changes
