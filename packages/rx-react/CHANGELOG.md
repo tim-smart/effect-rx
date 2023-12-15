@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.18.1
+
+### Patch Changes
+
+- [`2644716`](https://github.com/tim-smart/effect-rx/commit/2644716249e8508b8f5c82927626e75ca3bbdee7) Thanks [@tim-smart](https://github.com/tim-smart)! - add getServerSnapshot to react store
+
 ## 0.18.0
 
 ### Minor Changes
