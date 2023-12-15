@@ -67,7 +67,9 @@ function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
 
 function useStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): A {
   const store = makeStore(registry, rx)
-  return React.useSyncExternalStore(store.subscribe, store.snapshot)
+  return React.useSyncExternalStore(store.subscribe, store.snapshot, () => {
+    return undefined as A
+  })
 }
 
 /**

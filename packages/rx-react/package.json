@@ -23,7 +23,7 @@
   "license": "MIT",
   "sideEffects": false,
   "devDependencies": {
-    "@types/react": "^18.2.43",
+    "@types/react": "^18.2.45",
     "effect": "2.0.0-next.60",
     "react": "^18.2.0"
   },
