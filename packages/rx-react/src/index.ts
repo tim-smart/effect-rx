@@ -40,6 +40,7 @@ export const RegistryContext = React.createContext<Registry.Registry>(Registry.m
 interface RxStore<A> {
   readonly subscribe: (f: () => void) => () => void
   readonly snapshot: () => A
+  readonly serverSnapshot: () => A
 }
 
 const storeRegistry = globalValue(
@@ -59,6 +60,9 @@ function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
     },
     snapshot() {
       return registry.get(rx)
+    },
+    serverSnapshot() {
+      return undefined as any
     }
   }
   stores.set(rx, newStore)
@@ -67,9 +71,7 @@ function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
 
 function useStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): A {
   const store = makeStore(registry, rx)
-  return React.useSyncExternalStore(store.subscribe, store.snapshot, () => {
-    return undefined as A
-  })
+  return React.useSyncExternalStore(store.subscribe, store.snapshot, store.serverSnapshot)
 }
 
 /**
