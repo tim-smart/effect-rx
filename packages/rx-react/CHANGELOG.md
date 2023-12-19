@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.19.1
+
+### Patch Changes
+
+- [`f005658`](https://github.com/tim-smart/effect-rx/commit/f005658dd15313e46b0f4f0b1e4cf06eacc46783) Thanks [@tim-smart](https://github.com/tim-smart)! - use store.snapshot for getServerSnapshot
+
 ## 0.19.0
 
 ### Minor Changes
