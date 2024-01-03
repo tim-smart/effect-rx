@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.22.0
+
+### Minor Changes
+
+- [#94](https://github.com/tim-smart/effect-rx/pull/94) [`08e2b53`](https://github.com/tim-smart/effect-rx/commit/08e2b5307af266bdad50d17331cc9b1e8194f278) Thanks [@fubhy](https://github.com/fubhy)! - Updated `effect` dependencies
+
 ## 0.21.0
 
 ### Minor Changes
