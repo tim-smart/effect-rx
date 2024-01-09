@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.21.1
+
+### Patch Changes
+
+- [`db67bde`](https://github.com/tim-smart/effect-rx/commit/db67bde230f873458b1a8b3436aed6f1f7668a44) Thanks [@tim-smart](https://github.com/tim-smart)! - add stream apis to context
+
+- Updated dependencies [[`db67bde`](https://github.com/tim-smart/effect-rx/commit/db67bde230f873458b1a8b3436aed6f1f7668a44)]:
+  - @effect-rx/rx@0.22.1
+
 ## 0.21.0
 
 ### Minor Changes
