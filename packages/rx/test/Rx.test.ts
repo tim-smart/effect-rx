@@ -716,6 +716,42 @@ describe("Rx", () => {
     const r = Registry.make()
     assert.strictEqual(r.get(bool), true)
   })
+
+  it("get.stream", async () => {
+    const count = Rx.make(0)
+    const multiplied = Rx.make((get) => get.stream(count).pipe(Stream.map((_) => _ * 2)))
+
+    const r = Registry.make()
+    const cancel = r.mount(multiplied)
+
+    assert.strictEqual(r.get(count), 0)
+    assert.deepStrictEqual(r.get(multiplied), Result.success(0, true))
+
+    r.set(count, 1)
+    await new Promise((resolve) => resolve(null))
+    assert.deepStrictEqual(r.get(multiplied), Result.success(2, true))
+
+    cancel()
+  })
+
+  it("get.streamResult", async () => {
+    const count = Rx.make(0)
+    const multiplied = Rx.make((get) => get.stream(count).pipe(Stream.map((_) => _ * 2)))
+    const plusOne = Rx.make((get) => get.streamResult(multiplied).pipe(Stream.map((_) => _ + 1)))
+
+    const r = Registry.make()
+    const cancel = r.mount(plusOne)
+
+    assert.strictEqual(r.get(count), 0)
+    assert.deepStrictEqual(r.get(plusOne), Result.success(1, true))
+
+    r.set(count, 1)
+    await new Promise((resolve) => resolve(null))
+    await new Promise((resolve) => resolve(null))
+    assert.deepStrictEqual(r.get(plusOne), Result.success(3, true))
+
+    cancel()
+  })
 })
 
 interface BuildCounter {

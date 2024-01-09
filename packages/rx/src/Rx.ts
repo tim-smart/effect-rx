@@ -192,6 +192,14 @@ export interface Context {
   readonly setSelf: <A>(a: A) => Effect.Effect<never, never, void>
   readonly setSync: <R, W>(rx: Writable<R, W>, value: W) => void
   readonly set: <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<never, never, void>
+  readonly stream: <A>(rx: Rx<A>, options?: {
+    readonly withoutInitialValue?: boolean
+    readonly bufferSize?: number
+  }) => Stream.Stream<never, never, A>
+  readonly streamResult: <E, A>(rx: Rx<Result.Result<E, A>>, options?: {
+    readonly withoutInitialValue?: boolean
+    readonly bufferSize?: number
+  }) => Stream.Stream<never, E, A>
   readonly subscribe: <A>(rx: Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }) => void

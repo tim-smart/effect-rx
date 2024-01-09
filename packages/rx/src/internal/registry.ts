@@ -2,8 +2,11 @@ import type { NoSuchElementException } from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import type { Exit } from "effect/Exit"
+import { pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Option from "effect/Option"
+import * as Queue from "effect/Queue"
+import * as Stream from "effect/Stream"
 import type * as Registry from "../Registry.js"
 import * as Result from "../Result.js"
 import type * as Rx from "../Rx.js"
@@ -515,6 +518,47 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
       this.node.registry.set(rx, value)
       return Effect.unit
     })
+  },
+
+  stream<A>(this: Lifetime<any>, rx: Rx.Rx<A>, options?: {
+    readonly withoutInitialValue?: boolean
+    readonly bufferSize?: number
+  }) {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
+
+    return pipe(
+      Effect.acquireRelease(
+        Queue.bounded<A>(options?.bufferSize ?? 16),
+        Queue.shutdown
+      ),
+      Effect.tap((queue) =>
+        Effect.acquireRelease(
+          Effect.sync(() => {
+            return this.node.registry.subscribe(rx, (_) => {
+              Queue.unsafeOffer(queue, _)
+            }, { immediate: options?.withoutInitialValue !== true })
+          }),
+          (cancel) => Effect.sync(cancel)
+        )
+      ),
+      Effect.map((queue) => Stream.fromQueue(queue)),
+      Stream.unwrapScoped
+    )
+  },
+
+  streamResult<E, A>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<E, A>>, options?: {
+    readonly withoutInitialValue?: boolean
+    readonly bufferSize?: number
+  }) {
+    return pipe(
+      this.stream(rx, options),
+      Stream.filter(Result.isNotInitial),
+      Stream.flatMap((result) =>
+        result._tag === "Success" ? Stream.succeed(result.value) : Stream.failCause(result.cause)
+      )
+    )
   },
 
   dispose(this: Lifetime<any>): void {

@@ -116,6 +116,13 @@ export const isInitial = <E, A>(result: Result<E, A>): result is Initial<E, A> =
 
 /**
  * @since 1.0.0
+ * @category refinements
+ */
+export const isNotInitial = <E, A>(result: Result<E, A>): result is Success<E, A> | Failure<E, A> =>
+  result._tag !== "Initial"
+
+/**
+ * @since 1.0.0
  * @category constructors
  */
 export const initial = <E, A>(waiting = false): Initial<E, A> => {
