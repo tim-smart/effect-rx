@@ -38,7 +38,9 @@
       "@effect-rx/rx/test/*": ["./packages/rx/test/*.js"],
       "@effect-rx/rx/*": ["./packages/rx/src/*.js"],
       "@effect-rx/rx-react/test/*": ["./packages/rx-react/test/*.js"],
-      "@effect-rx/rx-react/*": ["./packages/rx-react/src/*.js"]
+      "@effect-rx/rx-react/*": ["./packages/rx-react/src/*.js"],
+      "@effect-rx/rx-vue/test/*": ["./packages/rx-vue/test/*.js"],
+      "@effect-rx/rx-vue/*": ["./packages/rx-vue/src/*.js"]
     },
     "plugins": [{ "name": "@effect/language-service" }]
   }

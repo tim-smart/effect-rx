@@ -6,6 +6,9 @@
     },
     {
       "path": "packages/rx-react"
+    },
+    {
+      "path": "packages/rx-vue"
     }
   ]
 }
