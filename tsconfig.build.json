@@ -6,6 +6,9 @@
     },
     {
       "path": "packages/rx-react/tsconfig.build.json"
+    },
+    {
+      "path": "packages/rx-vue/tsconfig.build.json"
     }
   ]
 }
