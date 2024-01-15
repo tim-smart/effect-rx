@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.23.0
+
+### Minor Changes
+
+- [`edcdb24`](https://github.com/tim-smart/effect-rx/commit/edcdb2439c29f89f63c66a2898244441724b1860) Thanks [@tim-smart](https://github.com/tim-smart)! - update effect
+
 ## 0.22.1
 
 ### Patch Changes
