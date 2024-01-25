@@ -5,6 +5,7 @@ import { NoSuchElementException } from "effect/Cause"
 import * as Chunk from "effect/Chunk"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Either from "effect/Either"
 import * as Exit from "effect/Exit"
 import { dual, pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
@@ -365,6 +366,10 @@ export const make: {
 // constructors - effect
 // -----------------------------------------------------------------------------
 
+const isDataType = (u: object): u is Option.Option<unknown> | Either.Either<unknown, unknown> =>
+  Option.TypeId in u ||
+  Either.TypeId in u
+
 const makeRead: {
   <E, A>(effect: Effect.Effect<Scope.Scope, E, A>, options?: {
     readonly initialValue?: A
@@ -401,8 +406,10 @@ const makeRead: {
     return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
       const value = create(get)
       if (typeof value === "object" && value !== null) {
-        if (Effect.EffectTypeId in value) {
-          return effect(get, value, options, providedRuntime)
+        if (isDataType(value)) {
+          return value
+        } else if (Effect.EffectTypeId in value) {
+          return effect(get, value as any, options, providedRuntime)
         } else if (Stream.StreamTypeId in value) {
           return stream(get, value, options, providedRuntime)
         } else if (Layer.LayerTypeId in value) {
@@ -412,7 +419,9 @@ const makeRead: {
       return value
     }
   } else if (typeof arg === "object" && arg !== null) {
-    if (Effect.EffectTypeId in arg) {
+    if (isDataType(arg)) {
+      return state(arg)
+    } else if (Effect.EffectTypeId in arg) {
       return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
         return effect(get, arg, options, providedRuntime)
       }

@@ -1,7 +1,7 @@
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
-import { Cause, FiberRef } from "effect"
+import { Cause, Either, FiberRef } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Hash from "effect/Hash"
@@ -751,6 +751,18 @@ describe("Rx", () => {
     assert.deepStrictEqual(r.get(plusOne), Result.success(3, true))
 
     cancel()
+  })
+
+  it("Option is not an Effect", async () => {
+    const rx = Rx.make(Option.none<string>())
+    const r = Registry.make()
+    assert.deepStrictEqual(r.get(rx), Option.none())
+  })
+
+  it("Either is not an Effect", async () => {
+    const rx = Rx.make(Either.right(123))
+    const r = Registry.make()
+    assert.deepStrictEqual(r.get(rx), Either.right(123))
   })
 })
 
