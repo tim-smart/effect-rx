@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.24.1
+
+### Patch Changes
+
+- [`c7612e2`](https://github.com/tim-smart/effect-rx/commit/c7612e2ded6a1f62e1637bb62e41047b52d6949e) Thanks [@tim-smart](https://github.com/tim-smart)! - don't treat Option and Either as effects
+
 ## 0.24.0
 
 ### Minor Changes
