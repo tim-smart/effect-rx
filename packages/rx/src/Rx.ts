@@ -1,6 +1,7 @@
 /**
  * @since 1.0.0
  */
+import type { Context } from "effect"
 import { NoSuchElementException } from "effect/Cause"
 import * as Chunk from "effect/Chunk"
 import * as Duration from "effect/Duration"
@@ -234,9 +235,11 @@ const RxProto = {
   },
   [Inspectable.NodeInspectSymbol](this: Rx<any>) {
     return this.toJSON()
-  },
+  }
+} as const
 
-  // runtime api
+const RxRuntimeProto = {
+  ...RxProto,
   rx(this: RxRuntime<any, any>, arg: any, options?: { readonly initialValue?: unknown }) {
     const read = makeRead(arg, options)
     return readable((get) => {
@@ -280,7 +283,7 @@ const RxProto = {
     })
     return makeStreamPull(pullRx as any, options)
   }
-} as const
+}
 
 const WritableProto = {
   ...RxProto,
@@ -350,8 +353,6 @@ export const make: {
   <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: {
     readonly initialValue?: A
   }): Rx<Result.Result<E, A>>
-  <E, A>(layer: Layer.Layer<never, E, A>): RxRuntime<E, A>
-  <E, A>(create: Rx.Read<Layer.Layer<never, E, A>>): RxRuntime<E, A>
   <A>(create: Rx.Read<A>): Rx<A>
   <A>(initialValue: A): Writable<A, A>
 } = (arg: any, options?: { readonly initialValue?: unknown }) => {
@@ -383,12 +384,6 @@ const makeRead: {
   <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: {
     readonly initialValue?: A
   }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
-  <E, A>(
-    layer: Layer.Layer<never, E, A>
-  ): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, Runtime.Runtime<A>>
-  <E, A>(
-    create: Rx.Read<Layer.Layer<never, E, A>>
-  ): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, Runtime.Runtime<A>>
   <A>(create: Rx.Read<A>): (get: Context, runtime?: Runtime.Runtime<any>) => A
   <A>(initialValue: A): Writable<A, A>
 } = <E, A>(
@@ -412,8 +407,6 @@ const makeRead: {
           return effect(get, value as any, options, providedRuntime)
         } else if (Stream.StreamTypeId in value) {
           return stream(get, value, options, providedRuntime)
-        } else if (Layer.LayerTypeId in value) {
-          return defaultContext(value).read(get)
         }
       }
       return value
@@ -429,8 +422,6 @@ const makeRead: {
       return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
         return stream(get, arg, options, providedRuntime)
       }
-    } else if (Layer.LayerTypeId in arg) {
-      return defaultContext(arg as unknown as Layer.Layer<never, any, any>).read
     }
   }
 
@@ -496,6 +487,8 @@ function makeEffect<E, A>(
  * @category models
  */
 export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, Runtime.Runtime<R>>> {
+  readonly layer: Rx<Layer.Layer<never, ER, R>>
+
   readonly rx: {
     <E, A>(effect: Effect.Effect<Scope.Scope | R, E, A>, options?: {
       readonly initialValue?: A
@@ -534,27 +527,37 @@ export const context: () => <E, R>(
   create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>
 ) => RxRuntime<E, R> = () => {
   const memoMapRx = make(Layer.makeMemoMap)
-  return <E, R>(create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>): RxRuntime<E, R> =>
-    readable(function(get) {
+  return <E, R>(create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>): RxRuntime<E, R> => {
+    const rx = Object.create(RxRuntimeProto)
+    rx.keepAlive = false
+    rx.refresh = undefined
+
+    const layerRx = typeof create === "function" ? readable(create) : readable(() => create)
+    rx.layer = layerRx
+
+    rx.read = function read(get: Context) {
       const memoMapResult = get(memoMapRx)
       if (memoMapResult._tag !== "Success") {
         return Result.initial(true)
       }
       const memoMap = memoMapResult.value
-      const layer = typeof create === "function" ? create(get) : create
+      const layer = get(layerRx)
       const build = Effect.flatMap(
         Effect.flatMap(Effect.scope, (scope) => Layer.buildWithMemoMap(layer, memoMap, scope)),
         (context) => Effect.provide(Effect.runtime<R>(), context)
       )
       return effect(get, build)
-    }) as any
+    }
+
+    return rx
+  }
 }
 
 /**
  * @since 1.0.0
  * @category context
  */
-export const defaultContext: <E, R>(
+export const runtime: <E, R>(
   create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>
 ) => RxRuntime<E, R> = globalValue("@effect-rx/rx/Rx/defaultContext", () => context())
 

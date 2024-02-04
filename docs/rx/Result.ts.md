@@ -43,6 +43,7 @@ Added in v1.0.0
 - [refinements](#refinements)
   - [isFailure](#isfailure)
   - [isInitial](#isinitial)
+  - [isNotInitial](#isnotinitial)
   - [isSuccess](#issuccess)
 - [type ids](#type-ids)
   - [TypeId](#typeid)
@@ -312,13 +313,14 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type With<R extends Result<any, any>, E, A> = R extends Initial<infer _E, infer _A>
-  ? Initial<E, A>
-  : R extends Success<infer _E, infer _A>
-    ? Success<E, A>
-    : R extends Failure<infer _E, infer _A>
-      ? Failure<E, A>
-      : never
+export type With<R extends Result<any, any>, E, A> =
+  R extends Initial<infer _E, infer _A>
+    ? Initial<E, A>
+    : R extends Success<infer _E, infer _A>
+      ? Success<E, A>
+      : R extends Failure<infer _E, infer _A>
+        ? Failure<E, A>
+        : never
 ```
 
 Added in v1.0.0
@@ -354,6 +356,16 @@ Added in v1.0.0
 
 ```ts
 export declare const isInitial: <E, A>(result: Result<E, A>) => result is Initial<E, A>
+```
+
+Added in v1.0.0
+
+## isNotInitial
+
+**Signature**
+
+```ts
+export declare const isNotInitial: <E, A>(result: Result<E, A>) => result is Success<E, A> | Failure<E, A>
 ```
 
 Added in v1.0.0

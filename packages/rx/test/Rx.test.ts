@@ -71,6 +71,16 @@ describe("Rx", () => {
     expect(result.value).toEqual(1)
   })
 
+  it("runtime replacement", async () => {
+    const count = counterRuntime.rx(Effect.flatMap(Counter, (_) => _.get))
+    const r = Registry.make({
+      initialValues: [Rx.initialValue(counterRuntime.layer, CounterTest)]
+    })
+    const result = r.get(count)
+    assert(Result.isSuccess(result))
+    expect(result.value).toEqual(10)
+  })
+
   it("runtime multiple", async () => {
     const buildCount = buildCounterRuntime.fn((_: void) => Effect.flatMap(BuildCounter, (_) => _.get))
     const count = counterRuntime.rx(Effect.flatMap(Counter, (_) => _.get))
@@ -803,6 +813,23 @@ const CounterLive = Layer.effect(
   Layer.provide(BuildCounterLive)
 )
 
+const CounterTest = Layer.effect(
+  Counter,
+  Effect.gen(function*(_) {
+    const buildCounter = yield* _(BuildCounter)
+    yield* _(buildCounter.inc)
+    let count = 10
+    return Counter.of({
+      get: Effect.sync(() => count),
+      inc: Effect.sync(() => {
+        count++
+      })
+    })
+  })
+).pipe(
+  Layer.provide(BuildCounterLive)
+)
+
 interface Multiplier {
   readonly times: (n: number) => Effect.Effect<never, never, number>
 }
@@ -819,7 +846,7 @@ const MultiplierLive = Layer.effect(
   Layer.provideMerge(CounterLive)
 )
 
-const buildCounterRuntime = Rx.make(() => BuildCounterLive)
-const counterRuntime = Rx.make(CounterLive)
-const multiplierRuntime = Rx.make(MultiplierLive)
-const fiberRefRuntime = Rx.make(Layer.setRequestCaching(true))
+const buildCounterRuntime = Rx.runtime(BuildCounterLive)
+const counterRuntime = Rx.runtime(CounterLive)
+const multiplierRuntime = Rx.runtime(MultiplierLive)
+const fiberRefRuntime = Rx.runtime(Layer.setRequestCaching(true))

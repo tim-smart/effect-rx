@@ -35,7 +35,7 @@ Added in v1.0.0
 - [context](#context-1)
   - [Context (interface)](#context-interface)
   - [WriteContext (interface)](#writecontext-interface)
-  - [defaultContext](#defaultcontext)
+  - [runtime](#runtime)
 - [models](#models)
   - [PullResult (type alias)](#pullresult-type-alias)
   - [Refreshable (interface)](#refreshable-interface)
@@ -282,8 +282,6 @@ export declare const make: {
     create: Rx.Read<Stream.Stream<never, E, A>>,
     options?: { readonly initialValue?: A | undefined } | undefined
   ): Rx<Result.Result<E, A>>
-  <E, A>(layer: Layer.Layer<never, E, A>): RxRuntime<E, A>
-  <E, A>(create: Rx.Read<Layer.Layer<never, E, A>>): RxRuntime<E, A>
   <A>(create: Rx.Read<A>): Rx<A>
   <A>(initialValue: A): Writable<A, A>
 }
@@ -349,6 +347,20 @@ export interface Context {
   readonly setSelf: <A>(a: A) => Effect.Effect<never, never, void>
   readonly setSync: <R, W>(rx: Writable<R, W>, value: W) => void
   readonly set: <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<never, never, void>
+  readonly stream: <A>(
+    rx: Rx<A>,
+    options?: {
+      readonly withoutInitialValue?: boolean
+      readonly bufferSize?: number
+    }
+  ) => Stream.Stream<never, never, A>
+  readonly streamResult: <E, A>(
+    rx: Rx<Result.Result<E, A>>,
+    options?: {
+      readonly withoutInitialValue?: boolean
+      readonly bufferSize?: number
+    }
+  ) => Stream.Stream<never, E, A>
   readonly subscribe: <A>(
     rx: Rx<A>,
     f: (_: A) => void,
@@ -376,12 +388,12 @@ export interface WriteContext<A> {
 
 Added in v1.0.0
 
-## defaultContext
+## runtime
 
 **Signature**
 
 ```ts
-export declare const defaultContext: <E, R>(
+export declare const runtime: <E, R>(
   create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>
 ) => RxRuntime<E, R>
 ```
@@ -591,6 +603,8 @@ Added in v1.0.0
 
 ```ts
 export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, Runtime.Runtime<R>>> {
+  readonly layer: Rx<Layer.Layer<never, ER, R>>
+
   readonly rx: {
     <E, A>(
       effect: Effect.Effect<Scope.Scope | R, E, A>,
