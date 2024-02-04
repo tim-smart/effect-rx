@@ -532,7 +532,7 @@ export const context: () => <E, R>(
     rx.keepAlive = false
     rx.refresh = undefined
 
-    const layerRx = typeof create === "function" ? readable(create) : readable(() => create)
+    const layerRx = keepAlive(typeof create === "function" ? readable(create) : readable(() => create))
     rx.layer = layerRx
 
     rx.read = function read(get: Context) {
