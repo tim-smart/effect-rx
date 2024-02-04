@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.25.1
+
+### Patch Changes
+
+- [`63f1727`](https://github.com/tim-smart/effect-rx/commit/63f172702d13909f61892465939db63af4f7c763) Thanks [@tim-smart](https://github.com/tim-smart)! - add keepAlive to layer rx's
+
 ## 0.25.0
 
 ### Minor Changes
