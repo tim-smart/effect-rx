@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.25.2
+
+### Patch Changes
+
+- [`bd7f6ba`](https://github.com/tim-smart/effect-rx/commit/bd7f6ba4eefec3b0bb96f50c184531959f4b1c13) Thanks [@tim-smart](https://github.com/tim-smart)! - expose registry dispose & reset
+
 ## 0.25.1
 
 ### Patch Changes
