@@ -180,15 +180,18 @@ class RegistryImpl implements Registry.Registry {
     })
   }
 
-  dispose(): void {
-    this.disposed = true
-
+  reset(): void {
     this.timeoutBuckets.forEach(([, handle]) => clearTimeout(handle))
     this.timeoutBuckets.clear()
     this.nodeTimeoutBucket.clear()
 
     this.nodes.forEach((node) => node.remove())
     this.nodes.clear()
+  }
+
+  dispose(): void {
+    this.disposed = true
+    this.reset()
   }
 }
 
