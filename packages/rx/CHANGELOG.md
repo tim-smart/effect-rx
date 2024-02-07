@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.25.3
+
+### Patch Changes
+
+- [`ea179de`](https://github.com/tim-smart/effect-rx/commit/ea179deefabe3ed6063486b4fc470fa75011d729) Thanks [@tim-smart](https://github.com/tim-smart)! - allow interruptions in Result
+
 ## 0.25.2
 
 ### Patch Changes
