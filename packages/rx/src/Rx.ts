@@ -463,9 +463,7 @@ function makeEffect<E, A>(
   const cancel = runCallbackSync(runtime)(
     scopedEffect,
     function(exit) {
-      if (!Exit.isInterrupted(exit)) {
-        ctx.setSelfSync(Result.fromExitWithPrevious(exit, previous))
-      }
+      ctx.setSelfSync(Result.fromExitWithPrevious(exit, previous))
     }
   )
   if (cancel !== undefined) {
@@ -592,9 +590,7 @@ function makeStream<E, A>(
     ),
     (exit) => {
       if (exit._tag === "Failure") {
-        if (!Exit.isInterrupted(exit)) {
-          ctx.setSelfSync(Result.failureWithPrevious(exit.cause, previous))
-        }
+        ctx.setSelfSync(Result.failureWithPrevious(exit.cause, previous))
       } else {
         pipe(
           ctx.self<Result.Result<E | NoSuchElementException, A>>(),

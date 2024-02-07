@@ -2,7 +2,7 @@
  * @since 1.0.0
  */
 import { NoSuchElementException } from "effect/Cause"
-import * as Effect from "effect/Effect"
+import type * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Runtime from "effect/Runtime"
 import { SyncScheduler } from "effect/Scheduler"
@@ -49,6 +49,7 @@ export const runCallbackSync =
     }
     fiberRuntime.addObserver(onExit)
     return function() {
-      Effect.runFork(fiberRuntime.interruptAsFork(fiberRuntime.id()))
+      fiberRuntime.removeObserver(onExit)
+      fiberRuntime.unsafeInterruptAsFork(fiberRuntime.id())
     }
   }

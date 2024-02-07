@@ -177,6 +177,13 @@ export const isFailure = <E, A>(result: Result<E, A>): result is Failure<E, A> =
 
 /**
  * @since 1.0.0
+ * @category refinements
+ */
+export const isInterrupted = <E, A>(result: Result<E, A>): result is Failure<E, A> =>
+  result._tag === "Failure" && Cause.isInterruptedOnly(result.cause)
+
+/**
+ * @since 1.0.0
  * @category constructors
  */
 export const failure = <E, A>(
