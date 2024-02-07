@@ -463,9 +463,7 @@ function makeEffect<E, A>(
   const cancel = runCallbackSync(runtime)(
     scopedEffect,
     function(exit) {
-      if (!Exit.isInterrupted(exit)) {
-        ctx.setSelfSync(Result.fromExitWithPrevious(exit, previous))
-      }
+      ctx.setSelfSync(Result.fromExitWithPrevious(exit, previous))
     }
   )
   if (cancel !== undefined) {
