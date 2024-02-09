@@ -24,7 +24,7 @@ export type TypeId = typeof TypeId
  * @since 1.0.0
  * @category models
  */
-export type Result<E, A> = Initial<E, A> | Success<E, A> | Failure<E, A>
+export type Result<A, E = never> = Initial<A, E> | Success<A, E> | Failure<A, E>
 
 /**
  * @since 1.0.0
@@ -35,7 +35,7 @@ export declare namespace Result {
    * @since 1.0.0
    * @category models
    */
-  export interface Proto<E, A> extends Pipeable, Data.Case {
+  export interface Proto<A, E> extends Pipeable {
     readonly [TypeId]: {
       readonly E: (_: never) => E
       readonly A: (_: never) => A
@@ -46,19 +46,19 @@ export declare namespace Result {
   /**
    * @since 1.0.0
    */
-  export type InferA<R extends Result<any, any>> = R extends Result<infer _, infer A> ? A : never
+  export type InferA<R extends Result<any, any>> = R extends Result<infer A, infer _> ? A : never
 
   /**
    * @since 1.0.0
    */
-  export type InferE<R extends Result<any, any>> = R extends Result<infer E, infer _> ? E : never
+  export type InferE<R extends Result<any, any>> = R extends Result<infer _, infer E> ? E : never
 
   /**
    * @since 1.0.0
    */
-  export type With<R extends Result<any, any>, E, A> = R extends Initial<infer _E, infer _A> ? Initial<E, A>
-    : R extends Success<infer _E, infer _A> ? Success<E, A>
-    : R extends Failure<infer _E, infer _A> ? Failure<E, A>
+  export type With<R extends Result<any, any>, A, E> = R extends Initial<infer _A, infer _E> ? Initial<A, E>
+    : R extends Success<infer _A, infer _E> ? Success<A, E>
+    : R extends Failure<infer _A, infer _E> ? Failure<A, E>
     : never
 }
 
@@ -76,7 +76,7 @@ const ResultProto = Data.struct({
  * @since 1.0.0
  * @category models
  */
-export interface Initial<E, A> extends Result.Proto<E, A> {
+export interface Initial<A, E = never> extends Result.Proto<A, E> {
   readonly _tag: "Initial"
 }
 
@@ -84,24 +84,24 @@ export interface Initial<E, A> extends Result.Proto<E, A> {
  * @since 1.0.0
  * @category constructors
  */
-export const fromExit = <E, A>(exit: Exit.Exit<E, A>): Success<E, A> | Failure<E, A> =>
+export const fromExit = <A, E>(exit: Exit.Exit<A, E>): Success<A, E> | Failure<A, E> =>
   exit._tag === "Success" ? success(exit.value) : failure(exit.cause)
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const fromExitWithPrevious = <E, A>(
-  exit: Exit.Exit<E, A>,
-  previous: Option.Option<Result<E, A>>
-): Success<E, A> | Failure<E, A> =>
+export const fromExitWithPrevious = <A, E>(
+  exit: Exit.Exit<A, E>,
+  previous: Option.Option<Result<A, E>>
+): Success<A, E> | Failure<A, E> =>
   exit._tag === "Success" ? success(exit.value) : failureWithPrevious(exit.cause, previous)
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const waitingFrom = <E, A>(previous: Option.Option<Result<E, A>>): Result<E, A> => {
+export const waitingFrom = <A, E>(previous: Option.Option<Result<A, E>>): Result<A, E> => {
   if (previous._tag === "None") {
     return initial(true)
   }
@@ -112,20 +112,20 @@ export const waitingFrom = <E, A>(previous: Option.Option<Result<E, A>>): Result
  * @since 1.0.0
  * @category refinements
  */
-export const isInitial = <E, A>(result: Result<E, A>): result is Initial<E, A> => result._tag === "Initial"
+export const isInitial = <A, E>(result: Result<A, E>): result is Initial<A, E> => result._tag === "Initial"
 
 /**
  * @since 1.0.0
  * @category refinements
  */
-export const isNotInitial = <E, A>(result: Result<E, A>): result is Success<E, A> | Failure<E, A> =>
+export const isNotInitial = <A, E>(result: Result<A, E>): result is Success<A, E> | Failure<A, E> =>
   result._tag !== "Initial"
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const initial = <E, A>(waiting = false): Initial<E, A> => {
+export const initial = <A, E>(waiting = false): Initial<A, E> => {
   const result = Object.create(ResultProto)
   result._tag = "Initial"
   result.waiting = waiting
@@ -136,7 +136,7 @@ export const initial = <E, A>(waiting = false): Initial<E, A> => {
  * @since 1.0.0
  * @category models
  */
-export interface Success<E, A> extends Result.Proto<E, A> {
+export interface Success<A, E = never> extends Result.Proto<A, E> {
   readonly _tag: "Success"
   readonly value: A
 }
@@ -145,13 +145,13 @@ export interface Success<E, A> extends Result.Proto<E, A> {
  * @since 1.0.0
  * @category refinements
  */
-export const isSuccess = <E, A>(result: Result<E, A>): result is Success<E, A> => result._tag === "Success"
+export const isSuccess = <A, E>(result: Result<A, E>): result is Success<A, E> => result._tag === "Success"
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const success = <E, A>(value: A, waiting = false): Success<E, A> => {
+export const success = <A, E>(value: A, waiting = false): Success<A, E> => {
   const result = Object.create(ResultProto)
   result._tag = "Success"
   result.value = value
@@ -163,7 +163,7 @@ export const success = <E, A>(value: A, waiting = false): Success<E, A> => {
  * @since 1.0.0
  * @category models
  */
-export interface Failure<E, A> extends Result.Proto<E, A> {
+export interface Failure<A, E = never> extends Result.Proto<A, E> {
   readonly _tag: "Failure"
   readonly cause: Cause.Cause<E>
   readonly previousValue: Option.Option<A>
@@ -173,24 +173,24 @@ export interface Failure<E, A> extends Result.Proto<E, A> {
  * @since 1.0.0
  * @category refinements
  */
-export const isFailure = <E, A>(result: Result<E, A>): result is Failure<E, A> => result._tag === "Failure"
+export const isFailure = <A, E>(result: Result<A, E>): result is Failure<A, E> => result._tag === "Failure"
 
 /**
  * @since 1.0.0
  * @category refinements
  */
-export const isInterrupted = <E, A>(result: Result<E, A>): result is Failure<E, A> =>
+export const isInterrupted = <A, E>(result: Result<A, E>): result is Failure<A, E> =>
   result._tag === "Failure" && Cause.isInterruptedOnly(result.cause)
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const failure = <E, A>(
+export const failure = <A, E>(
   cause: Cause.Cause<E>,
   previousValue: Option.Option<A> = Option.none(),
   waiting = false
-): Failure<E, A> => {
+): Failure<A, E> => {
   const result = Object.create(ResultProto)
   result._tag = "Failure"
   result.cause = cause
@@ -203,28 +203,28 @@ export const failure = <E, A>(
  * @since 1.0.0
  * @category constructors
  */
-export const failureWithPrevious = <E, A>(
+export const failureWithPrevious = <A, E>(
   cause: Cause.Cause<E>,
-  previous: Option.Option<Result<E, A>>,
+  previous: Option.Option<Result<A, E>>,
   waiting = false
-): Failure<E, A> => failure(cause, Option.flatMap(previous, value), waiting)
+): Failure<A, E> => failure(cause, Option.flatMap(previous, value), waiting)
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const fail = <E, A>(error: E, previousData?: Option.Option<A>, waiting?: boolean): Failure<E, A> =>
+export const fail = <A, E>(error: E, previousData?: Option.Option<A>, waiting?: boolean): Failure<A, E> =>
   failure(Cause.fail(error), previousData, waiting)
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const failWithPrevious = <E, A>(
+export const failWithPrevious = <A, E>(
   error: E,
-  previous: Option.Option<Result<E, A>>,
+  previous: Option.Option<Result<A, E>>,
   waiting?: boolean
-): Failure<E, A> => fail(error, Option.flatMap(previous, value), waiting)
+): Failure<A, E> => fail(error, Option.flatMap(previous, value), waiting)
 
 /**
  * @since 1.0.0
@@ -245,8 +245,8 @@ export const waiting = <R extends Result<any, any>>(self: R): R => {
  */
 export const replacePrevious = <R extends Result<any, any>, XE, A>(
   self: R,
-  previous: Option.Option<Result<XE, A>>
-): Result.With<R, Result.InferE<R>, A> => {
+  previous: Option.Option<Result<A, XE>>
+): Result.With<R, A, Result.InferE<R>> => {
   if (self._tag === "Failure") {
     return failureWithPrevious(self.cause, previous, self.waiting) as any
   }
@@ -257,7 +257,7 @@ export const replacePrevious = <R extends Result<any, any>, XE, A>(
  * @since 1.0.0
  * @category accessors
  */
-export const value = <E, A>(self: Result<E, A>): Option.Option<A> => {
+export const value = <A, E>(self: Result<A, E>): Option.Option<A> => {
   if (self._tag === "Success") {
     return Option.some(self.value)
   } else if (self._tag === "Failure") {
@@ -270,7 +270,7 @@ export const value = <E, A>(self: Result<E, A>): Option.Option<A> => {
  * @since 1.0.0
  * @category accessors
  */
-export const cause = <E, A>(self: Result<E, A>): Option.Option<Cause.Cause<E>> => {
+export const cause = <A, E>(self: Result<A, E>): Option.Option<Cause.Cause<E>> => {
   if (self._tag === "Failure") {
     return Option.some(self.cause)
   }
@@ -281,9 +281,9 @@ export const cause = <E, A>(self: Result<E, A>): Option.Option<Cause.Cause<E>> =
  * @since 1.0.0
  * @category combinators
  */
-export const toExit = <E, A>(
-  self: Result<E, A>
-): Exit.Exit<E | Cause.NoSuchElementException, A> => {
+export const toExit = <A, E>(
+  self: Result<A, E>
+): Exit.Exit<A, E | Cause.NoSuchElementException> => {
   switch (self._tag) {
     case "Success": {
       return Exit.succeed(self.value)
@@ -301,13 +301,13 @@ export const toExit = <E, A>(
  * @since 1.0.0
  * @category combinators
  */
-export const map = dual<
-  <A, B>(f: (a: A) => B) => <E>(self: Result<E, A>) => Result<E, B>,
-  <E, A, B>(self: Result<E, A>, f: (a: A) => B) => Result<E, B>
->(2, <E, A, B>(self: Result<E, A>, f: (a: A) => B): Result<E, B> => {
+export const map: {
+  <A, B>(f: (a: A) => B): <E>(self: Result<A, E>) => Result<B, E>
+  <E, A, B>(self: Result<A, E>, f: (a: A) => B): Result<B, E>
+} = dual(2, <E, A, B>(self: Result<A, E>, f: (a: A) => B): Result<B, E> => {
   switch (self._tag) {
     case "Initial":
-      return self as any as Result<E, B>
+      return self as any as Result<B, E>
     case "Failure":
       return failure(self.cause, Option.map(self.previousValue, f), self.waiting)
     case "Success":

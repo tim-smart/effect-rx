@@ -7,7 +7,7 @@ import * as Exit from "effect/Exit"
 import * as Runtime from "effect/Runtime"
 import { SyncScheduler } from "effect/Scheduler"
 
-const fastPath = <R, E, A>(effect: Effect.Effect<R, E, A>): Exit.Exit<E, A> | undefined => {
+const fastPath = <R, E, A>(effect: Effect.Effect<A, E, R>): Exit.Exit<A, E> | undefined => {
   const op = effect as any
   switch (op._tag) {
     case "Failure":
@@ -33,7 +33,7 @@ const fastPath = <R, E, A>(effect: Effect.Effect<R, E, A>): Exit.Exit<E, A> | un
 /** @internal */
 export const runCallbackSync =
   <R>(runtime: Runtime.Runtime<R>) =>
-  <E, A>(effect: Effect.Effect<R, E, A>, onExit: (exit: Exit.Exit<E, A>) => void): (() => void) | undefined => {
+  <A, E>(effect: Effect.Effect<A, E, R>, onExit: (exit: Exit.Exit<A, E>) => void): (() => void) | undefined => {
     const op = fastPath(effect)
     if (op) {
       onExit(op)

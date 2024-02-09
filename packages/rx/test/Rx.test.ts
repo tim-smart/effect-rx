@@ -777,10 +777,10 @@ describe("Rx", () => {
 })
 
 interface BuildCounter {
-  readonly get: Effect.Effect<never, never, number>
-  readonly inc: Effect.Effect<never, never, void>
+  readonly get: Effect.Effect<number>
+  readonly inc: Effect.Effect<void>
 }
-const BuildCounter = Context.Tag<BuildCounter>("BuildCounter")
+const BuildCounter = Context.GenericTag<BuildCounter>("BuildCounter")
 const BuildCounterLive = Layer.sync(BuildCounter, () => {
   let count = 0
   return BuildCounter.of({
@@ -792,10 +792,10 @@ const BuildCounterLive = Layer.sync(BuildCounter, () => {
 })
 
 interface Counter {
-  readonly get: Effect.Effect<never, never, number>
-  readonly inc: Effect.Effect<never, never, void>
+  readonly get: Effect.Effect<number>
+  readonly inc: Effect.Effect<void>
 }
-const Counter = Context.Tag<Counter>("Counter")
+const Counter = Context.GenericTag<Counter>("Counter")
 const CounterLive = Layer.effect(
   Counter,
   Effect.gen(function*(_) {
@@ -831,9 +831,9 @@ const CounterTest = Layer.effect(
 )
 
 interface Multiplier {
-  readonly times: (n: number) => Effect.Effect<never, never, number>
+  readonly times: (n: number) => Effect.Effect<number>
 }
-const Multiplier = Context.Tag<Multiplier>("Multiplier")
+const Multiplier = Context.GenericTag<Multiplier>("Multiplier")
 const MultiplierLive = Layer.effect(
   Multiplier,
   Effect.gen(function*(_) {

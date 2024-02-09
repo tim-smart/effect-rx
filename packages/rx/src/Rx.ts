@@ -87,7 +87,7 @@ export declare namespace Rx {
    * @since 1.0.0
    * @category models
    */
-  export type GetResult = <E, A>(rx: Rx<Result.Result<E, A>>) => Exit.Exit<E | NoSuchElementException, A>
+  export type GetResult = <A, E>(rx: Rx<Result.Result<A, E>>) => Exit.Exit<A, E | NoSuchElementException>
 
   /**
    * @since 1.0.0
@@ -99,7 +99,7 @@ export declare namespace Rx {
    * @since 1.0.0
    * @category models
    */
-  export type SetEffect = <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<never, never, void>
+  export type SetEffect = <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<void>
 
   /**
    * @since 1.0.0
@@ -111,7 +111,7 @@ export declare namespace Rx {
    * @since 1.0.0
    * @category models
    */
-  export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => Effect.Effect<never, never, void>
+  export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => Effect.Effect<void>
 
   /**
    * @since 1.0.0
@@ -181,27 +181,27 @@ export interface Writable<R, W> extends Rx<R> {
 export interface Context {
   <A>(rx: Rx<A>): A
   readonly get: <A>(rx: Rx<A>) => A
-  readonly result: <E, A>(rx: Rx<Result.Result<E, A>>) => Exit.Exit<E | NoSuchElementException, A>
+  readonly result: <A, E>(rx: Rx<Result.Result<A, E>>) => Exit.Exit<A, E | NoSuchElementException>
   readonly once: <A>(rx: Rx<A>) => A
   readonly addFinalizer: (f: () => void) => void
   readonly mount: <A>(rx: Rx<A>) => void
   readonly refreshSync: <A>(rx: Rx<A> & Refreshable) => void
-  readonly refresh: <A>(rx: Rx<A> & Refreshable) => Effect.Effect<never, never, void>
+  readonly refresh: <A>(rx: Rx<A> & Refreshable) => Effect.Effect<void>
   readonly refreshSelfSync: () => void
-  readonly refreshSelf: Effect.Effect<never, never, void>
+  readonly refreshSelf: Effect.Effect<void>
   readonly self: <A>() => Option.Option<A>
   readonly setSelfSync: <A>(a: A) => void
-  readonly setSelf: <A>(a: A) => Effect.Effect<never, never, void>
+  readonly setSelf: <A>(a: A) => Effect.Effect<void>
   readonly setSync: <R, W>(rx: Writable<R, W>, value: W) => void
-  readonly set: <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<never, never, void>
+  readonly set: <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<void>
   readonly stream: <A>(rx: Rx<A>, options?: {
     readonly withoutInitialValue?: boolean
     readonly bufferSize?: number
-  }) => Stream.Stream<never, never, A>
-  readonly streamResult: <E, A>(rx: Rx<Result.Result<E, A>>, options?: {
+  }) => Stream.Stream<A>
+  readonly streamResult: <A, E>(rx: Rx<Result.Result<A, E>>, options?: {
     readonly withoutInitialValue?: boolean
     readonly bufferSize?: number
-  }) => Stream.Stream<never, E, A>
+  }) => Stream.Stream<A, E>
   readonly subscribe: <A>(rx: Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }) => void
@@ -341,18 +341,18 @@ function constSetSelf<A>(ctx: WriteContext<A>, value: A) {
  * @category constructors
  */
 export const make: {
-  <E, A>(effect: Effect.Effect<Scope.Scope, E, A>, options?: {
+  <A, E>(effect: Effect.Effect<A, E, Scope.Scope>, options?: {
     readonly initialValue?: A
-  }): Rx<Result.Result<E, A>>
-  <E, A>(create: Rx.Read<Effect.Effect<Scope.Scope, E, A>>, options?: {
+  }): Rx<Result.Result<A, E>>
+  <A, E>(create: Rx.Read<Effect.Effect<A, E, Scope.Scope>>, options?: {
     readonly initialValue?: A
-  }): Rx<Result.Result<E, A>>
-  <E, A>(stream: Stream.Stream<never, E, A>, options?: {
+  }): Rx<Result.Result<A, E>>
+  <A, E>(stream: Stream.Stream<A, E>, options?: {
     readonly initialValue?: A
-  }): Rx<Result.Result<E, A>>
-  <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: {
+  }): Rx<Result.Result<A, E>>
+  <A, E>(create: Rx.Read<Stream.Stream<A, E>>, options?: {
     readonly initialValue?: A
-  }): Rx<Result.Result<E, A>>
+  }): Rx<Result.Result<A, E>>
   <A>(create: Rx.Read<A>): Rx<A>
   <A>(initialValue: A): Writable<A, A>
 } = (arg: any, options?: { readonly initialValue?: unknown }) => {
@@ -372,26 +372,26 @@ const isDataType = (u: object): u is Option.Option<unknown> | Either.Either<unkn
   Either.TypeId in u
 
 const makeRead: {
-  <E, A>(effect: Effect.Effect<Scope.Scope, E, A>, options?: {
+  <A, E>(effect: Effect.Effect<A, E, Scope.Scope>, options?: {
     readonly initialValue?: A
-  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
-  <E, A>(create: Rx.Read<Effect.Effect<Scope.Scope, E, A>>, options?: {
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<A, E>
+  <A, E>(create: Rx.Read<Effect.Effect<A, E, Scope.Scope>>, options?: {
     readonly initialValue?: A
-  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
-  <E, A>(stream: Stream.Stream<never, E, A>, options?: {
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<A, E>
+  <A, E>(stream: Stream.Stream<A, E>, options?: {
     readonly initialValue?: A
-  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
-  <E, A>(create: Rx.Read<Stream.Stream<never, E, A>>, options?: {
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<A, E>
+  <A, E>(create: Rx.Read<Stream.Stream<A, E>>, options?: {
     readonly initialValue?: A
-  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<E, A>
+  }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<A, E>
   <A>(create: Rx.Read<A>): (get: Context, runtime?: Runtime.Runtime<any>) => A
   <A>(initialValue: A): Writable<A, A>
-} = <E, A>(
+} = <A, E>(
   arg:
-    | Effect.Effect<Scope.Scope, E, A>
-    | Rx.Read<Effect.Effect<Scope.Scope, E, A>>
-    | Stream.Stream<never, E, A>
-    | Rx.Read<Stream.Stream<never, E, A>>
+    | Effect.Effect<A, E, Scope.Scope>
+    | Rx.Read<Effect.Effect<A, E, Scope.Scope>>
+    | Stream.Stream<A, E>
+    | Rx.Read<Stream.Stream<A, E>>
     | Rx.Read<A>
     | A,
   options?: { readonly initialValue?: unknown }
@@ -435,25 +435,25 @@ const state = <A>(
     return initialValue
   }, constSetSelf)
 
-const effect = <E, A>(
+const effect = <A, E>(
   get: Context,
-  effect: Effect.Effect<Scope.Scope, E, A>,
+  effect: Effect.Effect<A, E, Scope.Scope>,
   options?: { readonly initialValue?: A },
   runtime?: Runtime.Runtime<any>
-): Result.Result<E, A> => {
+): Result.Result<A, E> => {
   const initialValue = options?.initialValue !== undefined
-    ? Result.success<E, A>(options.initialValue)
-    : Result.initial<E, A>()
+    ? Result.success<A, E>(options.initialValue)
+    : Result.initial<A, E>()
   return makeEffect(get, effect, initialValue, runtime)
 }
 
-function makeEffect<E, A>(
+function makeEffect<A, E>(
   ctx: Context,
-  effect: Effect.Effect<Scope.Scope, E, A>,
-  initialValue: Result.Result<E, A>,
+  effect: Effect.Effect<A, E, Scope.Scope>,
+  initialValue: Result.Result<A, E>,
   runtime = Runtime.defaultRuntime
-): Result.Result<E, A> {
-  const previous = ctx.self<Result.Result<E, A>>()
+): Result.Result<A, E> {
+  const previous = ctx.self<Result.Result<A, E>>()
 
   const scope = Effect.runSync(Scope.make())
   ctx.addFinalizer(() => {
@@ -484,34 +484,34 @@ function makeEffect<E, A>(
  * @since 1.0.0
  * @category models
  */
-export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, Runtime.Runtime<R>>> {
-  readonly layer: Rx<Layer.Layer<never, ER, R>>
+export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, ER>> {
+  readonly layer: Rx<Layer.Layer<R, ER>>
 
   readonly rx: {
-    <E, A>(effect: Effect.Effect<Scope.Scope | R, E, A>, options?: {
+    <A, E>(effect: Effect.Effect<A, E, Scope.Scope | R>, options?: {
       readonly initialValue?: A
-    }): Rx<Result.Result<E | ER, A>>
-    <E, A>(create: Rx.Read<Effect.Effect<Scope.Scope | R, E, A>>, options?: {
+    }): Rx<Result.Result<A, E | ER>>
+    <A, E>(create: Rx.Read<Effect.Effect<A, E, Scope.Scope | R>>, options?: {
       readonly initialValue?: A
-    }): Rx<Result.Result<E | ER, A>>
-    <E, A>(stream: Stream.Stream<never | R, E, A>, options?: {
+    }): Rx<Result.Result<A, E | ER>>
+    <A, E>(stream: Stream.Stream<A, E, never | R>, options?: {
       readonly initialValue?: A
-    }): Rx<Result.Result<E | ER, A>>
-    <E, A>(create: Rx.Read<Stream.Stream<never | R, E, A>>, options?: {
+    }): Rx<Result.Result<A, E | ER>>
+    <A, E>(create: Rx.Read<Stream.Stream<A, E, never | R>>, options?: {
       readonly initialValue?: A
-    }): Rx<Result.Result<E | ER, A>>
+    }): Rx<Result.Result<A, E | ER>>
   }
 
   readonly fn: {
-    <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope | R, E, A>>, options?: {
+    <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope | R>>, options?: {
       readonly initialValue?: A
     }): RxResultFn<E | ER, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
-    <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<R, E, A>>, options?: {
+    <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<A, E, R>>, options?: {
       readonly initialValue?: A
     }): RxResultFn<E | ER | NoSuchElementException, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
   }
 
-  readonly pull: <E, A>(create: Rx.Read<Stream.Stream<R, E, A>> | Stream.Stream<R, E, A>, options?: {
+  readonly pull: <A, E>(create: Rx.Read<Stream.Stream<A, E, R>> | Stream.Stream<A, E, R>, options?: {
     readonly disableAccumulation?: boolean
     readonly initialValue?: ReadonlyArray<A>
   }) => Writable<PullResult<E | ER, A>, void>
@@ -521,11 +521,11 @@ export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, Runtime.Runtime<R
  * @since 1.0.0
  * @category constructors
  */
-export const context: () => <E, R>(
-  create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>
-) => RxRuntime<E, R> = () => {
+export const context: () => <R, E>(
+  create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>
+) => RxRuntime<R, E> = () => {
   const memoMapRx = make(Layer.makeMemoMap)
-  return <E, R>(create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>): RxRuntime<E, R> => {
+  return <E, R>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>): RxRuntime<R, E> => {
     const rx = Object.create(RxRuntimeProto)
     rx.keepAlive = false
     rx.refresh = undefined
@@ -555,33 +555,34 @@ export const context: () => <E, R>(
  * @since 1.0.0
  * @category context
  */
-export const runtime: <E, R>(
-  create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>
-) => RxRuntime<E, R> = globalValue("@effect-rx/rx/Rx/defaultContext", () => context())
+export const runtime: <R, E>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>) => RxRuntime<R, E> = globalValue(
+  "@effect-rx/rx/Rx/defaultContext",
+  () => context()
+)
 
 // -----------------------------------------------------------------------------
 // constructors - stream
 // -----------------------------------------------------------------------------
 
-const stream = <E, A>(
+const stream = <A, E>(
   get: Context,
-  stream: Stream.Stream<never, E, A>,
+  stream: Stream.Stream<A, E>,
   options?: { readonly initialValue?: A },
   runtime?: Runtime.Runtime<any>
-): Result.Result<E | NoSuchElementException, A> => {
+): Result.Result<A, E | NoSuchElementException> => {
   const initialValue = options?.initialValue !== undefined
-    ? Result.success<E, A>(options.initialValue)
-    : Result.initial<E, A>()
+    ? Result.success<A, E>(options.initialValue)
+    : Result.initial<A, E>()
   return makeStream(get, stream, initialValue, runtime)
 }
 
-function makeStream<E, A>(
+function makeStream<A, E>(
   ctx: Context,
-  stream: Stream.Stream<never, E, A>,
-  initialValue: Result.Result<E | NoSuchElementException, A>,
+  stream: Stream.Stream<A, E>,
+  initialValue: Result.Result<A, E | NoSuchElementException>,
   runtime = Runtime.defaultRuntime
-): Result.Result<E | NoSuchElementException, A> {
-  const previous = ctx.self<Result.Result<E | NoSuchElementException, A>>()
+): Result.Result<A, E | NoSuchElementException> {
+  const previous = ctx.self<Result.Result<A, E | NoSuchElementException>>()
 
   const cancel = runCallbackSync(runtime)(
     Stream.runForEach(
@@ -593,7 +594,7 @@ function makeStream<E, A>(
         ctx.setSelfSync(Result.failureWithPrevious(exit.cause, previous))
       } else {
         pipe(
-          ctx.self<Result.Result<E | NoSuchElementException, A>>(),
+          ctx.self<Result.Result<A, E | NoSuchElementException>>(),
           Option.flatMap(Result.value),
           Option.match({
             onNone: () => ctx.setSelfSync(Result.failWithPrevious(new NoSuchElementException(), previous)),
@@ -621,7 +622,7 @@ function makeStream<E, A>(
  * @since 1.0.0
  * @category models
  */
-export interface RxResultFn<E, A, Arg> extends Writable<Result.Result<E, A>, Arg> {}
+export interface RxResultFn<Arg, A, E = never> extends Writable<Result.Result<A, E>, Arg> {}
 
 /**
  * @since 1.0.0
@@ -656,29 +657,29 @@ export const fnSync: {
  * @category constructors
  */
 export const fn: {
-  <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope, E, A>>, options?: {
+  <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope>>, options?: {
     readonly initialValue?: A
-  }): RxResultFn<E, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
-  <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<never, E, A>>, options?: {
+  }): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E>
+  <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<A, E>>, options?: {
     readonly initialValue?: A
-  }): RxResultFn<E | NoSuchElementException, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
-} = <Arg, E, A>(f: Rx.ReadFn<Arg, Stream.Stream<never, E, A> | Effect.Effect<Scope.Scope, E, A>>, options?: {
+  }): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | NoSuchElementException>
+} = <Arg, E, A>(f: Rx.ReadFn<Arg, Stream.Stream<A, E> | Effect.Effect<A, E, Scope.Scope>>, options?: {
   readonly initialValue?: A
-}): RxResultFn<E | NoSuchElementException, A, Types.Equals<Arg, unknown> extends true ? void : Arg> => {
+}): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | NoSuchElementException> => {
   const [read, write] = makeResultFn(f, options)
   return writable(read, write) as any
 }
 
 function makeResultFn<Arg, E, A>(
-  f: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope, E, A> | Stream.Stream<never, E, A>>,
+  f: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope> | Stream.Stream<A, E>>,
   options?: { readonly initialValue?: A }
 ) {
   const argRx = state<[number, Arg]>([0, undefined as any])
   const initialValue = options?.initialValue !== undefined
-    ? Result.success<E, A>(options.initialValue)
-    : Result.initial<E, A>()
+    ? Result.success<A, E>(options.initialValue)
+    : Result.initial<A, E>()
 
-  function read(get: Context, runtime?: Runtime.Runtime<any>): Result.Result<E | NoSuchElementException, A> {
+  function read(get: Context, runtime?: Runtime.Runtime<any>): Result.Result<A, E | NoSuchElementException> {
     const [counter, arg] = get(argRx)
     if (counter === 0) {
       return initialValue
@@ -689,7 +690,7 @@ function makeResultFn<Arg, E, A>(
     }
     return makeStream(get, value, initialValue, runtime)
   }
-  function write(ctx: WriteContext<Result.Result<E | NoSuchElementException, A>>, arg: Arg) {
+  function write(ctx: WriteContext<Result.Result<A, E | NoSuchElementException>>, arg: Arg) {
     ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
   }
   return [read, write] as const
@@ -699,19 +700,19 @@ function makeResultFn<Arg, E, A>(
  * @since 1.0.0
  * @category models
  */
-export type PullResult<E, A> = Result.Result<E | NoSuchElementException, {
+export type PullResult<A, E = never> = Result.Result<{
   readonly done: boolean
   readonly items: Array<A>
-}>
+}, E | NoSuchElementException>
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const pull = <E, A>(create: Rx.Read<Stream.Stream<never, E, A>> | Stream.Stream<never, E, A>, options?: {
+export const pull = <A, E>(create: Rx.Read<Stream.Stream<A, E>> | Stream.Stream<A, E>, options?: {
   readonly disableAccumulation?: boolean
   readonly initialValue?: ReadonlyArray<A>
-}): Writable<PullResult<E, A>, void> => {
+}): Writable<PullResult<A, E>, void> => {
   const pullRx = readable(
     makeRead(function(get) {
       return makeStreamPullEffect(get, create, options)
@@ -720,9 +721,9 @@ export const pull = <E, A>(create: Rx.Read<Stream.Stream<never, E, A>> | Stream.
   return makeStreamPull(pullRx, options)
 }
 
-const makeStreamPullEffect = <E, A>(
+const makeStreamPullEffect = <A, E>(
   get: Context,
-  create: Rx.Read<Stream.Stream<never, E, A>> | Stream.Stream<never, E, A>,
+  create: Rx.Read<Stream.Stream<A, E>> | Stream.Stream<A, E>,
   options?: { readonly disableAccumulation?: boolean },
   runtime?: Runtime.Runtime<any>
 ) => {
@@ -735,24 +736,23 @@ const makeStreamPullEffect = <E, A>(
   )
 }
 
-const makeStreamPull = <E, A>(
+const makeStreamPull = <A, E>(
   pullRx: Rx<
     Result.Result<
-      never,
-      readonly [Effect.Effect<never, Option.Option<E>, Chunk.Chunk<A>>, Runtime.Runtime<any> | undefined]
+      readonly [Effect.Effect<Chunk.Chunk<A>, Option.Option<E>>, Runtime.Runtime<any> | undefined]
     >
   >,
   options?: { readonly initialValue?: ReadonlyArray<A> }
 ) => {
-  const initialValue: Result.Result<E | NoSuchElementException, {
+  const initialValue: Result.Result<{
     readonly done: boolean
     readonly items: Array<A>
-  }> = options?.initialValue !== undefined
+  }, E | NoSuchElementException> = options?.initialValue !== undefined
     ? Result.success({ done: false, items: options.initialValue as Array<A> })
     : Result.initial()
 
-  return writable(function(get: Context): PullResult<E, A> {
-    const previous = get.self<PullResult<E, A>>()
+  return writable(function(get: Context): PullResult<A, E> {
+    const previous = get.self<PullResult<A, E>>()
     const pullResult = get(pullRx)
     if (pullResult._tag !== "Success") {
       return Result.replacePrevious(pullResult, previous)
@@ -764,14 +764,14 @@ const makeStreamPull = <E, A>(
         done: false,
         items: Chunk.toReadonlyArray(_) as Array<A>
       })),
-      Effect.catchAll((error): Effect.Effect<never, E | NoSuchElementException, {
+      Effect.catchAll((error): Effect.Effect<{
         readonly done: boolean
         readonly items: Array<A>
-      }> =>
+      }, E | NoSuchElementException> =>
         Option.match(error, {
           onNone: () =>
             pipe(
-              get.self<PullResult<E, A>>(),
+              get.self<PullResult<A, E>>(),
               Option.flatMap(Result.value),
               Option.match({
                 onNone: () => Effect.fail(new NoSuchElementException()),
@@ -840,33 +840,25 @@ export const family = typeof WeakRef === "undefined" || typeof FinalizationRegis
  */
 export const withFallback: {
   <E2, A2>(
-    fallback: Rx<Result.Result<E2, A2>>
+    fallback: Rx<Result.Result<A2, E2>>
   ): <R extends Rx<Result.Result<any, any>>>(
     self: R
   ) => [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>, RW>
-    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>>
-  <R extends Rx<Result.Result<any, any>>, E2, A2>(
+    ? Writable<Result.Result<Result.Result.InferA<Rx.Infer<R>> | A2, Result.Result.InferE<Rx.Infer<R>> | E2>, RW>
+    : Rx<Result.Result<Result.Result.InferA<Rx.Infer<R>> | A2, Result.Result.InferE<Rx.Infer<R>> | E2>>
+  <R extends Rx<Result.Result<any, any>>, A2, E2>(
     self: R,
-    fallback: Rx<Result.Result<E2, A2>>
+    fallback: Rx<Result.Result<A2, E2>>
   ): [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>, RW>
-    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>>
-} = dual<
-  <E2, A2>(
-    fallback: Rx<Result.Result<E2, A2>>
-  ) => <R extends Rx<Result.Result<any, any>>>(
-    self: R
-  ) => [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>, RW>
-    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>>,
-  <R extends Rx<Result.Result<any, any>>, E2, A2>(
-    self: R,
-    fallback: Rx<Result.Result<E2, A2>>
-  ) => [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>, RW>
-    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>> | E2, Result.Result.InferA<Rx.Infer<R>> | A2>>
->(2, (self, fallback) => {
+    ? Writable<Result.Result<Result.Result.InferA<Rx.Infer<R>> | A2, Result.Result.InferE<Rx.Infer<R>> | E2>, RW>
+    : Rx<Result.Result<Result.Result.InferA<Rx.Infer<R>> | A2, Result.Result.InferE<Rx.Infer<R>> | E2>>
+} = dual(2, <R extends Rx<Result.Result<any, any>>, A2, E2>(
+  self: R,
+  fallback: Rx<Result.Result<A2, E2>>
+): [R] extends [Writable<infer _, infer RW>]
+  ? Writable<Result.Result<Result.Result.InferA<Rx.Infer<R>> | A2, Result.Result.InferE<Rx.Infer<R>> | E2>, RW>
+  : Rx<Result.Result<Result.Result.InferA<Rx.Infer<R>> | A2, Result.Result.InferE<Rx.Infer<R>> | E2>> =>
+{
   function withFallback(get: Context) {
     const result = get(self)
     if (result._tag === "Initial") {
@@ -991,19 +983,23 @@ export const map = dual<
  * @since 1.0.0
  * @category combinators
  */
-export const mapResult = dual<
+export const mapResult: {
   <R extends Rx<Result.Result<any, any>>, B>(
     f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
-  ) => (
+  ): (
     self: R
-  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>, RW>
-    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>>,
+  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
+    : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>>
   <R extends Rx<Result.Result<any, any>>, B>(
     self: R,
     f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
-  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>, RW>
-    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>>
->(2, (self, f) => map(self, Result.map(f)) as any)
+  ): [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
+    : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>>
+} = dual(2, <R extends Rx<Result.Result<any, any>>, B>(
+  self: R,
+  f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
+): [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
+  : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>> => map(self, Result.map(f)))
 
 /**
  * @since 1.0.0

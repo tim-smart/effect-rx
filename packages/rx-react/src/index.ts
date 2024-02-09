@@ -103,8 +103,8 @@ function setRx<R, W>(registry: Registry.Registry, rx: Rx.Writable<R, W>): (_: W 
 
 function setRxPromise<E, A, W>(
   registry: Registry.Registry,
-  rx: Rx.Writable<Result.Result<E, A>, W>
-): (_: W) => Promise<Exit.Exit<E, A>> {
+  rx: Rx.Writable<Result.Result<A, E>, W>
+): (_: W) => Promise<Exit.Exit<A, E>> {
   const cancelRef = React.useRef<Set<() => void>>(undefined as any)
   if (!cancelRef.current) {
     cancelRef.current = new Set()
@@ -159,8 +159,8 @@ export const useRxSet = <R, W>(rx: Rx.Writable<R, W>): (_: W | ((_: R) => W)) =>
  * @category hooks
  */
 export const useRxSetPromise = <E, A, W>(
-  rx: Rx.Writable<Result.Result<E, A>, W>
-): (_: W) => Promise<Exit.Exit<E, A>> => {
+  rx: Rx.Writable<Result.Result<A, E>, W>
+): (_: W) => Promise<Exit.Exit<A, E>> => {
   const registry = React.useContext(RegistryContext)
   return setRxPromise(registry, rx)
 }
@@ -191,14 +191,14 @@ export const useRx = <R, W>(
   ] as const
 }
 
-type SuspenseResult<E, A> =
+type SuspenseResult<A, E> =
   | {
     readonly _tag: "Suspended"
     readonly promise: Promise<void>
   }
   | {
     readonly _tag: "Value"
-    readonly value: Result.Success<E, A> | Result.Failure<E, A>
+    readonly value: Result.Success<A, E> | Result.Failure<A, E>
   }
 
 const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
@@ -233,10 +233,10 @@ const suspenseMounts = globalValue("@effect-rx/rx-react/suspenseMounts", () => n
  * @since 1.0.0
  * @category hooks
  */
-export const useRxSuspense = <E, A>(
-  rx: Rx.Rx<Result.Result<E, A>>,
+export const useRxSuspense = <A, E>(
+  rx: Rx.Rx<Result.Result<A, E>>,
   options?: { readonly suspendOnWaiting?: boolean }
-): Result.Success<E, A> | Result.Failure<E, A> => {
+): Result.Success<A, E> | Result.Failure<A, E> => {
   const registry = React.useContext(RegistryContext)
   const resultRx = React.useMemo(
     () => (options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)),
@@ -264,10 +264,10 @@ export const useRxSuspense = <E, A>(
  * @since 1.0.0
  * @category hooks
  */
-export const useRxSuspenseSuccess = <E, A>(
-  rx: Rx.Rx<Result.Result<E, A>>,
+export const useRxSuspenseSuccess = <A, E>(
+  rx: Rx.Rx<Result.Result<A, E>>,
   options?: { readonly suspendOnWaiting?: boolean }
-): Result.Success<E, A> => {
+): Result.Success<A, E> => {
   const result = useRxSuspense(rx, options)
   if (result._tag === "Failure") {
     throw Cause.squash(result.cause)

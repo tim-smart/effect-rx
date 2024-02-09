@@ -418,7 +418,7 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
     return parent.value()
   },
 
-  result<E, A>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<E, A>>): Exit<E | NoSuchElementException, A> {
+  result<A, E>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<A, E>>): Exit<A, E | NoSuchElementException> {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
@@ -551,7 +551,7 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
     )
   },
 
-  streamResult<E, A>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<E, A>>, options?: {
+  streamResult<A, E>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<A, E>>, options?: {
     readonly withoutInitialValue?: boolean
     readonly bufferSize?: number
   }) {
