@@ -505,16 +505,16 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
   readonly fn: {
     <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope | R>>, options?: {
       readonly initialValue?: A
-    }): RxResultFn<E | ER, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
+    }): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | ER>
     <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<A, E, R>>, options?: {
       readonly initialValue?: A
-    }): RxResultFn<E | ER | NoSuchElementException, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
+    }): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | ER | NoSuchElementException>
   }
 
   readonly pull: <A, E>(create: Rx.Read<Stream.Stream<A, E, R>> | Stream.Stream<A, E, R>, options?: {
     readonly disableAccumulation?: boolean
     readonly initialValue?: ReadonlyArray<A>
-  }) => Writable<PullResult<E | ER, A>, void>
+  }) => Writable<PullResult<A, E | ER>, void>
 }
 
 /**
