@@ -1,5 +1,13 @@
 # @effect-rx/rx
 
+## 0.26.0
+
+### Minor Changes
+
+- [`ec1b66e`](https://github.com/tim-smart/effect-rx/commit/ec1b66e48c826f82087a3c86f60e6b2beb33b6ae) Thanks [@tim-smart](https://github.com/tim-smart)! - swap type params for Result
+
+- [`ec1b66e`](https://github.com/tim-smart/effect-rx/commit/ec1b66e48c826f82087a3c86f60e6b2beb33b6ae) Thanks [@tim-smart](https://github.com/tim-smart)! - update effect
+
 ## 0.25.3
 
 ### Patch Changes
