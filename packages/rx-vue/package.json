@@ -23,11 +23,11 @@
   "license": "MIT",
   "sideEffects": false,
   "devDependencies": {
-    "effect": "^2.3.0",
-    "vue": "^3.4.18"
+    "effect": "^2.4.0",
+    "vue": "^3.4.19"
   },
   "peerDependencies": {
-    "effect": "^2.3.0",
+    "effect": "^2.4.0",
     "vue": "^3.4"
   },
   "dependencies": {
