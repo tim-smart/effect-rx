@@ -43,6 +43,7 @@ Added in v1.0.0
 - [refinements](#refinements)
   - [isFailure](#isfailure)
   - [isInitial](#isinitial)
+  - [isInterrupted](#isinterrupted)
   - [isNotInitial](#isnotinitial)
   - [isSuccess](#issuccess)
 - [type ids](#type-ids)
@@ -58,7 +59,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const cause: <E, A>(self: Result<E, A>) => Option.Option<Cause.Cause<E>>
+export declare const cause: <A, E>(self: Result<A, E>) => Option.Option<Cause.Cause<E>>
 ```
 
 Added in v1.0.0
@@ -68,7 +69,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const value: <E, A>(self: Result<E, A>) => Option.Option<A>
+export declare const value: <A, E>(self: Result<A, E>) => Option.Option<A>
 ```
 
 Added in v1.0.0
@@ -80,8 +81,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const map: (<A, B>(f: (a: A) => B) => <E>(self: Result<E, A>) => Result<E, B>) &
-  (<E, A, B>(self: Result<E, A>, f: (a: A) => B) => Result<E, B>)
+export declare const map: {
+  <A, B>(f: (a: A) => B): <E>(self: Result<A, E>) => Result<B, E>
+  <E, A, B>(self: Result<A, E>, f: (a: A) => B): Result<B, E>
+}
 ```
 
 Added in v1.0.0
@@ -91,7 +94,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const toExit: <E, A>(self: Result<E, A>) => Exit.Exit<Cause.NoSuchElementException | E, A>
+export declare const toExit: <A, E>(self: Result<A, E>) => Exit.Exit<A, Cause.NoSuchElementException | E>
 ```
 
 Added in v1.0.0
@@ -103,11 +106,11 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const fail: <E, A>(
+export declare const fail: <A, E>(
   error: E,
   previousData?: Option.Option<A> | undefined,
   waiting?: boolean
-) => Failure<E, A>
+) => Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -117,11 +120,11 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const failWithPrevious: <E, A>(
+export declare const failWithPrevious: <A, E>(
   error: E,
-  previous: Option.Option<Result<E, A>>,
+  previous: Option.Option<Result<A, E>>,
   waiting?: boolean
-) => Failure<E, A>
+) => Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -131,11 +134,11 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const failure: <E, A>(
+export declare const failure: <A, E>(
   cause: Cause.Cause<E>,
   previousValue?: Option.Option<A>,
   waiting?: boolean
-) => Failure<E, A>
+) => Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -145,11 +148,11 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const failureWithPrevious: <E, A>(
+export declare const failureWithPrevious: <A, E>(
   cause: Cause.Cause<E>,
-  previous: Option.Option<Result<E, A>>,
+  previous: Option.Option<Result<A, E>>,
   waiting?: boolean
-) => Failure<E, A>
+) => Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -159,7 +162,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const fromExit: <E, A>(exit: Exit.Exit<E, A>) => Success<E, A> | Failure<E, A>
+export declare const fromExit: <A, E>(exit: Exit.Exit<A, E>) => Success<A, E> | Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -169,10 +172,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const fromExitWithPrevious: <E, A>(
-  exit: Exit.Exit<E, A>,
-  previous: Option.Option<Result<E, A>>
-) => Success<E, A> | Failure<E, A>
+export declare const fromExitWithPrevious: <A, E>(
+  exit: Exit.Exit<A, E>,
+  previous: Option.Option<Result<A, E>>
+) => Success<A, E> | Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -182,7 +185,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const initial: <E, A>(waiting?: boolean) => Initial<E, A>
+export declare const initial: <A, E>(waiting?: boolean) => Initial<A, E>
 ```
 
 Added in v1.0.0
@@ -194,8 +197,8 @@ Added in v1.0.0
 ```ts
 export declare const replacePrevious: <R extends Result<any, any>, XE, A>(
   self: R,
-  previous: Option.Option<Result<XE, A>>
-) => Result.With<R, Result.InferE<R>, A>
+  previous: Option.Option<Result<A, XE>>
+) => Result.With<R, A, Result.InferE<R>>
 ```
 
 Added in v1.0.0
@@ -205,7 +208,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const success: <E, A>(value: A, waiting?: boolean) => Success<E, A>
+export declare const success: <A, E>(value: A, waiting?: boolean) => Success<A, E>
 ```
 
 Added in v1.0.0
@@ -225,7 +228,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const waitingFrom: <E, A>(previous: Option.Option<Result<E, A>>) => Result<E, A>
+export declare const waitingFrom: <A, E>(previous: Option.Option<Result<A, E>>) => Result<A, E>
 ```
 
 Added in v1.0.0
@@ -237,7 +240,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface Failure<E, A> extends Result.Proto<E, A> {
+export interface Failure<A, E = never> extends Result.Proto<A, E> {
   readonly _tag: "Failure"
   readonly cause: Cause.Cause<E>
   readonly previousValue: Option.Option<A>
@@ -251,7 +254,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface Initial<E, A> extends Result.Proto<E, A> {
+export interface Initial<A, E = never> extends Result.Proto<A, E> {
   readonly _tag: "Initial"
 }
 ```
@@ -263,7 +266,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type Result<E, A> = Initial<E, A> | Success<E, A> | Failure<E, A>
+export type Result<A, E = never> = Initial<A, E> | Success<A, E> | Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -277,7 +280,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface Proto<E, A> extends Pipeable, Data.Case {
+export interface Proto<A, E> extends Pipeable {
   readonly [TypeId]: {
     readonly E: (_: never) => E
     readonly A: (_: never) => A
@@ -293,7 +296,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type InferA<R extends Result<any, any>> = R extends Result<infer _, infer A> ? A : never
+export type InferA<R extends Result<any, any>> = R extends Result<infer A, infer _> ? A : never
 ```
 
 Added in v1.0.0
@@ -303,7 +306,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type InferE<R extends Result<any, any>> = R extends Result<infer E, infer _> ? E : never
+export type InferE<R extends Result<any, any>> = R extends Result<infer _, infer E> ? E : never
 ```
 
 Added in v1.0.0
@@ -313,13 +316,13 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type With<R extends Result<any, any>, E, A> =
-  R extends Initial<infer _E, infer _A>
-    ? Initial<E, A>
-    : R extends Success<infer _E, infer _A>
-      ? Success<E, A>
-      : R extends Failure<infer _E, infer _A>
-        ? Failure<E, A>
+export type With<R extends Result<any, any>, A, E> =
+  R extends Initial<infer _A, infer _E>
+    ? Initial<A, E>
+    : R extends Success<infer _A, infer _E>
+      ? Success<A, E>
+      : R extends Failure<infer _A, infer _E>
+        ? Failure<A, E>
         : never
 ```
 
@@ -330,7 +333,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface Success<E, A> extends Result.Proto<E, A> {
+export interface Success<A, E = never> extends Result.Proto<A, E> {
   readonly _tag: "Success"
   readonly value: A
 }
@@ -345,7 +348,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const isFailure: <E, A>(result: Result<E, A>) => result is Failure<E, A>
+export declare const isFailure: <A, E>(result: Result<A, E>) => result is Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -355,7 +358,17 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const isInitial: <E, A>(result: Result<E, A>) => result is Initial<E, A>
+export declare const isInitial: <A, E>(result: Result<A, E>) => result is Initial<A, E>
+```
+
+Added in v1.0.0
+
+## isInterrupted
+
+**Signature**
+
+```ts
+export declare const isInterrupted: <A, E>(result: Result<A, E>) => result is Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -365,7 +378,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const isNotInitial: <E, A>(result: Result<E, A>) => result is Success<E, A> | Failure<E, A>
+export declare const isNotInitial: <A, E>(result: Result<A, E>) => result is Success<A, E> | Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -375,7 +388,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const isSuccess: <E, A>(result: Result<E, A>) => result is Success<E, A>
+export declare const isSuccess: <A, E>(result: Result<A, E>) => result is Success<A, E>
 ```
 
 Added in v1.0.0

@@ -1,7 +1,7 @@
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
-import { Cause, Either, FiberRef } from "effect"
+import { Cause, Either, FiberRef, SubscriptionRef } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Hash from "effect/Hash"
@@ -773,6 +773,41 @@ describe("Rx", () => {
     const rx = Rx.make(Either.right(123))
     const r = Registry.make()
     assert.deepStrictEqual(r.get(rx), Either.right(123))
+  })
+
+  it("SubscriptionRef", async () => {
+    vitest.useRealTimers()
+    const ref = SubscriptionRef.make(0).pipe(Effect.runSync)
+    const rx = Rx.subRef(ref)
+    const r = Registry.make()
+    const unmount = r.mount(rx)
+    assert.deepStrictEqual(r.get(rx), 0)
+    r.set(rx, 1)
+    await new Promise((resolve) => resolve(null))
+    assert.deepStrictEqual(r.get(rx), 1)
+    unmount()
+  })
+
+  it("SubscriptionRef/effect", async () => {
+    const rx = Rx.subRef(SubscriptionRef.make(0))
+    const r = Registry.make()
+    const unmount = r.mount(rx)
+    assert.deepStrictEqual(r.get(rx), Result.success(0, true))
+    r.set(rx, 1)
+    await new Promise((resolve) => resolve(null))
+    assert.deepStrictEqual(r.get(rx), Result.success(1, true))
+    unmount()
+  })
+
+  it("SubscriptionRef/runtime", async () => {
+    const rx = counterRuntime.subRef(SubscriptionRef.make(0))
+    const r = Registry.make()
+    const unmount = r.mount(rx)
+    assert.deepStrictEqual(r.get(rx), Result.success(0, true))
+    r.set(rx, 1)
+    await new Promise((resolve) => resolve(null))
+    assert.deepStrictEqual(r.get(rx), Result.success(1, true))
+    unmount()
   })
 })
 
