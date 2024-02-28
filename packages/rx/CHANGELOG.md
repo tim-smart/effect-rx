@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.27.1
+
+### Patch Changes
+
+- [#110](https://github.com/tim-smart/effect-rx/pull/110) [`60259bd`](https://github.com/tim-smart/effect-rx/commit/60259bd692e5a1c6e134fe59e6249a03915170e7) Thanks [@tim-smart](https://github.com/tim-smart)! - add Rx.subRef & runtime.subRef constructor
+
 ## 0.27.0
 
 ### Minor Changes
