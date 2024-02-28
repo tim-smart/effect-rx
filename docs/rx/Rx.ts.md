@@ -31,6 +31,7 @@ Added in v1.0.0
   - [make](#make)
   - [pull](#pull)
   - [readable](#readable)
+  - [subRef](#subref)
   - [writable](#writable)
 - [context](#context-1)
   - [Context (interface)](#context-interface)
@@ -312,6 +313,23 @@ Added in v1.0.0
 
 ```ts
 export declare const readable: <A>(read: Rx.Read<A>, refresh?: Rx.Refresh) => Rx<A>
+```
+
+Added in v1.0.0
+
+## subRef
+
+**Signature**
+
+```ts
+export declare const subRef: {
+  <A>(ref: SubscriptionRef.SubscriptionRef<A> | Rx.Read<SubscriptionRef.SubscriptionRef<A>>): Writable<A, A>
+  <A, E>(
+    effect:
+      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, never>
+      | Rx.Read<Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, never>>
+  ): Writable<Result.Result<A, E>, A>
+}
 ```
 
 Added in v1.0.0
@@ -656,6 +674,12 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
       readonly initialValue?: ReadonlyArray<A>
     }
   ) => Writable<PullResult<A, E | ER>, void>
+
+  readonly subRef: <A, E>(
+    create:
+      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R>
+      | Rx.Read<Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R>>
+  ) => Writable<Result.Result<A, E>, A>
 }
 ```
 
