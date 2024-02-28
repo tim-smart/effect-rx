@@ -116,8 +116,8 @@ Added in v1.0.0
 
 ```ts
 export declare const useRxSetPromise: <E, A, W>(
-  rx: Rx.Writable<Result.Result<E, A>, W>
-) => (_: W) => Promise<Exit.Exit<E, A>>
+  rx: Rx.Writable<Result.Result<A, E>, W>
+) => (_: W) => Promise<Exit.Exit<A, E>>
 ```
 
 Added in v1.0.0
@@ -141,8 +141,8 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRxSuspense: <E, A>(
-  rx: Rx.Rx<Result.Result<E, A>>,
+export declare const useRxSuspense: <A, E>(
+  rx: Rx.Rx<Result.Result<A, E>>,
   options?: { readonly suspendOnWaiting?: boolean }
 ) => any
 ```
@@ -154,10 +154,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRxSuspenseSuccess: <E, A>(
-  rx: Rx.Rx<Result.Result<E, A>>,
+export declare const useRxSuspenseSuccess: <A, E>(
+  rx: Rx.Rx<Result.Result<A, E>>,
   options?: { readonly suspendOnWaiting?: boolean }
-) => Result.Success<E, A>
+) => Result.Success<A, E>
 ```
 
 Added in v1.0.0

@@ -127,19 +127,21 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const mapResult: (<R extends Rx<Result.Result<any, any>>, B>(
-  f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
-) => (
-  self: R
-) => [R] extends [Writable<infer _, infer RW>]
-  ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>, RW>
-  : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>>) &
-  (<R extends Rx<Result.Result<any, any>>, B>(
+export declare const mapResult: {
+  <R extends Rx<Result.Result<any, any>>, B>(
+    f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
+  ): (
+    self: R
+  ) => [R] extends [Writable<infer _, infer RW>]
+    ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
+    : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>>
+  <R extends Rx<Result.Result<any, any>>, B>(
     self: R,
     f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
-  ) => [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>, RW>
-    : Rx<Result.Result<Result.Result.InferE<Rx.Infer<R>>, B>>)
+  ): [R] extends [Writable<infer _, infer RW>]
+    ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
+    : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>>
+}
 ```
 
 Added in v1.0.0
@@ -174,18 +176,18 @@ Added in v1.0.0
 ```ts
 export declare const withFallback: {
   <E2, A2>(
-    fallback: Rx<Result.Result<E2, A2>>
+    fallback: Rx<Result.Result<A2, E2>>
   ): <R extends Rx<Result.Result<any, any>>>(
     self: R
   ) => [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<E2 | Result.Result.InferE<Rx.Infer<R>>, A2 | Result.Result.InferA<Rx.Infer<R>>>, RW>
-    : Rx<Result.Result<E2 | Result.Result.InferE<Rx.Infer<R>>, A2 | Result.Result.InferA<Rx.Infer<R>>>>
-  <R extends Rx<Result.Result<any, any>>, E2, A2>(
+    ? Writable<Result.Result<A2 | Result.Result.InferA<Rx.Infer<R>>, E2 | Result.Result.InferE<Rx.Infer<R>>>, RW>
+    : Rx<Result.Result<A2 | Result.Result.InferA<Rx.Infer<R>>, E2 | Result.Result.InferE<Rx.Infer<R>>>>
+  <R extends Rx<Result.Result<any, any>>, A2, E2>(
     self: R,
-    fallback: Rx<Result.Result<E2, A2>>
+    fallback: Rx<Result.Result<A2, E2>>
   ): [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<E2 | Result.Result.InferE<Rx.Infer<R>>, A2 | Result.Result.InferA<Rx.Infer<R>>>, RW>
-    : Rx<Result.Result<E2 | Result.Result.InferE<Rx.Infer<R>>, A2 | Result.Result.InferA<Rx.Infer<R>>>>
+    ? Writable<Result.Result<A2 | Result.Result.InferA<Rx.Infer<R>>, E2 | Result.Result.InferE<Rx.Infer<R>>>, RW>
+    : Rx<Result.Result<A2 | Result.Result.InferA<Rx.Infer<R>>, E2 | Result.Result.InferE<Rx.Infer<R>>>>
 }
 ```
 
@@ -211,9 +213,9 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const context: () => <E, R>(
-  create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>
-) => RxRuntime<E, R>
+export declare const context: () => <R, E>(
+  create: Layer.Layer<R, E, never> | Rx.Read<Layer.Layer<R, E, never>>
+) => RxRuntime<R, E>
 ```
 
 Added in v1.0.0
@@ -235,13 +237,13 @@ Added in v1.0.0
 ```ts
 export declare const fn: {
   <Arg, E, A>(
-    fn: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope, E, A>>,
+    fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope>>,
     options?: { readonly initialValue?: A | undefined } | undefined
-  ): RxResultFn<E, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
+  ): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E>
   <Arg, E, A>(
-    fn: Rx.ReadFn<Arg, Stream.Stream<never, E, A>>,
+    fn: Rx.ReadFn<Arg, Stream.Stream<A, E, never>>,
     options?: { readonly initialValue?: A | undefined } | undefined
-  ): RxResultFn<E | NoSuchElementException, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
+  ): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | NoSuchElementException>
 }
 ```
 
@@ -266,22 +268,22 @@ Added in v1.0.0
 
 ```ts
 export declare const make: {
-  <E, A>(
-    effect: Effect.Effect<Scope.Scope, E, A>,
+  <A, E>(
+    effect: Effect.Effect<A, E, Scope.Scope>,
     options?: { readonly initialValue?: A | undefined } | undefined
-  ): Rx<Result.Result<E, A>>
-  <E, A>(
-    create: Rx.Read<Effect.Effect<Scope.Scope, E, A>>,
+  ): Rx<Result.Result<A, E>>
+  <A, E>(
+    create: Rx.Read<Effect.Effect<A, E, Scope.Scope>>,
     options?: { readonly initialValue?: A | undefined } | undefined
-  ): Rx<Result.Result<E, A>>
-  <E, A>(
-    stream: Stream.Stream<never, E, A>,
+  ): Rx<Result.Result<A, E>>
+  <A, E>(
+    stream: Stream.Stream<A, E, never>,
     options?: { readonly initialValue?: A | undefined } | undefined
-  ): Rx<Result.Result<E, A>>
-  <E, A>(
-    create: Rx.Read<Stream.Stream<never, E, A>>,
+  ): Rx<Result.Result<A, E>>
+  <A, E>(
+    create: Rx.Read<Stream.Stream<A, E, never>>,
     options?: { readonly initialValue?: A | undefined } | undefined
-  ): Rx<Result.Result<E, A>>
+  ): Rx<Result.Result<A, E>>
   <A>(create: Rx.Read<A>): Rx<A>
   <A>(initialValue: A): Writable<A, A>
 }
@@ -294,12 +296,12 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const pull: <E, A>(
-  create: Stream.Stream<never, E, A> | Rx.Read<Stream.Stream<never, E, A>>,
+export declare const pull: <A, E>(
+  create: Stream.Stream<A, E, never> | Rx.Read<Stream.Stream<A, E, never>>,
   options?:
     | { readonly disableAccumulation?: boolean | undefined; readonly initialValue?: readonly A[] | undefined }
     | undefined
-) => Writable<PullResult<E, A>, void>
+) => Writable<PullResult<A, E>, void>
 ```
 
 Added in v1.0.0
@@ -334,33 +336,33 @@ Added in v1.0.0
 export interface Context {
   <A>(rx: Rx<A>): A
   readonly get: <A>(rx: Rx<A>) => A
-  readonly result: <E, A>(rx: Rx<Result.Result<E, A>>) => Exit.Exit<E | NoSuchElementException, A>
+  readonly result: <A, E>(rx: Rx<Result.Result<A, E>>) => Exit.Exit<A, E | NoSuchElementException>
   readonly once: <A>(rx: Rx<A>) => A
   readonly addFinalizer: (f: () => void) => void
   readonly mount: <A>(rx: Rx<A>) => void
   readonly refreshSync: <A>(rx: Rx<A> & Refreshable) => void
-  readonly refresh: <A>(rx: Rx<A> & Refreshable) => Effect.Effect<never, never, void>
+  readonly refresh: <A>(rx: Rx<A> & Refreshable) => Effect.Effect<void>
   readonly refreshSelfSync: () => void
-  readonly refreshSelf: Effect.Effect<never, never, void>
+  readonly refreshSelf: Effect.Effect<void>
   readonly self: <A>() => Option.Option<A>
   readonly setSelfSync: <A>(a: A) => void
-  readonly setSelf: <A>(a: A) => Effect.Effect<never, never, void>
+  readonly setSelf: <A>(a: A) => Effect.Effect<void>
   readonly setSync: <R, W>(rx: Writable<R, W>, value: W) => void
-  readonly set: <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<never, never, void>
+  readonly set: <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<void>
   readonly stream: <A>(
     rx: Rx<A>,
     options?: {
       readonly withoutInitialValue?: boolean
       readonly bufferSize?: number
     }
-  ) => Stream.Stream<never, never, A>
-  readonly streamResult: <E, A>(
-    rx: Rx<Result.Result<E, A>>,
+  ) => Stream.Stream<A>
+  readonly streamResult: <A, E>(
+    rx: Rx<Result.Result<A, E>>,
     options?: {
       readonly withoutInitialValue?: boolean
       readonly bufferSize?: number
     }
-  ) => Stream.Stream<never, E, A>
+  ) => Stream.Stream<A, E>
   readonly subscribe: <A>(
     rx: Rx<A>,
     f: (_: A) => void,
@@ -393,9 +395,9 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const runtime: <E, R>(
-  create: Layer.Layer<never, E, R> | Rx.Read<Layer.Layer<never, E, R>>
-) => RxRuntime<E, R>
+export declare const runtime: <R, E>(
+  create: Layer.Layer<R, E, never> | Rx.Read<Layer.Layer<R, E, never>>
+) => RxRuntime<R, E>
 ```
 
 Added in v1.0.0
@@ -407,12 +409,12 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type PullResult<E, A> = Result.Result<
-  E | NoSuchElementException,
+export type PullResult<A, E = never> = Result.Result<
   {
     readonly done: boolean
     readonly items: Array<A>
-  }
+  },
+  E | NoSuchElementException
 >
 ```
 
@@ -466,7 +468,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type GetResult = <E, A>(rx: Rx<Result.Result<E, A>>) => Exit.Exit<E | NoSuchElementException, A>
+export type GetResult = <A, E>(rx: Rx<Result.Result<A, E>>) => Exit.Exit<A, E | NoSuchElementException>
 ```
 
 Added in v1.0.0
@@ -526,7 +528,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => Effect.Effect<never, never, void>
+export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => Effect.Effect<void>
 ```
 
 Added in v1.0.0
@@ -556,7 +558,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type SetEffect = <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<never, never, void>
+export type SetEffect = <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<void>
 ```
 
 Added in v1.0.0
@@ -592,7 +594,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface RxResultFn<E, A, Arg> extends Writable<Result.Result<E, A>, Arg> {}
+export interface RxResultFn<Arg, A, E = never> extends Writable<Result.Result<A, E>, Arg> {}
 ```
 
 Added in v1.0.0
@@ -602,58 +604,58 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface RxRuntime<ER, R> extends Rx<Result.Result<ER, Runtime.Runtime<R>>> {
-  readonly layer: Rx<Layer.Layer<never, ER, R>>
+export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, ER>> {
+  readonly layer: Rx<Layer.Layer<R, ER>>
 
   readonly rx: {
-    <E, A>(
-      effect: Effect.Effect<Scope.Scope | R, E, A>,
+    <A, E>(
+      effect: Effect.Effect<A, E, Scope.Scope | R>,
       options?: {
         readonly initialValue?: A
       }
-    ): Rx<Result.Result<E | ER, A>>
-    <E, A>(
-      create: Rx.Read<Effect.Effect<Scope.Scope | R, E, A>>,
+    ): Rx<Result.Result<A, E | ER>>
+    <A, E>(
+      create: Rx.Read<Effect.Effect<A, E, Scope.Scope | R>>,
       options?: {
         readonly initialValue?: A
       }
-    ): Rx<Result.Result<E | ER, A>>
-    <E, A>(
-      stream: Stream.Stream<never | R, E, A>,
+    ): Rx<Result.Result<A, E | ER>>
+    <A, E>(
+      stream: Stream.Stream<A, E, never | R>,
       options?: {
         readonly initialValue?: A
       }
-    ): Rx<Result.Result<E | ER, A>>
-    <E, A>(
-      create: Rx.Read<Stream.Stream<never | R, E, A>>,
+    ): Rx<Result.Result<A, E | ER>>
+    <A, E>(
+      create: Rx.Read<Stream.Stream<A, E, never | R>>,
       options?: {
         readonly initialValue?: A
       }
-    ): Rx<Result.Result<E | ER, A>>
+    ): Rx<Result.Result<A, E | ER>>
   }
 
   readonly fn: {
     <Arg, E, A>(
-      fn: Rx.ReadFn<Arg, Effect.Effect<Scope.Scope | R, E, A>>,
+      fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope | R>>,
       options?: {
         readonly initialValue?: A
       }
-    ): RxResultFn<E | ER, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
+    ): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | ER>
     <Arg, E, A>(
-      fn: Rx.ReadFn<Arg, Stream.Stream<R, E, A>>,
+      fn: Rx.ReadFn<Arg, Stream.Stream<A, E, R>>,
       options?: {
         readonly initialValue?: A
       }
-    ): RxResultFn<E | ER | NoSuchElementException, A, Types.Equals<Arg, unknown> extends true ? void : Arg>
+    ): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | ER | NoSuchElementException>
   }
 
-  readonly pull: <E, A>(
-    create: Rx.Read<Stream.Stream<R, E, A>> | Stream.Stream<R, E, A>,
+  readonly pull: <A, E>(
+    create: Rx.Read<Stream.Stream<A, E, R>> | Stream.Stream<A, E, R>,
     options?: {
       readonly disableAccumulation?: boolean
       readonly initialValue?: ReadonlyArray<A>
     }
-  ) => Writable<PullResult<E | ER, A>, void>
+  ) => Writable<PullResult<A, E | ER>, void>
 }
 ```
 
