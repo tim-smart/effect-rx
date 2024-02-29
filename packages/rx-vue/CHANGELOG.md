@@ -1,5 +1,14 @@
 # @effect-rx/rx-vue
 
+## 0.6.2
+
+### Patch Changes
+
+- [#108](https://github.com/tim-smart/effect-rx/pull/108) [`953ff58`](https://github.com/tim-smart/effect-rx/commit/953ff5845ff38f584091e03bc0a8549b2209d3a0) Thanks [@jessekelly881](https://github.com/jessekelly881)! - added Result.match
+
+- Updated dependencies [[`953ff58`](https://github.com/tim-smart/effect-rx/commit/953ff5845ff38f584091e03bc0a8549b2209d3a0)]:
+  - @effect-rx/rx@0.27.2
+
 ## 0.6.1
 
 ### Patch Changes
