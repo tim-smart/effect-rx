@@ -95,7 +95,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRxRefresh: <A>(rx: Rx.Rx<A> & Rx.Refreshable) => () => void
+export declare const useRxRefresh: <A>(rx: any) => () => void
 ```
 
 Added in v1.0.0
@@ -144,7 +144,7 @@ Added in v1.0.0
 export declare const useRxSuspense: <A, E>(
   rx: Rx.Rx<Result.Result<A, E>>,
   options?: { readonly suspendOnWaiting?: boolean }
-) => Result.Success<A, E> | Result.Failure<A, E>
+) => any
 ```
 
 Added in v1.0.0

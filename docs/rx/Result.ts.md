@@ -17,6 +17,7 @@ Added in v1.0.0
   - [value](#value)
 - [combinators](#combinators)
   - [map](#map)
+  - [match](#match)
   - [toExit](#toexit)
 - [constructors](#constructors)
   - [fail](#fail)
@@ -84,6 +85,30 @@ Added in v1.0.0
 export declare const map: {
   <A, B>(f: (a: A) => B): <E>(self: Result<A, E>) => Result<B, E>
   <E, A, B>(self: Result<A, E>, f: (a: A) => B): Result<B, E>
+}
+```
+
+Added in v1.0.0
+
+## match
+
+**Signature**
+
+```ts
+export declare const match: {
+  <A, E, X, Y, Z>(options: {
+    readonly onInitial: (_: Initial<A, E>) => X
+    readonly onFailure: (_: Failure<A, E>) => Y
+    readonly onSuccess: (_: Success<A, E>) => Z
+  }): (self: Result<A, E>) => X | Y | Z
+  <A, E, X, Y, Z>(
+    self: Result<A, E>,
+    options: {
+      readonly onInitial: (_: Initial<A, E>) => X
+      readonly onFailure: (_: Failure<A, E>) => Y
+      readonly onSuccess: (_: Success<A, E>) => Z
+    }
+  ): X | Y | Z
 }
 ```
 

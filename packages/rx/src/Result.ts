@@ -314,3 +314,33 @@ export const map: {
       return success(f(self.value), self.waiting)
   }
 })
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const match: {
+  <A, E, X, Y, Z>(options: {
+    readonly onInitial: (_: Initial<A, E>) => X
+    readonly onFailure: (_: Failure<A, E>) => Y
+    readonly onSuccess: (_: Success<A, E>) => Z
+  }): (self: Result<A, E>) => X | Y | Z
+  <A, E, X, Y, Z>(self: Result<A, E>, options: {
+    readonly onInitial: (_: Initial<A, E>) => X
+    readonly onFailure: (_: Failure<A, E>) => Y
+    readonly onSuccess: (_: Success<A, E>) => Z
+  }): X | Y | Z
+} = dual(2, <A, E, X, Y, Z>(self: Result<A, E>, options: {
+  readonly onInitial: (_: Initial<A, E>) => X
+  readonly onFailure: (_: Failure<A, E>) => Y
+  readonly onSuccess: (_: Success<A, E>) => Z
+}): X | Y | Z => {
+  switch (self._tag) {
+    case "Initial":
+      return options.onInitial(self)
+    case "Failure":
+      return options.onFailure(self)
+    case "Success":
+      return options.onSuccess(self)
+  }
+})
