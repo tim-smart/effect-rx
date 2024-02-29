@@ -96,10 +96,20 @@ Added in v1.0.0
 
 ```ts
 export declare const match: {
-  <A, E, X, Y, Z>(options: MatchOptions<A, E, X, Y, Z>): (self: Result<A, E>) => X | Y | Z
-  <A, E, X, Y, Z>(self: Result<A, E>, options: MatchOptions<A, E, X, Y, Z>): X | Y | Z
+  <A, E, X, Y, Z>(options: {
+    readonly onInitial: (_: Initial<A, E>) => X
+    readonly onFailure: (_: Failure<A, E>) => Y
+    readonly onSuccess: (_: Success<A, E>) => Z
+  }): (self: Result<A, E>) => X | Y | Z
+  <A, E, X, Y, Z>(
+    self: Result<A, E>,
+    options: {
+      readonly onInitial: (_: Initial<A, E>) => X
+      readonly onFailure: (_: Failure<A, E>) => Y
+      readonly onSuccess: (_: Success<A, E>) => Z
+    }
+  ): X | Y | Z
 }
-=======
 ```
 
 Added in v1.0.0
