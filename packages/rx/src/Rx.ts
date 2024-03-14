@@ -706,12 +706,6 @@ export const subRef: {
 
 /**
  * @since 1.0.0
- * @category models
- */
-export interface RxResultFn<Arg, A, E = never> extends Writable<Result.Result<A, E>, Arg> {}
-
-/**
- * @since 1.0.0
  * @category constructors
  */
 export const fnSync: {
@@ -737,6 +731,24 @@ export const fnSync: {
     ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
   })
 }
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export interface RxResultFn<Arg, A, E = never> extends Writable<Result.Result<A, E>, Arg | Reset> {}
+
+/**
+ * @since 1.0.0
+ * @category symbols
+ */
+export const Reset = Symbol.for("@effect-rx/rx/Rx/Reset")
+
+/**
+ * @since 1.0.0
+ * @category symbols
+ */
+export type Reset = typeof Reset
 
 /**
  * @since 1.0.0
@@ -776,8 +788,12 @@ function makeResultFn<Arg, E, A>(
     }
     return makeStream(get, value, initialValue, runtime)
   }
-  function write(ctx: WriteContext<Result.Result<A, E | NoSuchElementException>>, arg: Arg) {
-    ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
+  function write(ctx: WriteContext<Result.Result<A, E | NoSuchElementException>>, arg: Arg | Reset) {
+    if (arg === Reset) {
+      ctx.set(argRx, [0, undefined as any])
+    } else {
+      ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
+    }
   }
   return [read, write] as const
 }
