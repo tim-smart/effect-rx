@@ -60,6 +60,9 @@ Added in v1.0.0
   - [Writable (interface)](#writable-interface)
 - [refinements](#refinements)
   - [isWritable](#iswritable)
+- [symbols](#symbols)
+  - [Reset](#reset)
+  - [Reset (type alias)](#reset-type-alias)
 - [type ids](#type-ids)
   - [RefreshableTypeId](#refreshabletypeid)
   - [RefreshableTypeId (type alias)](#refreshabletypeid-type-alias)
@@ -612,7 +615,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface RxResultFn<Arg, A, E = never> extends Writable<Result.Result<A, E>, Arg> {}
+export interface RxResultFn<Arg, A, E = never> extends Writable<Result.Result<A, E>, Arg | Reset> {}
 ```
 
 Added in v1.0.0
@@ -706,6 +709,28 @@ Added in v1.0.0
 
 ```ts
 export declare const isWritable: <R, W>(rx: Rx<R>) => rx is Writable<R, W>
+```
+
+Added in v1.0.0
+
+# symbols
+
+## Reset
+
+**Signature**
+
+```ts
+export declare const Reset: typeof Reset
+```
+
+Added in v1.0.0
+
+## Reset (type alias)
+
+**Signature**
+
+```ts
+export type Reset = typeof Reset
 ```
 
 Added in v1.0.0
