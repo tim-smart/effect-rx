@@ -19,7 +19,6 @@ import * as Runtime from "effect/Runtime"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
 import * as SubscriptionRef from "effect/SubscriptionRef"
-import type * as Types from "effect/Types"
 import * as internalRegistry from "./internal/registry.js"
 import { runCallbackSync } from "./internal/runtime.js"
 import * as Result from "./Result.js"
@@ -521,10 +520,10 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
   readonly fn: {
     <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope | R>>, options?: {
       readonly initialValue?: A
-    }): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | ER>
+    }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
     <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<A, E, R>>, options?: {
       readonly initialValue?: A
-    }): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | ER | NoSuchElementException>
+    }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER | NoSuchElementException>
   }
 
   readonly pull: <A, E>(create: Rx.Read<Stream.Stream<A, E, R>> | Stream.Stream<A, E, R>, options?: {
@@ -711,14 +710,14 @@ export const subRef: {
 export const fnSync: {
   <Arg, A>(
     f: Rx.ReadFn<Arg, A>
-  ): Writable<Option.Option<A>, Arg>
+  ): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
   <Arg, A>(
     f: Rx.ReadFn<Arg, A>,
     options: { readonly initialValue: A }
-  ): Writable<A, Arg>
+  ): Writable<A, RxResultFn.ArgToVoid<Arg>>
 } = <Arg, A>(f: Rx.ReadFn<Arg, A>, options?: {
   readonly initialValue?: A
-}): Writable<Option.Option<A> | A, Arg> => {
+}): Writable<Option.Option<A> | A, RxResultFn.ArgToVoid<Arg>> => {
   const argRx = state<[number, Arg]>([0, undefined as any])
   const hasInitialValue = options?.initialValue !== undefined
   return writable(function(get) {
@@ -728,7 +727,7 @@ export const fnSync: {
     }
     return hasInitialValue ? f(arg, get) : Option.some(f(arg, get))
   }, function(ctx, arg) {
-    ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
+    ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg as Arg])
   })
 }
 
@@ -737,6 +736,16 @@ export const fnSync: {
  * @category models
  */
 export interface RxResultFn<Arg, A, E = never> extends Writable<Result.Result<A, E>, Arg | Reset> {}
+
+/**
+ * @since 1.0.0
+ */
+export declare namespace RxResultFn {
+  /**
+   * @since 1.0.0
+   */
+  export type ArgToVoid<Arg> = Arg extends infer A ? unknown extends A ? void : A extends undefined ? void : A : never
+}
 
 /**
  * @since 1.0.0
@@ -757,13 +766,13 @@ export type Reset = typeof Reset
 export const fn: {
   <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope>>, options?: {
     readonly initialValue?: A
-  }): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E>
+  }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
   <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<A, E>>, options?: {
     readonly initialValue?: A
-  }): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | NoSuchElementException>
+  }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
 } = <Arg, E, A>(f: Rx.ReadFn<Arg, Stream.Stream<A, E> | Effect.Effect<A, E, Scope.Scope>>, options?: {
   readonly initialValue?: A
-}): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | NoSuchElementException> => {
+}): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException> => {
   const [read, write] = makeResultFn(f, options)
   return writable(read, write) as any
 }

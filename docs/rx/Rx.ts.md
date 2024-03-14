@@ -70,6 +70,9 @@ Added in v1.0.0
   - [TypeId (type alias)](#typeid-type-alias)
   - [WritableTypeId](#writabletypeid)
   - [WritableTypeId (type alias)](#writabletypeid-type-alias)
+- [utils](#utils)
+  - [RxResultFn (namespace)](#rxresultfn-namespace)
+    - [ArgToVoid (type alias)](#argtovoid-type-alias)
 
 ---
 
@@ -243,11 +246,11 @@ export declare const fn: {
   <Arg, E, A>(
     fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope>>,
     options?: { readonly initialValue?: A | undefined } | undefined
-  ): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E>
+  ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
   <Arg, E, A>(
     fn: Rx.ReadFn<Arg, Stream.Stream<A, E, never>>,
     options?: { readonly initialValue?: A | undefined } | undefined
-  ): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | NoSuchElementException>
+  ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
 }
 ```
 
@@ -259,8 +262,8 @@ Added in v1.0.0
 
 ```ts
 export declare const fnSync: {
-  <Arg, A>(f: Rx.ReadFn<Arg, A>): Writable<Option.Option<A>, Arg>
-  <Arg, A>(f: Rx.ReadFn<Arg, A>, options: { readonly initialValue: A }): Writable<A, Arg>
+  <Arg, A>(f: Rx.ReadFn<Arg, A>): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
+  <Arg, A>(f: Rx.ReadFn<Arg, A>, options: { readonly initialValue: A }): Writable<A, RxResultFn.ArgToVoid<Arg>>
 }
 ```
 
@@ -661,13 +664,13 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
       options?: {
         readonly initialValue?: A
       }
-    ): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | ER>
+    ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
     <Arg, E, A>(
       fn: Rx.ReadFn<Arg, Stream.Stream<A, E, R>>,
       options?: {
         readonly initialValue?: A
       }
-    ): RxResultFn<Types.Equals<Arg, unknown> extends true ? void : Arg, A, E | ER | NoSuchElementException>
+    ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER | NoSuchElementException>
   }
 
   readonly pull: <A, E>(
@@ -793,6 +796,22 @@ Added in v1.0.0
 
 ```ts
 export type WritableTypeId = typeof WritableTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## RxResultFn (namespace)
+
+Added in v1.0.0
+
+### ArgToVoid (type alias)
+
+**Signature**
+
+```ts
+export type ArgToVoid<Arg> = Arg extends infer A ? (unknown extends A ? void : A extends undefined ? void : A) : never
 ```
 
 Added in v1.0.0
