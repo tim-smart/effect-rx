@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.28.1
+
+### Patch Changes
+
+- [`b40779d`](https://github.com/tim-smart/effect-rx/commit/b40779df3f142f55eacd593feb7eb1452e8baca4) Thanks [@tim-smart](https://github.com/tim-smart)! - cast undefined to void for .fn arguments
+
 ## 0.28.0
 
 ### Minor Changes
