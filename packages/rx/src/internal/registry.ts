@@ -452,7 +452,7 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
         return Effect.die(disposedError(this.node.rx))
       }
       this.node.registry.refresh(rx)
-      return Effect.unit
+      return Effect.void
     })
   },
 
@@ -469,7 +469,7 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
         return Effect.die(disposedError((this as Lifetime<any>).node.rx))
       }
       ;(this as Lifetime<any>).node.invalidate()
-      return Effect.unit
+      return Effect.void
     })
   },
 
@@ -502,7 +502,7 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
         return Effect.die(disposedError(this.node.rx))
       }
       this.node.setValue(value)
-      return Effect.unit
+      return Effect.void
     })
   },
 
@@ -519,7 +519,7 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
         return Effect.die(disposedError(this.node.rx))
       }
       this.node.registry.set(rx, value)
-      return Effect.unit
+      return Effect.void
     })
   },
 

@@ -472,7 +472,7 @@ function makeEffect<A, E>(
 
   const scope = Effect.runSync(Scope.make())
   ctx.addFinalizer(() => {
-    Effect.runFork(Scope.close(scope, Exit.unit))
+    Effect.runFork(Scope.close(scope, Exit.void))
   })
   const scopedEffect = Scope.extend(effect, scope)
   const cancel = runCallbackSync(runtime)(
