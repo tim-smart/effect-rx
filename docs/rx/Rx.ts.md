@@ -250,7 +250,7 @@ export declare const fn: {
   <Arg, E, A>(
     fn: Rx.ReadFn<Arg, Stream.Stream<A, E, never>>,
     options?: { readonly initialValue?: A | undefined } | undefined
-  ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
+  ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, NoSuchElementException | E>
 }
 ```
 
