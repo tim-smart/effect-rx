@@ -678,24 +678,28 @@ function makeStream<A, E>(
 // constructors - subscription ref
 // -----------------------------------------------------------------------------
 
-const makeSubRef = (
-  refRx: Rx<SubscriptionRef.SubscriptionRef<any> | Result.Result<SubscriptionRef.SubscriptionRef<any>, any>>
-) => {
-  function read(get: Context) {
-    const ref = get(refRx)
-    if (SubscriptionRef.SubscriptionRefTypeId in ref) {
+/** @internal */
+const readSub = (subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<Subscribable.Subscribable<any, any>, any>>) => (get: Context) => {
+    const sub = get(subRx)
+    if (Subscribable.TypeId in sub) {
       get.addFinalizer(
-        ref.changes.pipe(
+        sub.changes.pipe(
           Stream.runForEach((value) => get.setSelf(value)),
           Effect.runCallback
         )
       )
-      return Effect.runSync(SubscriptionRef.get(ref))
-    } else if (ref._tag !== "Success") {
-      return ref
+      return Effect.runSync(sub.get)
+    } else if (sub._tag !== "Success") {
+      return sub
     }
-    return makeStream(get, ref.value.changes, Result.initial(true))
+    return makeStream(get, sub.value.changes, Result.initial(true))
   }
+
+
+const makeSubRef = (
+  refRx: Rx<SubscriptionRef.SubscriptionRef<any> | Result.Result<SubscriptionRef.SubscriptionRef<any>, any>>
+) => {
+  const read = readSub(refRx);
 
   function write(ctx: WriteContext<SubscriptionRef.SubscriptionRef<any>>, value: any) {
     const ref = ctx.get(refRx)
@@ -749,22 +753,7 @@ export const subRef: {
 export const makeSub = (
   subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<Subscribable.Subscribable<any, any>, any>>
 ) => {
-  function read(get: Context) {
-    const sub = get(subRx)
-    if (Subscribable.TypeId in sub) {
-      get.addFinalizer(
-        sub.changes.pipe(
-          Stream.runForEach((value) => get.setSelf(value)),
-          Effect.runCallback
-        )
-      )
-      return Effect.runSync(sub.get)
-    } else if (sub._tag !== "Success") {
-      return sub
-    }
-    return makeStream(get, sub.value.changes, Result.initial(true))
-  }
-
+  const read = readSub(subRx)
   return readable(read)
 }
 
