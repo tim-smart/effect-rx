@@ -699,8 +699,6 @@ const readSub = (subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<S
 const makeSubRef = (
   refRx: Rx<SubscriptionRef.SubscriptionRef<any> | Result.Result<SubscriptionRef.SubscriptionRef<any>, any>>
 ) => {
-  const read = readSub(refRx);
-
   function write(ctx: WriteContext<SubscriptionRef.SubscriptionRef<any>>, value: any) {
     const ref = ctx.get(refRx)
     if (SubscriptionRef.SubscriptionRefTypeId in ref) {
@@ -710,7 +708,7 @@ const makeSubRef = (
     }
   }
 
-  return writable(read, write)
+  return writable(readSub(refRx), write)
 }
 
 /**
@@ -752,10 +750,8 @@ export const subRef: {
  */
 export const makeSub = (
   subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<Subscribable.Subscribable<any, any>, any>>
-) => {
-  const read = readSub(subRx)
-  return readable(read)
-}
+) => readable(readSub(subRx))
+
 
 /**
  * @since 1.0.0
