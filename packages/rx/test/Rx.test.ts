@@ -790,9 +790,9 @@ describe("Rx", () => {
     const ref = SubscriptionRef.make(123).pipe(Effect.runSync)
     const rx = Rx.sub(ref)
     const r = Registry.make()
-    const unmount = r.mount(rx)
     assert.deepStrictEqual(r.get(rx), 123)
-    unmount()
+    await Effect.runPromise(SubscriptionRef.update(ref, a => a + 1))
+    assert.deepStrictEqual(r.get(rx), 124)
   })
 
   it("SubscriptionRef", async () => {
