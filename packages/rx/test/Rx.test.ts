@@ -1,7 +1,7 @@
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
-import { Cause, Either, FiberRef, Queue, Subscribable, SubscriptionRef } from "effect"
+import { Cause, Either, FiberRef, Subscribable, SubscriptionRef } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Hash from "effect/Hash"
@@ -774,17 +774,17 @@ describe("Rx", () => {
     const r = Registry.make()
     assert.deepStrictEqual(r.get(rx), Either.right(123))
   })
-  
+
   it("Subscribable", async () => {
     vitest.useRealTimers()
     const sub = Subscribable.make({ get: Effect.succeed(123), changes: Stream.empty })
     const rx = Rx.sub(sub)
     const r = Registry.make()
     const unmount = r.mount(rx)
-    assert.deepStrictEqual(r.get(rx),123)
+    assert.deepStrictEqual(r.get(rx), 123)
     unmount()
   })
-  
+
   it("Subscribable/SubscriptionRef", async () => {
     vitest.useRealTimers()
     const ref = SubscriptionRef.make(123).pipe(Effect.runSync)
@@ -794,7 +794,6 @@ describe("Rx", () => {
     assert.deepStrictEqual(r.get(rx), 123)
     unmount()
   })
-
 
   it("SubscriptionRef", async () => {
     vitest.useRealTimers()

@@ -679,7 +679,9 @@ function makeStream<A, E>(
 // -----------------------------------------------------------------------------
 
 /** @internal */
-const readSub = (subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<Subscribable.Subscribable<any, any>, any>>) => (get: Context) => {
+const readSub =
+  (subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<Subscribable.Subscribable<any, any>, any>>) =>
+  (get: Context) => {
     const sub = get(subRx)
     if (Subscribable.TypeId in sub) {
       get.addFinalizer(
@@ -694,7 +696,6 @@ const readSub = (subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<S
     }
     return makeStream(get, sub.value.changes, Result.initial(true))
   }
-
 
 const makeSubRef = (
   refRx: Rx<SubscriptionRef.SubscriptionRef<any> | Result.Result<SubscriptionRef.SubscriptionRef<any>, any>>
@@ -751,7 +752,6 @@ export const subRef: {
 export const makeSub = (
   subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<Subscribable.Subscribable<any, any>, any>>
 ) => readable(readSub(subRx))
-
 
 /**
  * @since 1.0.0
