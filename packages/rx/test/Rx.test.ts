@@ -791,7 +791,7 @@ describe("Rx", () => {
     const rx = Rx.sub(ref)
     const r = Registry.make()
     assert.deepStrictEqual(r.get(rx), 123)
-    await Effect.runPromise(SubscriptionRef.update(ref, a => a + 1))
+    await Effect.runPromise(SubscriptionRef.update(ref, (a) => a + 1))
     assert.deepStrictEqual(r.get(rx), 124)
   })
 
