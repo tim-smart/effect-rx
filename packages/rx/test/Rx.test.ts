@@ -85,12 +85,12 @@ describe("Rx", () => {
     const buildCount = buildCounterRuntime.fn((_: void) => Effect.flatMap(BuildCounter, (_) => _.get))
     const count = counterRuntime.rx(Effect.flatMap(Counter, (_) => _.get))
     const timesTwo = multiplierRuntime.rx((get) =>
-      Effect.gen(function*(_) {
-        const counter = yield* _(Counter)
-        const multiplier = yield* _(Multiplier)
-        yield* _(counter.inc)
-        expect(yield* _(get.result(count))).toEqual(2)
-        return yield* _(multiplier.times(2))
+      Effect.gen(function*() {
+        const counter = yield* Counter
+        const multiplier = yield* Multiplier
+        yield counter.inc
+        expect(yield* get.result(count)).toEqual(2)
+        return yield* multiplier.times(2)
       })
     )
     const r = Registry.make()
@@ -833,9 +833,9 @@ interface Counter {
 const Counter = Context.GenericTag<Counter>("Counter")
 const CounterLive = Layer.effect(
   Counter,
-  Effect.gen(function*(_) {
-    const buildCounter = yield* _(BuildCounter)
-    yield* _(buildCounter.inc)
+  Effect.gen(function*() {
+    const buildCounter = yield* BuildCounter
+    yield buildCounter.inc
     let count = 1
     return Counter.of({
       get: Effect.sync(() => count),
@@ -850,9 +850,9 @@ const CounterLive = Layer.effect(
 
 const CounterTest = Layer.effect(
   Counter,
-  Effect.gen(function*(_) {
-    const buildCounter = yield* _(BuildCounter)
-    yield* _(buildCounter.inc)
+  Effect.gen(function*() {
+    const buildCounter = yield* BuildCounter
+    yield* buildCounter.inc
     let count = 10
     return Counter.of({
       get: Effect.sync(() => count),
@@ -871,8 +871,8 @@ interface Multiplier {
 const Multiplier = Context.GenericTag<Multiplier>("Multiplier")
 const MultiplierLive = Layer.effect(
   Multiplier,
-  Effect.gen(function*(_) {
-    const counter = yield* _(Counter)
+  Effect.gen(function*() {
+    const counter = yield* Counter
     return Multiplier.of({
       times: (n) => Effect.map(counter.get, (_) => _ * n)
     })
