@@ -88,7 +88,7 @@ describe("Rx", () => {
       Effect.gen(function*() {
         const counter = yield* Counter
         const multiplier = yield* Multiplier
-        yield counter.inc
+        yield* counter.inc
         expect(yield* get.result(count)).toEqual(2)
         return yield* multiplier.times(2)
       })
@@ -835,7 +835,7 @@ const CounterLive = Layer.effect(
   Counter,
   Effect.gen(function*() {
     const buildCounter = yield* BuildCounter
-    yield buildCounter.inc
+    yield* buildCounter.inc
     let count = 1
     return Counter.of({
       get: Effect.sync(() => count),

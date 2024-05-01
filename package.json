@@ -18,8 +18,8 @@
     "lint-fix": "pnpm lint --fix"
   },
   "devDependencies": {
-    "@babel/cli": "^7.24.1",
-    "@babel/core": "^7.24.4",
+    "@babel/cli": "^7.24.5",
+    "@babel/core": "^7.24.5",
     "@babel/plugin-transform-export-namespace-from": "^7.24.1",
     "@babel/plugin-transform-modules-commonjs": "^7.24.1",
     "@changesets/changelog-github": "^0.5.0",
@@ -28,9 +28,9 @@
     "@effect/docgen": "^0.4.3",
     "@effect/eslint-plugin": "^0.1.2",
     "@effect/language-service": "^0.1.0",
-    "@typescript-eslint/eslint-plugin": "^7.7.1",
-    "@typescript-eslint/parser": "^7.7.1",
-    "@vitest/coverage-v8": "^1.5.1",
+    "@typescript-eslint/eslint-plugin": "^7.8.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "@vitest/coverage-v8": "^1.5.3",
     "babel-plugin-annotate-pure-calls": "^0.4.0",
     "eslint": "^8.57.0",
     "eslint-import-resolver-typescript": "^3.6.1",
@@ -39,12 +39,12 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "eslint-plugin-sort-destructure-keys": "^2.0.0",
-    "fast-check": "^3.17.2",
+    "fast-check": "^3.18.0",
     "glob": "^10.3.12",
     "madge": "^7.0.0",
     "prettier": "^3.2.5",
-    "tsx": "^4.7.2",
+    "tsx": "^4.8.2",
     "typescript": "^5.4.5",
-    "vitest": "^1.5.1"
+    "vitest": "^1.5.3"
   }
 }
