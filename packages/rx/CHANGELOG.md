@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.29.4
+
+### Patch Changes
+
+- [`cb39aec`](https://github.com/tim-smart/effect-rx/commit/cb39aec65ef91fac06f81b6af97d9cf02f2f8c1d) Thanks [@tim-smart](https://github.com/tim-smart)! - ensure fn args aren't disposed
+
 ## 0.29.3
 
 ### Patch Changes
