@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.29.3
+
+### Patch Changes
+
+- [`46da19b`](https://github.com/tim-smart/effect-rx/commit/46da19b42f6527388efb2005856dc9c989375d7c) Thanks [@tim-smart](https://github.com/tim-smart)! - add inference helpers
+
 ## 0.29.2
 
 ### Patch Changes
