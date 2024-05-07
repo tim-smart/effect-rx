@@ -31,7 +31,8 @@ Added in v1.0.0
   - [make](#make)
   - [pull](#pull)
   - [readable](#readable)
-  - [subRef](#subref)
+  - [subscribable](#subscribable)
+  - [subscriptionRef](#subscriptionref)
   - [writable](#writable)
 - [context](#context-1)
   - [Context (interface)](#context-interface)
@@ -45,6 +46,9 @@ Added in v1.0.0
     - [Get (type alias)](#get-type-alias)
     - [GetResult (type alias)](#getresult-type-alias)
     - [Infer (type alias)](#infer-type-alias)
+    - [InferFailure (type alias)](#inferfailure-type-alias)
+    - [InferPullSuccess (type alias)](#inferpullsuccess-type-alias)
+    - [InferSuccess (type alias)](#infersuccess-type-alias)
     - [Mount (type alias)](#mount-type-alias)
     - [Read (type alias)](#read-type-alias)
     - [ReadFn (type alias)](#readfn-type-alias)
@@ -323,12 +327,29 @@ export declare const readable: <A>(read: Rx.Read<A>, refresh?: Rx.Refresh) => Rx
 
 Added in v1.0.0
 
-## subRef
+## subscribable
 
 **Signature**
 
 ```ts
-export declare const subRef: {
+export declare const subscribable: {
+  <A, E>(ref: Subscribable.Subscribable<A, E, never> | Rx.Read<Subscribable.Subscribable<A, E, never>>): Rx<A>
+  <A, E, E1>(
+    effect:
+      | Effect.Effect<Subscribable.Subscribable<A, E1, never>, E, never>
+      | Rx.Read<Effect.Effect<Subscribable.Subscribable<A, E1, never>, E, never>>
+  ): Rx<A>
+}
+```
+
+Added in v1.0.0
+
+## subscriptionRef
+
+**Signature**
+
+```ts
+export declare const subscriptionRef: {
   <A>(ref: SubscriptionRef.SubscriptionRef<A> | Rx.Read<SubscriptionRef.SubscriptionRef<A>>): Writable<A, A>
   <A, E>(
     effect:
@@ -507,6 +528,36 @@ export type Infer<T extends Rx<any>> = T extends Rx<infer A> ? A : never
 
 Added in v1.0.0
 
+### InferFailure (type alias)
+
+**Signature**
+
+```ts
+export type InferFailure<T extends Rx<any>> = T extends Rx<Result.Result<infer _, infer E>> ? E : never
+```
+
+Added in v1.0.0
+
+### InferPullSuccess (type alias)
+
+**Signature**
+
+```ts
+export type InferPullSuccess<T extends Rx<any>> = T extends Rx<PullResult<infer A, infer _>> ? A : never
+```
+
+Added in v1.0.0
+
+### InferSuccess (type alias)
+
+**Signature**
+
+```ts
+export type InferSuccess<T extends Rx<any>> = T extends Rx<Result.Result<infer A, infer _>> ? A : never
+```
+
+Added in v1.0.0
+
 ### Mount (type alias)
 
 **Signature**
@@ -681,11 +732,17 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
     }
   ) => Writable<PullResult<A, E | ER>, void>
 
-  readonly subRef: <A, E>(
+  readonly subscriptionRef: <A, E>(
     create:
       | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R>
       | Rx.Read<Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R>>
   ) => Writable<Result.Result<A, E>, A>
+
+  readonly subscribable: <A, E, E1 = never>(
+    create:
+      | Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R>
+      | Rx.Read<Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R>>
+  ) => Rx<Result.Result<A, E | E1>>
 }
 ```
 
