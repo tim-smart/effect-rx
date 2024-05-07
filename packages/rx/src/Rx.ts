@@ -130,6 +130,21 @@ export declare namespace Rx {
    * @since 1.0.0
    */
   export type Infer<T extends Rx<any>> = T extends Rx<infer A> ? A : never
+
+  /**
+   * @since 1.0.0
+   */
+  export type InferSuccess<T extends Rx<any>> = T extends Rx<Result.Result<infer A, infer _>> ? A : never
+
+  /**
+   * @since 1.0.0
+   */
+  export type InferPullSuccess<T extends Rx<any>> = T extends Rx<PullResult<infer A, infer _>> ? A : never
+
+  /**
+   * @since 1.0.0
+   */
+  export type InferFailure<T extends Rx<any>> = T extends Rx<Result.Result<infer _, infer E>> ? E : never
 }
 
 /**
