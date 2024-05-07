@@ -745,11 +745,7 @@ export const subscriptionRef: {
 // constructors - subscribable
 // -----------------------------------------------------------------------------
 
-/**
- * @since 1.0.0
- * @category constructors
- */
-export const makeSubscribable = (
+const makeSubscribable = (
   subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<Subscribable.Subscribable<any, any>, any>>
 ) => readable(readSubscribable(subRx))
 
