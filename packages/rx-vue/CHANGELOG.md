@@ -1,5 +1,12 @@
 # @effect-rx/rx-vue
 
+## 0.8.3
+
+### Patch Changes
+
+- Updated dependencies [[`46da19b`](https://github.com/tim-smart/effect-rx/commit/46da19b42f6527388efb2005856dc9c989375d7c)]:
+  - @effect-rx/rx@0.29.3
+
 ## 0.8.2
 
 ### Patch Changes
