@@ -267,8 +267,9 @@ const RxRuntimeProto = {
   },
 
   fn(this: RxRuntime<any, any>, arg: any, options?: { readonly initialValue?: unknown }) {
-    const [read, write] = makeResultFn(arg, options)
+    const [read, write, argRx] = makeResultFn(arg, options)
     return writable((get) => {
+      get(argRx)
       const previous = get.self<Result.Result<any, any>>()
       const runtimeResult = get(this)
       if (runtimeResult._tag !== "Success") {
@@ -819,7 +820,7 @@ function makeResultFn<Arg, E, A>(
       ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
     }
   }
-  return [read, write] as const
+  return [read, write, argRx] as const
 }
 
 /**
