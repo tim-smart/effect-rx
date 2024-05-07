@@ -2,4 +2,4 @@
 "@effect-rx/rx": patch
 ---
 
-added Rx.sub for working with Subscribables
+added Rx.subscribable for working with Subscribables
