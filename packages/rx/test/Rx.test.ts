@@ -1,7 +1,7 @@
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
-import { Cause, Either, FiberRef, SubscriptionRef } from "effect"
+import { Cause, Either, FiberRef, Subscribable, SubscriptionRef } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Hash from "effect/Hash"
@@ -775,10 +775,30 @@ describe("Rx", () => {
     assert.deepStrictEqual(r.get(rx), Either.right(123))
   })
 
+  it("Subscribable", async () => {
+    vitest.useRealTimers()
+    const sub = Subscribable.make({ get: Effect.succeed(123), changes: Stream.empty })
+    const rx = Rx.subscribable(sub)
+    const r = Registry.make()
+    const unmount = r.mount(rx)
+    assert.deepStrictEqual(r.get(rx), 123)
+    unmount()
+  })
+
+  it("Subscribable/SubscriptionRef", async () => {
+    vitest.useRealTimers()
+    const ref = SubscriptionRef.make(123).pipe(Effect.runSync)
+    const rx = Rx.subscribable(ref)
+    const r = Registry.make()
+    assert.deepStrictEqual(r.get(rx), 123)
+    await Effect.runPromise(SubscriptionRef.update(ref, (a) => a + 1))
+    assert.deepStrictEqual(r.get(rx), 124)
+  })
+
   it("SubscriptionRef", async () => {
     vitest.useRealTimers()
     const ref = SubscriptionRef.make(0).pipe(Effect.runSync)
-    const rx = Rx.subRef(ref)
+    const rx = Rx.subscriptionRef(ref)
     const r = Registry.make()
     const unmount = r.mount(rx)
     assert.deepStrictEqual(r.get(rx), 0)
@@ -789,7 +809,7 @@ describe("Rx", () => {
   })
 
   it("SubscriptionRef/effect", async () => {
-    const rx = Rx.subRef(SubscriptionRef.make(0))
+    const rx = Rx.subscriptionRef(SubscriptionRef.make(0))
     const r = Registry.make()
     const unmount = r.mount(rx)
     assert.deepStrictEqual(r.get(rx), Result.success(0, true))
@@ -800,7 +820,7 @@ describe("Rx", () => {
   })
 
   it("SubscriptionRef/runtime", async () => {
-    const rx = counterRuntime.subRef(SubscriptionRef.make(0))
+    const rx = counterRuntime.subscriptionRef(SubscriptionRef.make(0))
     const r = Registry.make()
     const unmount = r.mount(rx)
     assert.deepStrictEqual(r.get(rx), Result.success(0, true))

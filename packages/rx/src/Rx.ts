@@ -18,6 +18,7 @@ import { type Pipeable, pipeArguments } from "effect/Pipeable"
 import * as Runtime from "effect/Runtime"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
+import * as Subscribable from "effect/Subscribable"
 import * as SubscriptionRef from "effect/SubscriptionRef"
 import * as internalRegistry from "./internal/registry.js"
 import { runCallbackSync } from "./internal/runtime.js"
@@ -299,8 +300,24 @@ const RxRuntimeProto = {
     return makeStreamPull(pullRx as any, options)
   },
 
-  subRef(this: RxRuntime<any, any>, arg: any) {
+  subscriptionRef(this: RxRuntime<any, any>, arg: any) {
     return makeSubRef(readable((get) => {
+      const previous = get.self<Result.Result<any, any>>()
+      const runtimeResult = get(this)
+      if (runtimeResult._tag !== "Success") {
+        return Result.replacePrevious(runtimeResult, previous)
+      }
+      return makeEffect(
+        get,
+        arg,
+        Result.initial(true),
+        runtimeResult.value
+      )
+    }))
+  },
+
+  subscribable(this: RxRuntime<any, any>, arg: any) {
+    return makeSubscribable(readable((get) => {
       const previous = get.self<Result.Result<any, any>>()
       const runtimeResult = get(this)
       if (runtimeResult._tag !== "Success") {
@@ -547,11 +564,17 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
     readonly initialValue?: ReadonlyArray<A>
   }) => Writable<PullResult<A, E | ER>, void>
 
-  readonly subRef: <A, E>(
+  readonly subscriptionRef: <A, E>(
     create:
       | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R>
       | Rx.Read<Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R>>
   ) => Writable<Result.Result<A, E>, A>
+
+  readonly subscribable: <A, E, E1 = never>(
+    create:
+      | Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R>
+      | Rx.Read<Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R>>
+  ) => Rx<Result.Result<A, E | E1>>
 }
 
 /**
@@ -655,25 +678,28 @@ function makeStream<A, E>(
 // constructors - subscription ref
 // -----------------------------------------------------------------------------
 
-const makeSubRef = (
-  refRx: Rx<SubscriptionRef.SubscriptionRef<any> | Result.Result<SubscriptionRef.SubscriptionRef<any>, any>>
-) => {
-  function read(get: Context) {
-    const ref = get(refRx)
-    if (SubscriptionRef.SubscriptionRefTypeId in ref) {
+/** @internal */
+const readSubscribable =
+  (subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<Subscribable.Subscribable<any, any>, any>>) =>
+  (get: Context) => {
+    const sub = get(subRx)
+    if (Subscribable.TypeId in sub) {
       get.addFinalizer(
-        ref.changes.pipe(
+        sub.changes.pipe(
           Stream.runForEach((value) => get.setSelf(value)),
           Effect.runCallback
         )
       )
-      return Effect.runSync(SubscriptionRef.get(ref))
-    } else if (ref._tag !== "Success") {
-      return ref
+      return Effect.runSync(sub.get)
+    } else if (sub._tag !== "Success") {
+      return sub
     }
-    return makeStream(get, ref.value.changes, Result.initial(true))
+    return makeStream(get, sub.value.changes, Result.initial(true))
   }
 
+const makeSubRef = (
+  refRx: Rx<SubscriptionRef.SubscriptionRef<any> | Result.Result<SubscriptionRef.SubscriptionRef<any>, any>>
+) => {
   function write(ctx: WriteContext<SubscriptionRef.SubscriptionRef<any>>, value: any) {
     const ref = ctx.get(refRx)
     if (SubscriptionRef.SubscriptionRefTypeId in ref) {
@@ -683,14 +709,14 @@ const makeSubRef = (
     }
   }
 
-  return writable(read, write)
+  return writable(readSubscribable(refRx), write)
 }
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const subRef: {
+export const subscriptionRef: {
   <A>(ref: SubscriptionRef.SubscriptionRef<A> | Rx.Read<SubscriptionRef.SubscriptionRef<A>>): Writable<A, A>
   <A, E>(
     effect:
@@ -706,6 +732,43 @@ export const subRef: {
 ) =>
   makeSubRef(readable((get) => {
     let value: SubscriptionRef.SubscriptionRef<any> | Effect.Effect<SubscriptionRef.SubscriptionRef<any>, any, any>
+    if (typeof ref === "function") {
+      value = ref(get)
+    } else {
+      value = ref
+    }
+
+    return Effect.isEffect(value) ? makeEffect(get, value, Result.initial(true)) : value
+  }))
+
+// -----------------------------------------------------------------------------
+// constructors - subscribable
+// -----------------------------------------------------------------------------
+
+const makeSubscribable = (
+  subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<Subscribable.Subscribable<any, any>, any>>
+) => readable(readSubscribable(subRx))
+
+/**
+ * @since 1.0.0
+ * @category constructors
+ */
+export const subscribable: {
+  <A, E>(ref: Subscribable.Subscribable<A, E> | Rx.Read<Subscribable.Subscribable<A, E>>): Rx<A>
+  <A, E, E1>(
+    effect:
+      | Effect.Effect<Subscribable.Subscribable<A, E1>, E, never>
+      | Rx.Read<Effect.Effect<Subscribable.Subscribable<A, E1>, E, never>>
+  ): Rx<A>
+} = (
+  ref:
+    | Subscribable.Subscribable<any, any>
+    | Rx.Read<Subscribable.Subscribable<any, any>>
+    | Effect.Effect<Subscribable.Subscribable<any, any>, any, never>
+    | Rx.Read<Effect.Effect<Subscribable.Subscribable<any, any>, any, never>>
+) =>
+  makeSubscribable(readable((get) => {
+    let value: Subscribable.Subscribable<any, any> | Effect.Effect<Subscribable.Subscribable<any, any>, any, any>
     if (typeof ref === "function") {
       value = ref(get)
     } else {
