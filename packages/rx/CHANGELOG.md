@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.30.1
+
+### Patch Changes
+
+- [`dc3dbee`](https://github.com/tim-smart/effect-rx/commit/dc3dbeef72ad3d5d4de8f7ea5ea4ad0168c1a5a9) Thanks [@tim-smart](https://github.com/tim-smart)! - schedule tasks with react scheduler
+
 ## 0.30.0
 
 ### Minor Changes
