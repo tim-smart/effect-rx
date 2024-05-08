@@ -36,5 +36,9 @@ export interface Registry {
  * @category constructors
  */
 export const make: (
-  options?: { readonly initialValues: Iterable<readonly [Rx.Rx<any>, any]> } | undefined
+  options?: {
+    readonly initialValues?: Iterable<readonly [Rx.Rx<any>, any]> | undefined
+    readonly scheduleTask?: ((f: () => void) => void) | undefined
+    readonly timeoutResolution?: number | undefined
+  } | undefined
 ) => Registry = internal.make

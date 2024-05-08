@@ -19,13 +19,21 @@ export const TypeId: Registry.TypeId = Symbol.for("@effect-rx/rx/Registry") as R
 
 /** @internal */
 export const make = (options?: {
-  readonly initialValues: Iterable<readonly [Rx.Rx<any>, any]>
-}): Registry.Registry => new RegistryImpl(options?.initialValues)
+  readonly initialValues?: Iterable<readonly [Rx.Rx<any>, any]> | undefined
+  readonly scheduleTask?: ((f: () => void) => void) | undefined
+  readonly timeoutResolution?: number | undefined
+}): Registry.Registry =>
+  new RegistryImpl(
+    options?.initialValues,
+    options?.scheduleTask,
+    options?.timeoutResolution
+  )
 
 class RegistryImpl implements Registry.Registry {
   readonly [TypeId]: Registry.TypeId
   constructor(
     initialValues?: Iterable<readonly [Rx.Rx<any>, any]>,
+    readonly scheduleTask = queueMicrotask,
     readonly timeoutResolution = 5000
   ) {
     this[TypeId] = TypeId
@@ -104,7 +112,7 @@ class RegistryImpl implements Registry.Registry {
   }
 
   scheduleRxRemoval(rx: Rx.Rx<any>): void {
-    queueMicrotask(() => {
+    this.scheduleTask(() => {
       const node = this.nodes.get(rx)
       if (node !== undefined && node.canBeRemoved) {
         this.removeNode(node)
@@ -113,7 +121,7 @@ class RegistryImpl implements Registry.Registry {
   }
 
   scheduleNodeRemoval(node: Node<any>): void {
-    queueMicrotask(() => {
+    this.scheduleTask(() => {
       if (node.canBeRemoved) {
         this.removeNode(node)
       }

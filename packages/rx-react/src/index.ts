@@ -9,6 +9,7 @@ import * as Cause from "effect/Cause"
 import type * as Exit from "effect/Exit"
 import { globalValue } from "effect/GlobalValue"
 import * as React from "react"
+import * as Scheduler from "scheduler"
 
 /**
  * @since 1.0.0
@@ -31,11 +32,17 @@ export * as Rx from "@effect-rx/rx/Rx"
  */
 export * as RxRef from "@effect-rx/rx/RxRef"
 
+function scheduleTask(f: () => void): void {
+  Scheduler.unstable_scheduleCallback(Scheduler.unstable_LowPriority, f)
+}
+
 /**
  * @since 1.0.0
  * @category context
  */
-export const RegistryContext = React.createContext<Registry.Registry>(Registry.make())
+export const RegistryContext = React.createContext<Registry.Registry>(Registry.make({
+  scheduleTask
+}))
 
 interface RxStore<A> {
   readonly subscribe: (f: () => void) => () => void
