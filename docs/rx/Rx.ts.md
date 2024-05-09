@@ -394,6 +394,7 @@ export interface Context {
   readonly setSelf: <A>(a: A) => Effect.Effect<void>
   readonly setSync: <R, W>(rx: Writable<R, W>, value: W) => void
   readonly set: <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<void>
+  readonly some: <A>(rx: Rx<Option.Option<A>>) => Effect.Effect<A>
   readonly stream: <A>(
     rx: Rx<A>,
     options?: {

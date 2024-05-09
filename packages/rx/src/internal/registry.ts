@@ -443,6 +443,14 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
     }
   },
 
+  some<A>(this: Lifetime<any>, rx: Rx.Rx<Option.Option<A>>): Effect.Effect<A> {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
+    const result = this.get(rx)
+    return result._tag === "None" ? Effect.never : Effect.succeed(result.value)
+  },
+
   once<A>(this: Lifetime<any>, rx: Rx.Rx<A>): A {
     if (this.disposed) {
       throw disposedError(this.node.rx)
