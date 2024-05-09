@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.31.0
+
+### Minor Changes
+
+- [`a6af10b`](https://github.com/tim-smart/effect-rx/commit/a6af10b7c03935612b40fbcdb3d02ade8f32994a) Thanks [@tim-smart](https://github.com/tim-smart)! - return Effect from get.result
+
 ## 0.30.1
 
 ### Patch Changes
