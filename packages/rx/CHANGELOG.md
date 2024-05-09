@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.31.1
+
+### Patch Changes
+
+- [`ac8264f`](https://github.com/tim-smart/effect-rx/commit/ac8264fd69bd5a5aa80aac5d041358eae1feaff8) Thanks [@tim-smart](https://github.com/tim-smart)! - add get.some(optionRx)
+
 ## 0.31.0
 
 ### Minor Changes
