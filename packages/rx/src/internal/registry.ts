@@ -1,7 +1,6 @@
-import type { NoSuchElementException } from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
-import type { Exit } from "effect/Exit"
+import * as Exit from "effect/Exit"
 import { pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Option from "effect/Option"
@@ -426,11 +425,22 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
     return parent.value()
   },
 
-  result<A, E>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<A, E>>): Exit<A, E | NoSuchElementException> {
+  result<A, E>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<A, E>>): Effect.Effect<A, E> {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
-    return Result.toExit(this.get(rx))
+    const result = this.get(rx)
+    switch (result._tag) {
+      case "Initial": {
+        return Effect.never
+      }
+      case "Failure": {
+        return Exit.failCause(result.cause)
+      }
+      case "Success": {
+        return Effect.succeed(result.value)
+      }
+    }
   },
 
   once<A>(this: Lifetime<any>, rx: Rx.Rx<A>): A {

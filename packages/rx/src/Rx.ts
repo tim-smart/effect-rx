@@ -87,7 +87,7 @@ export declare namespace Rx {
    * @since 1.0.0
    * @category models
    */
-  export type GetResult = <A, E>(rx: Rx<Result.Result<A, E>>) => Exit.Exit<A, E | NoSuchElementException>
+  export type GetResult = <A, E>(rx: Rx<Result.Result<A, E>>) => Effect.Effect<A, E>
 
   /**
    * @since 1.0.0
@@ -196,7 +196,7 @@ export interface Writable<R, W> extends Rx<R> {
 export interface Context {
   <A>(rx: Rx<A>): A
   readonly get: <A>(rx: Rx<A>) => A
-  readonly result: <A, E>(rx: Rx<Result.Result<A, E>>) => Exit.Exit<A, E | NoSuchElementException>
+  readonly result: <A, E>(rx: Rx<Result.Result<A, E>>) => Effect.Effect<A, E>
   readonly once: <A>(rx: Rx<A>) => A
   readonly addFinalizer: (f: () => void) => void
   readonly mount: <A>(rx: Rx<A>) => void
