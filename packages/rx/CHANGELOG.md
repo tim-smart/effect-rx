@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.31.3
+
+### Patch Changes
+
+- [`dbe2b5d`](https://github.com/tim-smart/effect-rx/commit/dbe2b5d306f45e7c7620b763233727d926309edd) Thanks [@tim-smart](https://github.com/tim-smart)! - fix debounce finalizer
+
 ## 0.31.2
 
 ### Patch Changes
