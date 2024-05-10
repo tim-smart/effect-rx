@@ -1225,17 +1225,16 @@ export const debounce: {
       let timeout: number | undefined
       let value = get.once(self)
       function update() {
+        timeout = undefined
         get.setSelfSync(get.once(self))
       }
       get.addFinalizer(function() {
-        if (timeout !== undefined) {
-          clearTimeout(timeout)
-        }
+        timeout && clearTimeout(timeout)
       })
       get.subscribe(self, function(val) {
         value = val
         if (timeout) return
-        setTimeout(update, millis)
+        timeout = setTimeout(update, millis)
       })
       return value
     })
