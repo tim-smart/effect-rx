@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.31.2
+
+### Patch Changes
+
+- [`cf29609`](https://github.com/tim-smart/effect-rx/commit/cf29609832f2d28f371133f204ebc056774a12d2) Thanks [@tim-smart](https://github.com/tim-smart)! - add Rx.debounce
+
 ## 0.31.1
 
 ### Patch Changes
