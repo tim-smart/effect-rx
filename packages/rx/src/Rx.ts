@@ -1,7 +1,6 @@
 /**
  * @since 1.0.0
  */
-import type { Context } from "effect"
 import { NoSuchElementException } from "effect/Cause"
 import * as Chunk from "effect/Chunk"
 import * as Duration from "effect/Duration"
@@ -1143,31 +1142,50 @@ export const initialValue: {
  * @since 1.0.0
  * @category combinators
  */
-export const map = dual<
+export const transform: {
   <R extends Rx<any>, B>(
-    f: (_: Rx.Infer<R>) => B
-  ) => (self: R) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>,
+    f: (get: Context) => B
+  ): (self: R) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>
   <R extends Rx<any>, B>(
     self: R,
-    f: (_: Rx.Infer<R>) => B
-  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>
->(
+    f: (get: Context) => B
+  ): [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>
+} = dual(
   2,
-  (<A, B>(self: Rx<A>, f: (_: A) => B): Rx<B> =>
+  (<A, B>(self: Rx<A>, f: (get: Context) => B): Rx<B> =>
     isWritable(self)
       ? writable(
-        (get) => f(get(self)),
-        self.write as any,
+        f,
+        function(ctx, value) {
+          ctx.set(self, value)
+        },
         self.refresh ?? function(refresh) {
           refresh(self)
         }
       )
       : readable(
-        (get) => f(get(self)),
+        f,
         self.refresh ?? function(refresh) {
           refresh(self)
         }
       )) as any
+)
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const map: {
+  <R extends Rx<any>, B>(
+    f: (_: Rx.Infer<R>) => B
+  ): (self: R) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>
+  <R extends Rx<any>, B>(
+    self: R,
+    f: (_: Rx.Infer<R>) => B
+  ): [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>
+} = dual(
+  2,
+  <A, B>(self: Rx<A>, f: (_: A) => B): Rx<B> => transform(self, (get) => f(get(self)))
 )
 
 /**
@@ -1191,6 +1209,38 @@ export const mapResult: {
   f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
 ): [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
   : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>> => map(self, Result.map(f)))
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const debounce: {
+  (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, duration: Duration.DurationInput): A
+} = dual(
+  2,
+  <A>(self: Rx<A>, duration: Duration.DurationInput): Rx<A> => {
+    const millis = Duration.toMillis(duration)
+    return transform(self, function(get) {
+      let timeout: number | undefined
+      let value = get.once(self)
+      function update() {
+        get.setSelfSync(get.once(self))
+      }
+      get.addFinalizer(function() {
+        if (timeout !== undefined) {
+          clearTimeout(timeout)
+        }
+      })
+      get.subscribe(self, function(val) {
+        value = val
+        if (timeout) return
+        setTimeout(update, millis)
+      })
+      return value
+    })
+  }
+)
 
 /**
  * @since 1.0.0

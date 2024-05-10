@@ -15,12 +15,14 @@ Added in v1.0.0
 - [batching](#batching)
   - [batch](#batch)
 - [combinators](#combinators)
+  - [debounce](#debounce)
   - [initialValue](#initialvalue)
   - [keepAlive](#keepalive)
   - [map](#map)
   - [mapResult](#mapresult)
   - [refreshable](#refreshable)
   - [setIdleTTL](#setidlettl)
+  - [transform](#transform)
   - [withFallback](#withfallback)
   - [withLabel](#withlabel)
 - [constructors](#constructors)
@@ -94,6 +96,19 @@ Added in v1.0.0
 
 # combinators
 
+## debounce
+
+**Signature**
+
+```ts
+export declare const debounce: {
+  (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, duration: Duration.DurationInput): A
+}
+```
+
+Added in v1.0.0
+
 ## initialValue
 
 **Signature**
@@ -122,13 +137,15 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const map: (<R extends Rx<any>, B>(
-  f: (_: Rx.Infer<R>) => B
-) => (self: R) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>) &
-  (<R extends Rx<any>, B>(
+export declare const map: {
+  <R extends Rx<any>, B>(
+    f: (_: Rx.Infer<R>) => B
+  ): (self: R) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>
+  <R extends Rx<any>, B>(
     self: R,
     f: (_: Rx.Infer<R>) => B
-  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>)
+  ): [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>
+}
 ```
 
 Added in v1.0.0
@@ -175,6 +192,24 @@ Added in v1.0.0
 export declare const setIdleTTL: {
   (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => A
   <A extends Rx<any>>(self: A, duration: Duration.DurationInput): A
+}
+```
+
+Added in v1.0.0
+
+## transform
+
+**Signature**
+
+```ts
+export declare const transform: {
+  <R extends Rx<any>, B>(
+    f: (get: Context) => B
+  ): (self: R) => [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>
+  <R extends Rx<any>, B>(
+    self: R,
+    f: (get: Context) => B
+  ): [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>
 }
 ```
 
