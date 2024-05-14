@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.28.12
+
+### Patch Changes
+
+- [`a5619b3`](https://github.com/tim-smart/effect-rx/commit/a5619b327b356f67a2d1ebc97c86e505b100404f) Thanks [@tim-smart](https://github.com/tim-smart)! - try useReducer over useSyncExternalStore
+
 ## 0.28.11
 
 ### Patch Changes
