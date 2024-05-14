@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.28.11
+
+### Patch Changes
+
+- [`04ab209`](https://github.com/tim-smart/effect-rx/commit/04ab20961614efc82ba35c5a01dde45d5acbe29f) Thanks [@tim-smart](https://github.com/tim-smart)! - move suspense state outside of react
+
 ## 0.28.10
 
 ### Patch Changes
