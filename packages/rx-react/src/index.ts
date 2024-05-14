@@ -7,6 +7,7 @@ import * as Rx from "@effect-rx/rx/Rx"
 import type * as RxRef from "@effect-rx/rx/RxRef"
 import * as Cause from "effect/Cause"
 import type * as Exit from "effect/Exit"
+import { constVoid } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as React from "react"
 import * as Scheduler from "scheduler"
@@ -198,43 +199,89 @@ export const useRx = <R, W>(
   ] as const
 }
 
-type SuspenseResult<A, E> =
-  | {
-    readonly _tag: "Suspended"
-    readonly promise: Promise<void>
-  }
-  | {
-    readonly _tag: "Value"
-    readonly value: Result.Success<A, E> | Result.Failure<A, E>
-  }
-
-const suspenseRx = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
-  Rx.readable((get): SuspenseResult<any, any> => {
-    const result = get(rx)
-    if (result._tag === "Initial") {
-      return {
-        _tag: "Suspended",
-        promise: new Promise<void>((resolve) => get.addFinalizer(resolve))
-      } as const
-    }
-    return { _tag: "Value", value: result } as const
+type SuspenseResult<A, E> = {
+  readonly _tag: "Suspended"
+  readonly promise: Promise<void>
+  readonly resolve: () => void
+} | {
+  readonly _tag: "Resolved"
+  readonly result: Result.Success<A, E> | Result.Failure<A, E>
+}
+function makeSuspended(rx: Rx.Rx<any>): {
+  readonly _tag: "Suspended"
+  readonly promise: Promise<void>
+  readonly resolve: () => void
+} {
+  let resolve: () => void
+  const promise = new Promise<void>((_resolve) => {
+    resolve = _resolve
   })
+  ;(promise as any).rx = rx
+  return {
+    _tag: "Suspended",
+    promise,
+    resolve: resolve!
+  }
+}
+const suspenseRxMap = globalValue(
+  "@effect-rx/rx-react/suspenseMounts",
+  () => new WeakMap<Rx.Rx<any>, Rx.Rx<SuspenseResult<any, any>>>()
 )
 
-const suspenseRxWaiting = Rx.family((rx: Rx.Rx<Result.Result<any, any>>) =>
-  Rx.readable((get): SuspenseResult<any, any> => {
-    const result = get(rx)
-    if (result.waiting || result._tag === "Initial") {
-      return {
-        _tag: "Suspended",
-        promise: new Promise<void>((resolve) => get.addFinalizer(resolve))
-      } as const
+function suspenseRx<A, E>(
+  registry: Registry.Registry,
+  rx: Rx.Rx<Result.Result<A, E>>,
+  suspendOnWaiting: boolean
+): Rx.Rx<SuspenseResult<A, E>> {
+  if (suspenseRxMap.has(rx)) {
+    return suspenseRxMap.get(rx)!
+  }
+  let unmount: (() => void) | undefined
+  let timeout: number | undefined
+  function performMount() {
+    if (timeout !== undefined) {
+      clearTimeout(timeout)
     }
-    return { _tag: "Value", value: result } as const
+    unmount = registry.subscribe(resultRx, constVoid)
+  }
+  function performUnmount() {
+    timeout = undefined
+    if (unmount !== undefined) {
+      unmount()
+      unmount = undefined
+    }
+  }
+  const resultRx = Rx.readable<SuspenseResult<A, E>>(function(get) {
+    let state: SuspenseResult<A, E> = makeSuspended(rx)
+    get.subscribe(rx, function(result) {
+      if (result._tag === "Initial" || (suspendOnWaiting && result.waiting)) {
+        if (state._tag === "Resolved") {
+          state = makeSuspended(rx)
+          get.setSelfSync(state)
+        }
+        if (unmount === undefined) {
+          performMount()
+        }
+      } else {
+        if (unmount !== undefined && timeout === undefined) {
+          timeout = setTimeout(performUnmount, 1000)
+        }
+        if (state._tag === "Resolved") {
+          state = { _tag: "Resolved", result }
+          get.setSelfSync(state)
+        } else {
+          const resolve = state.resolve
+          state = { _tag: "Resolved", result }
+          get.setSelfSync(state)
+          resolve()
+        }
+      }
+    }, { immediate: true })
+    return state
   })
-)
-
-const suspenseMounts = globalValue("@effect-rx/rx-react/suspenseMounts", () => new Set<Rx.Rx<any>>())
+  suspenseRxMap.set(rx, resultRx)
+  return resultRx
+}
 
 /**
  * @since 1.0.0
@@ -245,26 +292,16 @@ export const useRxSuspense = <A, E>(
   options?: { readonly suspendOnWaiting?: boolean }
 ): Result.Success<A, E> | Result.Failure<A, E> => {
   const registry = React.useContext(RegistryContext)
-  const resultRx = React.useMemo(
-    () => (options?.suspendOnWaiting ? suspenseRxWaiting(rx) : suspenseRx(rx)),
-    [options?.suspendOnWaiting, rx]
-  )
-  const result = useStore(registry, resultRx)
+  const promiseRx = React.useMemo(() => suspenseRx(registry, rx, options?.suspendOnWaiting ?? false), [
+    registry,
+    rx,
+    options?.suspendOnWaiting
+  ])
+  const result = useStore(registry, promiseRx)
   if (result._tag === "Suspended") {
-    if (!suspenseMounts.has(resultRx)) {
-      suspenseMounts.add(resultRx)
-      const unmount = registry.mount(resultRx)
-      result.promise.then(function() {
-        setTimeout(function() {
-          unmount()
-          suspenseMounts.delete(resultRx)
-        }, 1000)
-      })
-    }
     throw result.promise
   }
-
-  return result.value
+  return result.result
 }
 
 /**
