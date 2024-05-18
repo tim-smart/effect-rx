@@ -53,12 +53,27 @@ function identityReducer<A>(prev: A, next: A) {
 }
 
 function useRxValueRaw<A>(registry: Registry.Registry, rx: Rx.Rx<A>): A {
+  const subRef = React.useRef<(() => void) | false>()
+
   const [state, dispatch] = React.useReducer(identityReducer<A>, void 0, function(_) {
     return registry.get(rx)
   })
+
+  if (subRef.current === undefined) {
+    subRef.current = registry.subscribe(rx, dispatch)
+  } else if (subRef.current === false) {
+    subRef.current = registry.subscribe(rx, dispatch, { immediate: true })
+  }
+
   React.useEffect(function() {
-    return registry.subscribe(rx, dispatch, { immediate: true })
-  }, [registry, rx])
+    return function() {
+      if (subRef.current) {
+        subRef.current()
+        subRef.current = false
+      }
+    }
+  }, [subRef])
+
   return state
 }
 
