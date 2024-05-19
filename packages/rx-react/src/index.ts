@@ -45,36 +45,41 @@ export const RegistryContext = React.createContext<Registry.Registry>(Registry.m
   scheduleTask
 }))
 
-function identityReducer<A>(prev: A, next: A) {
-  if (Object.is(prev, next)) {
-    return prev
-  }
-  return next
+interface RxStore<A> {
+  readonly subscribe: (f: () => void) => () => void
+  readonly snapshot: () => A
 }
 
-function useRxValueRaw<A>(registry: Registry.Registry, rx: Rx.Rx<A>): A {
-  const subRef = React.useRef<(() => void) | false>()
+const storeRegistry = globalValue(
+  "@effect-rx/rx-react/storeRegistry",
+  () => new WeakMap<Registry.Registry, WeakMap<Rx.Rx<any>, RxStore<any>>>()
+)
 
-  const [state, dispatch] = React.useReducer(identityReducer<A>, void 0, function(_) {
-    return registry.get(rx)
-  })
-
-  if (subRef.current === undefined) {
-    subRef.current = registry.subscribe(rx, dispatch)
-  } else if (subRef.current === false) {
-    subRef.current = registry.subscribe(rx, dispatch, { immediate: true })
+function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
+  let stores = storeRegistry.get(registry)
+  if (stores === undefined) {
+    stores = new WeakMap()
+    storeRegistry.set(registry, stores)
   }
-
-  React.useEffect(function() {
-    return function() {
-      if (subRef.current) {
-        subRef.current()
-        subRef.current = false
-      }
+  const store = stores.get(rx)
+  if (store !== undefined) {
+    return store
+  }
+  const newStore: RxStore<A> = {
+    subscribe(f) {
+      return registry.subscribe(rx, f)
+    },
+    snapshot() {
+      return registry.get(rx)
     }
-  }, [subRef])
+  }
+  stores.set(rx, newStore)
+  return newStore
+}
 
-  return state
+function useStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): A {
+  const store = makeStore(registry, rx)
+  return React.useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot)
 }
 
 /**
@@ -88,9 +93,9 @@ export const useRxValue: {
   const registry = React.useContext(RegistryContext)
   if (f) {
     const rxB = React.useMemo(() => Rx.map(rx, f), [rx, f])
-    return useRxValueRaw(registry, rxB)
+    return useStore(registry, rxB)
   }
-  return useRxValueRaw(registry, rx)
+  return useStore(registry, rx)
 }
 
 function mountRx<A>(registry: Registry.Registry, rx: Rx.Rx<A>): void {
@@ -193,7 +198,7 @@ export const useRx = <R, W>(
 ): readonly [value: R, setOrUpdate: (_: W | ((_: R) => W)) => void] => {
   const registry = React.useContext(RegistryContext)
   return [
-    useRxValueRaw(registry, rx),
+    useStore(registry, rx),
     setRx(registry, rx)
   ] as const
 }
@@ -296,7 +301,7 @@ export const useRxSuspense = <A, E>(
     rx,
     options?.suspendOnWaiting
   ])
-  const result = useRxValueRaw(registry, promiseRx)
+  const result = useStore(registry, promiseRx)
   if (result._tag === "Suspended") {
     throw result.promise
   }
