@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.28.13
+
+### Patch Changes
+
+- [`945a038`](https://github.com/tim-smart/effect-rx/commit/945a038dd71e55fac8b76b0f589acdd685140d23) Thanks [@tim-smart](https://github.com/tim-smart)! - revert back to React.useSyncExternalStore
+
 ## 0.28.12
 
 ### Patch Changes
