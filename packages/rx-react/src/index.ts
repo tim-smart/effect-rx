@@ -148,7 +148,7 @@ export const useRxSetPromise = <E, A, W>(
         resolves.clear()
         fns.forEach((resolve) => resolve(Result.toExit(result) as any))
       }
-    }), [registry, rx, resolves])
+    }, { immediate: true }), [registry, rx, resolves])
   return React.useCallback((value) =>
     new Promise((resolve) => {
       resolves.add(resolve)
