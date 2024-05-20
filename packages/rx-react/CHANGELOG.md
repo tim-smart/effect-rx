@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.28.15
+
+### Patch Changes
+
+- [`dad697a`](https://github.com/tim-smart/effect-rx/commit/dad697af39ff41f12908134742babcd7b44ce825) Thanks [@tim-smart](https://github.com/tim-smart)! - fix useRxSetPromise not mounting
+
 ## 0.28.14
 
 ### Patch Changes
