@@ -113,40 +113,6 @@ function setRx<R, W>(registry: Registry.Registry, rx: Rx.Writable<R, W>): (_: W 
   }, [registry, rx])
 }
 
-function setRxPromise<E, A, W>(
-  registry: Registry.Registry,
-  rx: Rx.Writable<Result.Result<A, E>, W>
-): (_: W) => Promise<Exit.Exit<A, E>> {
-  const cancelRef = React.useRef<Set<() => void>>(undefined as any)
-  if (!cancelRef.current) {
-    cancelRef.current = new Set()
-  }
-  React.useEffect(() => () => {
-    cancelRef.current.forEach((cancel) => cancel())
-    cancelRef.current.clear()
-  }, [])
-
-  return React.useCallback((value) => {
-    registry.set(rx, value)
-
-    return new Promise((resolve) => {
-      const value = registry.get(rx)
-      if (Result.isSuccess(value) || Result.isFailure(value)) {
-        resolve(Result.toExit(value) as any)
-      } else {
-        const cancel = registry.subscribe(rx, (value) => {
-          if (Result.isSuccess(value) || Result.isFailure(value)) {
-            cancelRef.current.delete(cancel)
-            cancel()
-            resolve(Result.toExit(value) as any)
-          }
-        })
-        cancelRef.current.add(cancel)
-      }
-    })
-  }, [registry, rx])
-}
-
 /**
  * @since 1.0.0
  * @category hooks
@@ -174,7 +140,20 @@ export const useRxSetPromise = <E, A, W>(
   rx: Rx.Writable<Result.Result<A, E>, W>
 ): (_: W) => Promise<Exit.Exit<A, E>> => {
   const registry = React.useContext(RegistryContext)
-  return setRxPromise(registry, rx)
+  const resolves = React.useMemo(() => new Set<(result: Exit.Exit<A, E>) => void>(), [])
+  React.useEffect(() =>
+    registry.subscribe(rx, (result) => {
+      if (Result.isSuccess(result) || Result.isFailure(result)) {
+        const fns = Array.from(resolves)
+        resolves.clear()
+        fns.forEach((resolve) => resolve(Result.toExit(result) as any))
+      }
+    }), [registry, rx, resolves])
+  return React.useCallback((value) =>
+    new Promise((resolve) => {
+      resolves.add(resolve)
+      registry.set(rx, value)
+    }), [registry, rx, resolves])
 }
 
 /**
