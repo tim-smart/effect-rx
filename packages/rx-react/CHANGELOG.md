@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.28.14
+
+### Patch Changes
+
+- [`ec60fc9`](https://github.com/tim-smart/effect-rx/commit/ec60fc90a98d3635712557870f4348c36848616b) Thanks [@tim-smart](https://github.com/tim-smart)! - ensure rx is mounted in useRxSetPromise
+
 ## 0.28.13
 
 ### Patch Changes
