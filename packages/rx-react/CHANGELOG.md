@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.28.16
+
+### Patch Changes
+
+- [`2eafc58`](https://github.com/tim-smart/effect-rx/commit/2eafc58f369b48266db03b0bd40bed5abaa4614f) Thanks [@tim-smart](https://github.com/tim-smart)! - wait for result to settle in useRxSetPromise
+
 ## 0.28.15
 
 ### Patch Changes
