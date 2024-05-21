@@ -34,7 +34,7 @@ export * as Rx from "@effect-rx/rx/Rx"
 export * as RxRef from "@effect-rx/rx/RxRef"
 
 function scheduleTask(f: () => void): void {
-  Scheduler.unstable_scheduleCallback(Scheduler.unstable_LowPriority, f)
+  Scheduler.unstable_scheduleCallback(Scheduler.unstable_IdlePriority, f)
 }
 
 /**
@@ -143,11 +143,11 @@ export const useRxSetPromise = <E, A, W>(
   const resolves = React.useMemo(() => new Set<(result: Exit.Exit<A, E>) => void>(), [])
   React.useEffect(() =>
     registry.subscribe(rx, (result) => {
-      if (Result.isSuccess(result) || Result.isFailure(result)) {
-        const fns = Array.from(resolves)
-        resolves.clear()
-        fns.forEach((resolve) => resolve(Result.toExit(result) as any))
-      }
+      if (result.waiting || result._tag === "Initial") return
+      const fns = Array.from(resolves)
+      resolves.clear()
+      const exit = Result.toExit(result)
+      fns.forEach((resolve) => resolve(exit as any))
     }, { immediate: true }), [registry, rx, resolves])
   return React.useCallback((value) =>
     new Promise((resolve) => {
