@@ -1,5 +1,16 @@
 # @effect-rx/rx-react
 
+## 0.30.0
+
+### Minor Changes
+
+- [`b1cb351`](https://github.com/tim-smart/effect-rx/commit/b1cb351365cb3973f7ccca3b4618179eb86bbc0a) Thanks [@tim-smart](https://github.com/tim-smart)! - revert keepAlive removal
+
+### Patch Changes
+
+- Updated dependencies [[`b1cb351`](https://github.com/tim-smart/effect-rx/commit/b1cb351365cb3973f7ccca3b4618179eb86bbc0a)]:
+  - @effect-rx/rx@0.33.0
+
 ## 0.29.0
 
 ### Minor Changes
