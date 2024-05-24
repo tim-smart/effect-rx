@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.33.1
+
+### Patch Changes
+
+- [`e79420d`](https://github.com/tim-smart/effect-rx/commit/e79420db3af5e3aa0ce8329941501d51ba1ff960) Thanks [@tim-smart](https://github.com/tim-smart)! - derive timeout resolution based on defaultIdleTTL
+
 ## 0.33.0
 
 ### Minor Changes
