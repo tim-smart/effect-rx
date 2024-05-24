@@ -34,7 +34,7 @@ export * as Rx from "@effect-rx/rx/Rx"
 export * as RxRef from "@effect-rx/rx/RxRef"
 
 function scheduleTask(f: () => void): void {
-  Scheduler.unstable_scheduleCallback(Scheduler.unstable_IdlePriority, f)
+  Scheduler.unstable_scheduleCallback(Scheduler.unstable_LowPriority, f)
 }
 
 /**
@@ -43,7 +43,7 @@ function scheduleTask(f: () => void): void {
  */
 export const RegistryContext = React.createContext<Registry.Registry>(Registry.make({
   scheduleTask,
-  defaultIdleTTL: 150
+  defaultIdleTTL: 250
 }))
 
 interface RxStore<A> {
