@@ -14,6 +14,7 @@ import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
+import { hasProperty } from "effect/Predicate"
 import * as Runtime from "effect/Runtime"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
@@ -40,11 +41,11 @@ export type TypeId = typeof TypeId
  */
 export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
-  readonly keepAlive: boolean
+  readonly autoDispose: boolean
+  readonly idleTTL?: number
   readonly read: Rx.Read<A>
   readonly refresh?: Rx.Refresh
   readonly label?: readonly [name: string, stack: string]
-  readonly idleTTL?: number
 }
 
 /**
@@ -241,7 +242,8 @@ const RxProto = {
   toJSON(this: Rx<any>) {
     return {
       _id: "Rx",
-      keepAlive: this.keepAlive,
+      autoDispose: this.autoDispose,
+      idleTTL: this.idleTTL,
       label: this.label
     }
   },
@@ -296,40 +298,44 @@ const RxRuntimeProto = {
         Result.initial(true),
         runtimeResult.value
       )
-    })
+    }).pipe(autoDispose())
     return makeStreamPull(pullRx as any, options)
   },
 
   subscriptionRef(this: RxRuntime<any, any>, arg: any) {
-    return makeSubRef(readable((get) => {
-      const previous = get.self<Result.Result<any, any>>()
-      const runtimeResult = get(this)
-      if (runtimeResult._tag !== "Success") {
-        return Result.replacePrevious(runtimeResult, previous)
-      }
-      return makeEffect(
-        get,
-        arg,
-        Result.initial(true),
-        runtimeResult.value
-      )
-    }))
+    return makeSubRef(autoDispose(
+      readable((get) => {
+        const previous = get.self<Result.Result<any, any>>()
+        const runtimeResult = get(this)
+        if (runtimeResult._tag !== "Success") {
+          return Result.replacePrevious(runtimeResult, previous)
+        }
+        return makeEffect(
+          get,
+          arg,
+          Result.initial(true),
+          runtimeResult.value
+        )
+      })
+    ) as any)
   },
 
   subscribable(this: RxRuntime<any, any>, arg: any) {
-    return makeSubscribable(readable((get) => {
-      const previous = get.self<Result.Result<any, any>>()
-      const runtimeResult = get(this)
-      if (runtimeResult._tag !== "Success") {
-        return Result.replacePrevious(runtimeResult, previous)
-      }
-      return makeEffect(
-        get,
-        arg,
-        Result.initial(true),
-        runtimeResult.value
-      )
-    }))
+    return makeSubscribable(autoDispose(
+      readable((get) => {
+        const previous = get.self<Result.Result<any, any>>()
+        const runtimeResult = get(this)
+        if (runtimeResult._tag !== "Success") {
+          return Result.replacePrevious(runtimeResult, previous)
+        }
+        return makeEffect(
+          get,
+          arg,
+          Result.initial(true),
+          runtimeResult.value
+        )
+      })
+    ) as any)
   }
 }
 
@@ -353,7 +359,7 @@ export const readable = <A>(
   refresh?: Rx.Refresh
 ): Rx<A> => {
   const rx = Object.create(RxProto)
-  rx.keepAlive = false
+  rx.autoDispose = false
   rx.read = read
   rx.refresh = refresh
   return rx
@@ -369,7 +375,7 @@ export const writable = <R, W>(
   refresh?: Rx.Refresh
 ): Writable<R, W> => {
   const rx = Object.create(WritableProto)
-  rx.keepAlive = false
+  rx.autoDispose = false
   rx.read = read
   rx.write = write
   rx.refresh = refresh
@@ -410,6 +416,23 @@ export const make: {
   }
   return readable(readOrRx)
 }
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const autoDispose: {
+  (idleTTL?: Duration.DurationInput | undefined): <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, idleTTL?: Duration.DurationInput | undefined): A
+} = dual(
+  (args) => hasProperty(args[0], TypeId),
+  <A extends Rx<any>>(self: A, idleTTL?: Duration.DurationInput | undefined): A =>
+    Object.assign(Object.create(Object.getPrototypeOf(self)), {
+      ...self,
+      autoDispose: true,
+      idleTTL: idleTTL !== undefined ? Duration.toMillis(idleTTL) : undefined
+    })
+)
 
 // -----------------------------------------------------------------------------
 // constructors - effect
@@ -584,13 +607,13 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
 export const context: () => <R, E>(
   create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>
 ) => RxRuntime<R, E> = () => {
-  const memoMapRx = make(Layer.makeMemoMap)
+  const memoMapRx = make(Layer.makeMemoMap).pipe(autoDispose())
   return <E, R>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>): RxRuntime<R, E> => {
     const rx = Object.create(RxRuntimeProto)
-    rx.keepAlive = false
+    rx.autoDispose = false
     rx.refresh = undefined
 
-    const layerRx = keepAlive(typeof create === "function" ? readable(create) : readable(() => create))
+    const layerRx = typeof create === "function" ? readable(create) : readable(() => create)
     rx.layer = layerRx
 
     rx.read = function read(get: Context) {
@@ -730,16 +753,18 @@ export const subscriptionRef: {
     | Effect.Effect<SubscriptionRef.SubscriptionRef<any>, any, never>
     | Rx.Read<Effect.Effect<SubscriptionRef.SubscriptionRef<any>, any, never>>
 ) =>
-  makeSubRef(readable((get) => {
-    let value: SubscriptionRef.SubscriptionRef<any> | Effect.Effect<SubscriptionRef.SubscriptionRef<any>, any, any>
-    if (typeof ref === "function") {
-      value = ref(get)
-    } else {
-      value = ref
-    }
+  makeSubRef(
+    readable((get) => {
+      let value: SubscriptionRef.SubscriptionRef<any> | Effect.Effect<SubscriptionRef.SubscriptionRef<any>, any, any>
+      if (typeof ref === "function") {
+        value = ref(get)
+      } else {
+        value = ref
+      }
 
-    return Effect.isEffect(value) ? makeEffect(get, value, Result.initial(true)) : value
-  }))
+      return Effect.isEffect(value) ? makeEffect(get, value, Result.initial(true)) : value
+    }).pipe(autoDispose())
+  )
 
 // -----------------------------------------------------------------------------
 // constructors - subscribable
@@ -767,7 +792,7 @@ export const subscribable: {
     | Effect.Effect<Subscribable.Subscribable<any, any>, any, never>
     | Rx.Read<Effect.Effect<Subscribable.Subscribable<any, any>, any, never>>
 ) =>
-  makeSubscribable(readable((get) => {
+  makeSubscribable(autoDispose(readable((get) => {
     let value: Subscribable.Subscribable<any, any> | Effect.Effect<Subscribable.Subscribable<any, any>, any, any>
     if (typeof ref === "function") {
       value = ref(get)
@@ -776,7 +801,7 @@ export const subscribable: {
     }
 
     return Effect.isEffect(value) ? makeEffect(get, value, Result.initial(true)) : value
-  }))
+  })))
 
 // -----------------------------------------------------------------------------
 // constructors - functions
@@ -797,7 +822,7 @@ export const fnSync: {
 } = <Arg, A>(f: Rx.ReadFn<Arg, A>, options?: {
   readonly initialValue?: A
 }): Writable<Option.Option<A> | A, RxResultFn.ArgToVoid<Arg>> => {
-  const argRx = state<[number, Arg]>([0, undefined as any])
+  const argRx = state<[number, Arg]>([0, undefined as any]).pipe(autoDispose())
   const hasInitialValue = options?.initialValue !== undefined
   return writable(function(get) {
     const [counter, arg] = get(argRx)
@@ -860,7 +885,7 @@ function makeResultFn<Arg, E, A>(
   f: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope> | Stream.Stream<A, E>>,
   options?: { readonly initialValue?: A }
 ) {
-  const argRx = state<[number, Arg]>([0, undefined as any])
+  const argRx = state<[number, Arg]>([0, undefined as any]).pipe(autoDispose())
   const initialValue = options?.initialValue !== undefined
     ? Result.success<A, E>(options.initialValue)
     : Result.initial<A, E>()
@@ -907,7 +932,7 @@ export const pull = <A, E>(create: Rx.Read<Stream.Stream<A, E>> | Stream.Stream<
     makeRead(function(get) {
       return makeStreamPullEffect(get, create, options)
     })
-  )
+  ).pipe(autoDispose())
   return makeStreamPull(pullRx, options)
 }
 
@@ -1056,7 +1081,7 @@ export const withFallback: {
     }
     return result
   }
-  return isWritable(self)
+  const rx = isWritable(self)
     ? writable(
       withFallback,
       self.write,
@@ -1070,17 +1095,8 @@ export const withFallback: {
         refresh(self)
       }
     ) as any
+  return self.autoDispose ? autoDispose(rx, self.idleTTL) : rx
 })
-
-/**
- * @since 1.0.0
- * @category combinators
- */
-export const keepAlive = <A extends Rx<any>>(self: A): A =>
-  Object.assign(Object.create(Object.getPrototypeOf(self)), {
-    ...self,
-    keepAlive: true
-  })
 
 /**
  * @since 1.0.0
@@ -1114,23 +1130,7 @@ export const withLabel: {
  * @since 1.0.0
  * @category combinators
  */
-export const setIdleTTL: {
-  (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => A
-  <A extends Rx<any>>(self: A, duration: Duration.DurationInput): A
-} = dual<
-  (duration: Duration.DurationInput) => <A extends Rx<any>>(self: A) => A,
-  <A extends Rx<any>>(self: A, duration: Duration.DurationInput) => A
->(2, (self, duration) =>
-  Object.assign(Object.create(Object.getPrototypeOf(self)), {
-    ...self,
-    idleTTL: Duration.toMillis(duration)
-  }))
-
-/**
- * @since 1.0.0
- * @category combinators
- */
-export const initialValue: {
+export const toInitialValue: {
   <A>(initialValue: A): (self: Rx<A>) => readonly [Rx<A>, A]
   <A>(self: Rx<A>, initialValue: A): readonly [Rx<A>, A]
 } = dual<
@@ -1152,8 +1152,8 @@ export const transform: {
   ): [R] extends [Writable<infer _, infer RW>] ? Writable<B, RW> : Rx<B>
 } = dual(
   2,
-  (<A, B>(self: Rx<A>, f: (get: Context) => B): Rx<B> =>
-    isWritable(self)
+  (<A, B>(self: Rx<A>, f: (get: Context) => B): Rx<B> => {
+    const rx = isWritable(self)
       ? writable(
         f,
         function(ctx, value) {
@@ -1168,7 +1168,9 @@ export const transform: {
         self.refresh ?? function(refresh) {
           refresh(self)
         }
-      )) as any
+      )
+    return self.autoDispose ? autoDispose(rx, self.idleTTL) : rx
+  }) as any
 )
 
 /**
