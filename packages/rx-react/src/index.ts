@@ -42,7 +42,8 @@ function scheduleTask(f: () => void): void {
  * @category context
  */
 export const RegistryContext = React.createContext<Registry.Registry>(Registry.make({
-  scheduleTask
+  scheduleTask,
+  defaultIdleTTL: 150
 }))
 
 interface RxStore<A> {

@@ -630,16 +630,14 @@ describe("Rx", () => {
   })
 
   it("idleTTL", async () => {
-    const state = Rx.make(0).pipe(
-      Rx.setIdleTTL(2000)
-    )
+    const state = Rx.make(0)
     const state2 = Rx.make(0).pipe(
       Rx.setIdleTTL(10000)
     )
     const state3 = Rx.make(0).pipe(
       Rx.setIdleTTL(3000)
     )
-    const r = Registry.make()
+    const r = Registry.make({ defaultIdleTTL: 2000 })
     r.set(state, 10)
     r.set(state2, 10)
     r.set(state3, 10)

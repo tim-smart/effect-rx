@@ -21,11 +21,13 @@ export const make = (options?: {
   readonly initialValues?: Iterable<readonly [Rx.Rx<any>, any]> | undefined
   readonly scheduleTask?: ((f: () => void) => void) | undefined
   readonly timeoutResolution?: number | undefined
+  readonly defaultIdleTTL?: number | undefined
 }): Registry.Registry =>
   new RegistryImpl(
     options?.initialValues,
     options?.scheduleTask,
-    options?.timeoutResolution
+    options?.timeoutResolution,
+    options?.defaultIdleTTL
   )
 
 class RegistryImpl implements Registry.Registry {
@@ -33,7 +35,8 @@ class RegistryImpl implements Registry.Registry {
   constructor(
     initialValues?: Iterable<readonly [Rx.Rx<any>, any]>,
     readonly scheduleTask = queueMicrotask,
-    readonly timeoutResolution = 5000
+    readonly timeoutResolution = 5000,
+    readonly defaultIdleTTL?: number
   ) {
     this[TypeId] = TypeId
     if (initialValues !== undefined) {
@@ -89,7 +92,7 @@ class RegistryImpl implements Registry.Registry {
     if (node === undefined) {
       node = this.createNode(rx)
       this.nodes.set(rx, node)
-    } else if (!rx.keepAlive && rx.idleTTL) {
+    } else if (!rx.keepAlive && (rx.idleTTL || this.defaultIdleTTL)) {
       this.removeNodeTimeout(node)
     }
     return node
@@ -128,7 +131,7 @@ class RegistryImpl implements Registry.Registry {
   }
 
   removeNode(node: Node<any>): void {
-    if (node.rx.idleTTL) {
+    if (!node.rx.keepAlive && (node.rx.idleTTL || this.defaultIdleTTL)) {
       this.setNodeTimeout(node)
     } else {
       this.nodes.delete(node.rx)
@@ -141,7 +144,8 @@ class RegistryImpl implements Registry.Registry {
       return
     }
 
-    const ttl = Math.ceil(node.rx.idleTTL! / this.timeoutResolution) * this.timeoutResolution
+    const idleTTL = node.rx.idleTTL ?? this.defaultIdleTTL!
+    const ttl = Math.ceil(idleTTL! / this.timeoutResolution) * this.timeoutResolution
     const timestamp = Date.now() + ttl
     const bucket = timestamp - (timestamp % this.timeoutResolution) + this.timeoutResolution
 
