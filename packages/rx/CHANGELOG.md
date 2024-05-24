@@ -1,5 +1,13 @@
 # @effect-rx/rx
 
+## 0.32.0
+
+### Minor Changes
+
+- [`e5bc861`](https://github.com/tim-smart/effect-rx/commit/e5bc8617c044415a1f015c0fb4ebcc7a1d764cfe) Thanks [@tim-smart](https://github.com/tim-smart)! - if an Rx has no finilizers, use lazy calculation
+
+- [`e5bc861`](https://github.com/tim-smart/effect-rx/commit/e5bc8617c044415a1f015c0fb4ebcc7a1d764cfe) Thanks [@tim-smart](https://github.com/tim-smart)! - replace keepAlive with autoDispose
+
 ## 0.31.3
 
 ### Patch Changes
