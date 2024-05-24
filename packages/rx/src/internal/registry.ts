@@ -32,13 +32,20 @@ export const make = (options?: {
 
 class RegistryImpl implements Registry.Registry {
   readonly [TypeId]: Registry.TypeId
+  readonly timeoutResolution: number
+
   constructor(
     initialValues?: Iterable<readonly [Rx.Rx<any>, any]>,
     readonly scheduleTask = queueMicrotask,
-    readonly timeoutResolution = 5000,
+    timeoutResolution?: number,
     readonly defaultIdleTTL?: number
   ) {
     this[TypeId] = TypeId
+    if (timeoutResolution === undefined && defaultIdleTTL !== undefined) {
+      this.timeoutResolution = Math.round(defaultIdleTTL / 2)
+    } else {
+      this.timeoutResolution = timeoutResolution ?? 1000
+    }
     if (initialValues !== undefined) {
       for (const [rx, value] of initialValues) {
         this.ensureNode(rx).setValue(value)
@@ -144,7 +151,15 @@ class RegistryImpl implements Registry.Registry {
       return
     }
 
-    const idleTTL = node.rx.idleTTL ?? this.defaultIdleTTL!
+    let idleTTL = node.rx.idleTTL ?? this.defaultIdleTTL!
+    if (this.#currentSweepTTL !== null) {
+      idleTTL -= this.#currentSweepTTL
+      if (idleTTL <= 0) {
+        this.nodes.delete(node.rx)
+        node.remove()
+        return
+      }
+    }
     const ttl = Math.ceil(idleTTL! / this.timeoutResolution) * this.timeoutResolution
     const timestamp = Date.now() + ttl
     const bucket = timestamp - (timestamp % this.timeoutResolution) + this.timeoutResolution
@@ -177,6 +192,7 @@ class RegistryImpl implements Registry.Registry {
     }
   }
 
+  #currentSweepTTL: number | null = null
   sweepBucket(bucket: number): void {
     const nodes = this.timeoutBuckets.get(bucket)![0]
     this.timeoutBuckets.delete(bucket)
@@ -187,7 +203,9 @@ class RegistryImpl implements Registry.Registry {
       }
       this.nodeTimeoutBucket.delete(node)
       this.nodes.delete(node.rx)
+      this.#currentSweepTTL = node.rx.idleTTL ?? this.defaultIdleTTL!
       node.remove()
+      this.#currentSweepTTL = null
     })
   }
 
