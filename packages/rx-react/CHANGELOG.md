@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.30.2
+
+### Patch Changes
+
+- [`c2ab87c`](https://github.com/tim-smart/effect-rx/commit/c2ab87c1234ee6dcbe066ec682fa9daf26a7b8ce) Thanks [@tim-smart](https://github.com/tim-smart)! - change react defaultIdleTTL to 250ms
+
 ## 0.30.1
 
 ### Patch Changes
