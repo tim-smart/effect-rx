@@ -33,7 +33,7 @@ class RegistryImpl implements Registry.Registry {
   constructor(
     initialValues?: Iterable<readonly [Rx.Rx<any>, any]>,
     readonly scheduleTask = queueMicrotask,
-    readonly timeoutResolution = 1000
+    readonly timeoutResolution = 5000
   ) {
     this[TypeId] = TypeId
     if (initialValues !== undefined) {
@@ -43,7 +43,7 @@ class RegistryImpl implements Registry.Registry {
     }
   }
 
-  private readonly nodes = new WeakMap<Rx.Rx<any>, Node<any>>()
+  private readonly nodes = new Map<Rx.Rx<any>, Node<any>>()
   private readonly timeoutBuckets = new Map<number, readonly [nodes: Set<Node<any>>, handle: number]>()
   private readonly nodeTimeoutBucket = new Map<Node<any>, number>()
   private disposed = false
@@ -89,7 +89,7 @@ class RegistryImpl implements Registry.Registry {
     if (node === undefined) {
       node = this.createNode(rx)
       this.nodes.set(rx, node)
-    } else if (rx.autoDispose && rx.idleTTL) {
+    } else if (!rx.keepAlive && rx.idleTTL) {
       this.removeNodeTimeout(node)
     }
     return node
@@ -100,7 +100,7 @@ class RegistryImpl implements Registry.Registry {
       throw new Error(`Cannot access Rx ${rx}: registry is disposed`)
     }
 
-    if (rx.autoDispose) {
+    if (!rx.keepAlive) {
       this.scheduleRxRemoval(rx)
     }
     return new Node(this, rx)
@@ -186,17 +186,32 @@ class RegistryImpl implements Registry.Registry {
       node.remove()
     })
   }
+
+  reset(): void {
+    this.timeoutBuckets.forEach(([, handle]) => clearTimeout(handle))
+    this.timeoutBuckets.clear()
+    this.nodeTimeoutBucket.clear()
+
+    this.nodes.forEach((node) => node.remove())
+    this.nodes.clear()
+  }
+
+  dispose(): void {
+    this.disposed = true
+    this.reset()
+  }
 }
 
 const enum NodeFlags {
   alive = 1 << 0,
   initialized = 1 << 1,
-  waitingForValue = 1 << 2,
-  notified = 1 << 3
+  waitingForValue = 1 << 2
 }
 
 const enum NodeState {
   uninitialized = NodeFlags.alive | NodeFlags.waitingForValue,
+  stale = NodeFlags.alive | NodeFlags.initialized | NodeFlags.waitingForValue,
+  valid = NodeFlags.alive | NodeFlags.initialized,
   removed = 0
 }
 
@@ -218,17 +233,8 @@ class Node<A> {
   listeners: Array<() => void> = []
 
   get canBeRemoved(): boolean {
-    return this.rx.autoDispose && this.listeners.length === 0 && this.children.length === 0 &&
+    return !this.rx.keepAlive && this.listeners.length === 0 && this.children.length === 0 &&
       this.state !== 0
-  }
-
-  get debugFlags() {
-    return {
-      alive: (this.state & NodeFlags.alive) !== 0,
-      initialized: (this.state & NodeFlags.initialized) !== 0,
-      waitingForValue: (this.state & NodeFlags.waitingForValue) !== 0,
-      notified: (this.state & NodeFlags.notified) !== 0
-    }
   }
 
   _value: A = undefined as any
@@ -264,8 +270,7 @@ class Node<A> {
 
   setValue(value: A): void {
     if ((this.state & NodeFlags.initialized) === 0) {
-      this.state |= NodeFlags.initialized
-      this.state &= ~NodeFlags.waitingForValue
+      this.state = NodeState.valid
       this._value = value
 
       if (batchState.phase !== BatchPhase.collect) {
@@ -275,11 +280,10 @@ class Node<A> {
       return
     }
 
-    this.state &= ~NodeFlags.waitingForValue
+    this.state = NodeState.valid
     if (Equal.equals(this._value, value)) {
       return
     }
-    this.state &= ~NodeFlags.notified
 
     this._value = value
     this.invalidateChildren()
@@ -315,24 +319,16 @@ class Node<A> {
   }
 
   invalidate(): void {
-    const hadFinalizers = this.lifetime !== undefined && this.lifetime.hasFinalizers
-    if ((this.state & NodeFlags.waitingForValue) === 0) {
-      this.state |= NodeFlags.waitingForValue
+    if (this.state === NodeState.valid) {
+      this.state = NodeState.stale
       this.disposeLifetime()
     }
 
     if (batchState.phase === BatchPhase.collect) {
-      batchState.stale.push([this, hadFinalizers])
+      batchState.stale.push(this)
       this.invalidateChildren()
-      if (!hadFinalizers) {
-        this.state &= ~NodeFlags.notified
-      }
-    } else if (hadFinalizers) {
-      this.value()
     } else {
-      this.invalidateChildren()
-      this.state &= ~NodeFlags.notified
-      this.notify()
+      this.value()
     }
   }
 
@@ -349,10 +345,6 @@ class Node<A> {
   }
 
   notify(): void {
-    if ((this.state & NodeFlags.notified) !== 0) {
-      return
-    }
-    this.state |= NodeFlags.notified
     for (let i = 0; i < this.listeners.length; i++) {
       this.listeners[i]()
     }
@@ -408,7 +400,6 @@ class Node<A> {
 
 interface Lifetime<A> extends Rx.Context {
   readonly node: Node<A>
-  readonly hasFinalizers: boolean
   finalizers: Array<() => void> | undefined
   disposed: boolean
   readonly dispose: () => void
@@ -417,10 +408,6 @@ interface Lifetime<A> extends Rx.Context {
 const disposedError = (rx: Rx.Rx<any>): Error => new Error(`Cannot use context of disposed Rx: ${rx}`)
 
 const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
-  get hasFinalizers() {
-    return (this as Lifetime<any>).finalizers !== undefined && (this as Lifetime<any>).finalizers!.length !== 0
-  },
-
   addFinalizer(this: Lifetime<any>, f: () => void): void {
     if (this.disposed) {
       throw disposedError(this.node.rx)
@@ -667,7 +654,7 @@ export const enum BatchPhase {
 export const batchState = globalValue("@effect-rx/rx/Registry/batchState", () => ({
   phase: BatchPhase.disabled,
   depth: 0,
-  stale: [] as Array<[Node<any>, hadFinalizers: boolean]>
+  stale: [] as Array<Node<any>>
 }))
 
 /** @internal */
@@ -679,8 +666,7 @@ export function batch(f: () => void): void {
     if (batchState.depth === 1) {
       batchState.phase = BatchPhase.commit
       for (let i = 0; i < batchState.stale.length; i++) {
-        const [node, hadFinalizers] = batchState.stale[i]
-        batchRebuildNode(node, hadFinalizers)
+        batchRebuildNode(batchState.stale[i])
       }
     }
   } finally {
@@ -692,25 +678,20 @@ export function batch(f: () => void): void {
   }
 }
 
-function batchRebuildNode(node: Node<any>, hadFinalizers: boolean) {
-  if ((node.state & NodeFlags.waitingForValue) === 0) {
+function batchRebuildNode(node: Node<any>) {
+  if (node.state === NodeState.valid) {
     return
   }
 
   for (let i = 0; i < node.parents.length; i++) {
     const parent = node.parents[i]
-    if ((parent.state & NodeFlags.waitingForValue) === 0) {
-      batchRebuildNode(parent, false)
+    if (parent.state !== NodeState.valid) {
+      batchRebuildNode(parent)
     }
   }
 
   // @ts-ignore
-  if ((node.state & NodeFlags.waitingForValue) !== 0) {
-    if (hadFinalizers) {
-      node.value()
-    } else {
-      node.invalidateChildren()
-      node.notify()
-    }
+  if (node.state !== NodeState.valid) {
+    node.value()
   }
 }

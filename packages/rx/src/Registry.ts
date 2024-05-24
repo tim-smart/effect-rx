@@ -27,6 +27,8 @@ export interface Registry {
   readonly refresh: Rx.Rx.RefreshRxSync
   readonly set: Rx.Rx.Set
   readonly subscribe: Rx.Rx.Subscribe
+  readonly reset: () => void
+  readonly dispose: () => void
 }
 
 /**
