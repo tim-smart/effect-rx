@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.33.0
+
+### Minor Changes
+
+- [`b1cb351`](https://github.com/tim-smart/effect-rx/commit/b1cb351365cb3973f7ccca3b4618179eb86bbc0a) Thanks [@tim-smart](https://github.com/tim-smart)! - revert keepAlive removal
+
 ## 0.32.0
 
 ### Minor Changes
