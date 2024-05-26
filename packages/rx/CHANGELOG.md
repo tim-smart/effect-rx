@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.33.3
+
+### Patch Changes
+
+- [`145adb1`](https://github.com/tim-smart/effect-rx/commit/145adb10a727049cf5cf1e44d035032aa068d475) Thanks [@tim-smart](https://github.com/tim-smart)! - prevent interruption of runtime building
+
 ## 0.33.2
 
 ### Patch Changes
