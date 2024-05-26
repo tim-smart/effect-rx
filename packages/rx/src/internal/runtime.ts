@@ -32,25 +32,30 @@ const fastPath = <R, E, A>(effect: Effect.Effect<A, E, R>): Exit.Exit<A, E> | un
 }
 
 /** @internal */
-export const runCallbackSync =
-  <R>(runtime: Runtime.Runtime<R>) =>
-  <A, E>(effect: Effect.Effect<A, E, R>, onExit: (exit: Exit.Exit<A, E>) => void): (() => void) | undefined => {
-    const op = fastPath(effect)
-    if (op) {
-      onExit(op)
-      return undefined
-    }
-    const scheduler = new SyncScheduler()
-    const fiberRuntime = Runtime.runFork(runtime)(effect, { scheduler })
-    scheduler.flush()
-    const result = fiberRuntime.unsafePoll()
-    if (result) {
-      onExit(result)
-      return undefined
-    }
-    fiberRuntime.addObserver(onExit)
-    return function() {
-      fiberRuntime.removeObserver(onExit)
+export const runCallbackSync = <R>(runtime: Runtime.Runtime<R>) =>
+<A, E>(
+  effect: Effect.Effect<A, E, R>,
+  onExit: (exit: Exit.Exit<A, E>) => void,
+  uninterruptible = false
+): (() => void) | undefined => {
+  const op = fastPath(effect)
+  if (op) {
+    onExit(op)
+    return undefined
+  }
+  const scheduler = new SyncScheduler()
+  const fiberRuntime = Runtime.runFork(runtime)(effect, { scheduler })
+  scheduler.flush()
+  const result = fiberRuntime.unsafePoll()
+  if (result) {
+    onExit(result)
+    return undefined
+  }
+  fiberRuntime.addObserver(onExit)
+  return function() {
+    fiberRuntime.removeObserver(onExit)
+    if (!uninterruptible) {
       fiberRuntime.unsafeInterruptAsFork(FiberId.none)
     }
   }
+}

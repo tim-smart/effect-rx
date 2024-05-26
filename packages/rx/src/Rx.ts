@@ -22,6 +22,7 @@ import * as SubscriptionRef from "effect/SubscriptionRef"
 import * as internalRegistry from "./internal/registry.js"
 import { runCallbackSync } from "./internal/runtime.js"
 import * as Result from "./Result.js"
+
 /**
  * @since 1.0.0
  * @category type ids
@@ -486,20 +487,21 @@ const state = <A>(
 const effect = <A, E>(
   get: Context,
   effect: Effect.Effect<A, E, Scope.Scope>,
-  options?: { readonly initialValue?: A },
+  options?: { readonly initialValue?: A; readonly uninterruptible?: boolean },
   runtime?: Runtime.Runtime<any>
 ): Result.Result<A, E> => {
   const initialValue = options?.initialValue !== undefined
     ? Result.success<A, E>(options.initialValue)
     : Result.initial<A, E>()
-  return makeEffect(get, effect, initialValue, runtime)
+  return makeEffect(get, effect, initialValue, runtime, options?.uninterruptible)
 }
 
 function makeEffect<A, E>(
   ctx: Context,
   effect: Effect.Effect<A, E, Scope.Scope>,
   initialValue: Result.Result<A, E>,
-  runtime = Runtime.defaultRuntime
+  runtime = Runtime.defaultRuntime,
+  uninterruptible = false
 ): Result.Result<A, E> {
   const previous = ctx.self<Result.Result<A, E>>()
 
@@ -512,7 +514,8 @@ function makeEffect<A, E>(
     scopedEffect,
     function(exit) {
       ctx.setSelfSync(Result.fromExitWithPrevious(exit, previous))
-    }
+    },
+    uninterruptible
   )
   if (cancel !== undefined) {
     ctx.addFinalizer(cancel)
@@ -604,7 +607,7 @@ export const context: () => <R, E>(
         Effect.flatMap(Effect.scope, (scope) => Layer.buildWithMemoMap(layer, memoMap, scope)),
         (context) => Effect.provide(Effect.runtime<R>(), context)
       )
-      return effect(get, build)
+      return effect(get, build, { uninterruptible: true })
     }
 
     return rx
