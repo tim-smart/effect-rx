@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.30.3
+
+### Patch Changes
+
+- [`9c27399`](https://github.com/tim-smart/effect-rx/commit/9c273992b419a1fb76c32539d68279e07e42d4c9) Thanks [@tim-smart](https://github.com/tim-smart)! - increase react default idle time to 400ms
+
 ## 0.30.2
 
 ### Patch Changes
