@@ -94,12 +94,16 @@ class RegistryImpl implements Registry.Registry {
     return this.subscribe(rx, constListener, constImmediate)
   }
 
+  rxHasTTL(rx: Rx.Rx<any>): boolean {
+    return !rx.keepAlive && rx.idleTTL !== 0 && (rx.idleTTL !== undefined || this.defaultIdleTTL !== undefined)
+  }
+
   ensureNode<A>(rx: Rx.Rx<A>): Node<A> {
     let node = this.nodes.get(rx)
     if (node === undefined) {
       node = this.createNode(rx)
       this.nodes.set(rx, node)
-    } else if (!rx.keepAlive && (rx.idleTTL || this.defaultIdleTTL)) {
+    } else if (this.rxHasTTL(rx)) {
       this.removeNodeTimeout(node)
     }
     return node
@@ -138,7 +142,7 @@ class RegistryImpl implements Registry.Registry {
   }
 
   removeNode(node: Node<any>): void {
-    if (!node.rx.keepAlive && (node.rx.idleTTL || this.defaultIdleTTL)) {
+    if (this.rxHasTTL(node.rx)) {
       this.setNodeTimeout(node)
     } else {
       this.nodes.delete(node.rx)

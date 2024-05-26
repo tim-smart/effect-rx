@@ -4,6 +4,7 @@
 import { NoSuchElementException } from "effect/Cause"
 import type * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
+import * as FiberId from "effect/FiberId"
 import * as Runtime from "effect/Runtime"
 import { SyncScheduler } from "effect/Scheduler"
 
@@ -50,6 +51,6 @@ export const runCallbackSync =
     fiberRuntime.addObserver(onExit)
     return function() {
       fiberRuntime.removeObserver(onExit)
-      fiberRuntime.unsafeInterruptAsFork(fiberRuntime.id())
+      fiberRuntime.unsafeInterruptAsFork(FiberId.none)
     }
   }
