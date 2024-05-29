@@ -4,6 +4,7 @@
 import * as Cause from "effect/Cause"
 import * as Data from "effect/Data"
 import * as Exit from "effect/Exit"
+import type { LazyArg, LazyArg } from "effect/Function"
 import { dual, identity } from "effect/Function"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
@@ -265,6 +266,15 @@ export const value = <A, E>(self: Result<A, E>): Option.Option<A> => {
   }
   return Option.none()
 }
+
+/**
+ * @since 1.0.0
+ * @category accessors
+ */
+export const getOrElse: {
+  <B>(orElse: LazyArg<B>): <A, E>(self: Result<A, E>) => A | B
+  <A, E, B>(self: Result<A, E>, orElse: LazyArg<B>): A | B
+} = dual(2, <A, E, B>(self: Result<A, E>, orElse: LazyArg<B>): A | B => self._tag === "Success" ? self.value : orElse())
 
 /**
  * @since 1.0.0
