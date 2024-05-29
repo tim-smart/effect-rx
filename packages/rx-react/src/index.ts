@@ -324,15 +324,21 @@ export const useRxSubscribe = <A>(
  * @category hooks
  */
 export const useRxRef = <A>(ref: RxRef.ReadonlyRef<A>): A => {
-  const [value, setValue] = React.useState(ref.value)
+  const [, setValue] = React.useState(ref.value)
   React.useEffect(() => ref.subscribe(setValue), [ref])
-  return value
+  return ref.value
 }
 
 /**
  * @since 1.0.0
  * @category hooks
  */
-export const useRxRefProp = <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K): RxRef.RxRef<A[K]> => {
-  return React.useMemo(() => ref.prop(prop), [ref, prop])
-}
+export const useRxRefProp = <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K): RxRef.RxRef<A[K]> =>
+  React.useMemo(() => ref.prop(prop), [ref, prop])
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
+export const useRxRefPropValue = <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K): A[K] =>
+  useRxRef(useRxRefProp(ref, prop))
