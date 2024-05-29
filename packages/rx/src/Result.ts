@@ -4,7 +4,7 @@
 import * as Cause from "effect/Cause"
 import * as Data from "effect/Data"
 import * as Exit from "effect/Exit"
-import type { LazyArg, LazyArg } from "effect/Function"
+import type { LazyArg } from "effect/Function"
 import { dual, identity } from "effect/Function"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"

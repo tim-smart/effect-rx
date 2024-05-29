@@ -35,6 +35,7 @@ export declare const make: (
         readonly initialValues?: Iterable<readonly [Rx.Rx<any>, any]> | undefined
         readonly scheduleTask?: ((f: () => void) => void) | undefined
         readonly timeoutResolution?: number | undefined
+        readonly defaultIdleTTL?: number | undefined
       }
     | undefined
 ) => Registry

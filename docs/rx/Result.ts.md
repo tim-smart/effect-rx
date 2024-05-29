@@ -14,6 +14,7 @@ Added in v1.0.0
 
 - [accessors](#accessors)
   - [cause](#cause)
+  - [getOrElse](#getorelse)
   - [value](#value)
 - [combinators](#combinators)
   - [map](#map)
@@ -61,6 +62,19 @@ Added in v1.0.0
 
 ```ts
 export declare const cause: <A, E>(self: Result<A, E>) => Option.Option<Cause.Cause<E>>
+```
+
+Added in v1.0.0
+
+## getOrElse
+
+**Signature**
+
+```ts
+export declare const getOrElse: {
+  <B>(orElse: LazyArg<B>): <A, E>(self: Result<A, E>) => B | A
+  <A, E, B>(self: Result<A, E>, orElse: LazyArg<B>): A | B
+}
 ```
 
 Added in v1.0.0

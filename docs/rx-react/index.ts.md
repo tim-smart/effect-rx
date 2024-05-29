@@ -19,6 +19,7 @@ Added in v1.0.0
   - [useRxMount](#userxmount)
   - [useRxRef](#userxref)
   - [useRxRefProp](#userxrefprop)
+  - [useRxRefPropValue](#userxrefpropvalue)
   - [useRxRefresh](#userxrefresh)
   - [useRxSet](#userxset)
   - [useRxSetPromise](#userxsetpromise)
@@ -86,6 +87,16 @@ Added in v1.0.0
 
 ```ts
 export declare const useRxRefProp: <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K) => RxRef.RxRef<A[K]>
+```
+
+Added in v1.0.0
+
+## useRxRefPropValue
+
+**Signature**
+
+```ts
+export declare const useRxRefPropValue: <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K) => A[K]
 ```
 
 Added in v1.0.0
