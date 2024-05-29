@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.30.6
+
+### Patch Changes
+
+- [`c1f8e85`](https://github.com/tim-smart/effect-rx/commit/c1f8e85fce11c5ad0793d4973d55e23049fddd20) Thanks [@tim-smart](https://github.com/tim-smart)! - useRxRefPropValue
+
 ## 0.30.5
 
 ### Patch Changes
