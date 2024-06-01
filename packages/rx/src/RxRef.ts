@@ -194,17 +194,29 @@ class PropRefImpl<A, K extends keyof A> implements RxRef<A[K]> {
     return new PropRefImpl(this, prop)
   }
   set(value: A[K]): RxRef<A[K]> {
-    this.parent.set({
-      ...this.parent.value,
-      [this._prop]: value
-    })
+    if (Array.isArray(this.parent.value)) {
+      const newArray = this.parent.value.slice()
+      newArray[this._prop as number] = value
+      this.parent.set(newArray as A)
+    } else {
+      this.parent.set({
+        ...this.parent.value,
+        [this._prop]: value
+      })
+    }
     return this
   }
   update(f: (value: A[K]) => A[K]): RxRef<A[K]> {
-    this.parent.set({
-      ...this.parent.value,
-      [this._prop]: f(this.parent.value[this._prop])
-    })
+    if (Array.isArray(this.parent.value)) {
+      const newArray = this.parent.value.slice()
+      newArray[this._prop as number] = f(this.parent.value[this._prop])
+      this.parent.set(newArray as A)
+    } else {
+      this.parent.set({
+        ...this.parent.value,
+        [this._prop]: f(this.parent.value[this._prop])
+      })
+    }
     return this
   }
 }
