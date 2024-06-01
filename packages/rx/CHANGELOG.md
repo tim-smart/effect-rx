@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.33.5
+
+### Patch Changes
+
+- [`919339f`](https://github.com/tim-smart/effect-rx/commit/919339fd4cb1ba9dd8f52e81047e7911fda98efd) Thanks [@tim-smart](https://github.com/tim-smart)! - support arrays in RxRef.prop
+
 ## 0.33.4
 
 ### Patch Changes
