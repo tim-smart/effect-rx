@@ -164,8 +164,10 @@ class MapRefImpl<A, B> implements ReadonlyRef<B> {
 class PropRefImpl<A, K extends keyof A> implements RxRef<A[K]> {
   readonly [TypeId]: TypeId
   readonly key = keyState.generate()
+  private previous: A[K]
   constructor(readonly parent: RxRef<A>, readonly _prop: K) {
     this[TypeId] = TypeId
+    this.previous = parent.value[_prop]
   }
   [Equal.symbol](that: Equal.Equal) {
     return Equal.equals(this.value, (that as ReadonlyRef<A>).value)
@@ -174,11 +176,17 @@ class PropRefImpl<A, K extends keyof A> implements RxRef<A[K]> {
     return Hash.hash(this.value)
   }
   get value() {
-    return this.parent.value[this._prop]
+    if (this.parent.value && this._prop in (this.parent.value as any)) {
+      this.previous = this.parent.value[this._prop]
+    }
+    return this.previous
   }
   subscribe(f: (a: A[K]) => void): () => void {
     let previous = this.value
     return this.parent.subscribe((a) => {
+      if (!a || !(this._prop in (a as any))) {
+        return
+      }
       const next = a[this._prop]
       if (Equal.equals(next, previous)) {
         return
