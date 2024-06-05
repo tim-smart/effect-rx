@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.33.6
+
+### Patch Changes
+
+- [`65974f0`](https://github.com/tim-smart/effect-rx/commit/65974f02bf19eb22b64b8aef8b76b95343269269) Thanks [@tim-smart](https://github.com/tim-smart)! - cache previous value in RxRef.prop
+
 ## 0.33.5
 
 ### Patch Changes
