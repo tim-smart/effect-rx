@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.33.7
+
+### Patch Changes
+
+- [`dbd8016`](https://github.com/tim-smart/effect-rx/commit/dbd8016be587acd166f4856953a73d080e67bc22) Thanks [@tim-smart](https://github.com/tim-smart)! - add more pattern matching apis to Result
+
 ## 0.33.6
 
 ### Patch Changes
