@@ -354,3 +354,82 @@ export const match: {
       return options.onSuccess(self)
   }
 })
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const matchRefined: {
+  <A, E, X, Y, Z>(options: {
+    readonly onInitial: (_: Initial<A, E>) => X
+    readonly onError: (error: E, _: Failure<A, E>) => Y
+    readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
+    readonly onSuccess: (_: Success<A, E>) => Z
+  }): (self: Result<A, E>) => X | Y | Z
+  <A, E, X, Y, Z>(self: Result<A, E>, options: {
+    readonly onInitial: (_: Initial<A, E>) => X
+    readonly onError: (error: E, _: Failure<A, E>) => Y
+    readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
+    readonly onSuccess: (_: Success<A, E>) => Z
+  }): X | Y | Z
+} = dual(2, <A, E, X, Y, Z>(self: Result<A, E>, options: {
+  readonly onInitial: (_: Initial<A, E>) => X
+  readonly onError: (error: E, _: Failure<A, E>) => Y
+  readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
+  readonly onSuccess: (_: Success<A, E>) => Z
+}): X | Y | Z => {
+  switch (self._tag) {
+    case "Initial":
+      return options.onInitial(self)
+    case "Failure": {
+      const e = Cause.failureOrCause(self.cause)
+      if (e._tag === "Right") {
+        return options.onDefect(Cause.squash(e.right), self)
+      }
+      return options.onError(e.left, self)
+    }
+    case "Success":
+      return options.onSuccess(self)
+  }
+})
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const matchRefinedWaiting: {
+  <A, E, X, Y, Z>(options: {
+    readonly onWaiting: (_: Result<A, E>) => X
+    readonly onError: (error: E, _: Failure<A, E>) => Y
+    readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
+    readonly onSuccess: (_: Success<A, E>) => Z
+  }): (self: Result<A, E>) => X | Y | Z
+  <A, E, X, Y, Z>(self: Result<A, E>, options: {
+    readonly onWaiting: (_: Result<A, E>) => X
+    readonly onError: (error: E, _: Failure<A, E>) => Y
+    readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
+    readonly onSuccess: (_: Success<A, E>) => Z
+  }): X | Y | Z
+} = dual(2, <A, E, X, Y, Z>(self: Result<A, E>, options: {
+  readonly onWaiting: (_: Result<A, E>) => X
+  readonly onError: (error: E, _: Failure<A, E>) => Y
+  readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
+  readonly onSuccess: (_: Success<A, E>) => Z
+}): X | Y | Z => {
+  if (self.waiting) {
+    return options.onWaiting(self)
+  }
+  switch (self._tag) {
+    case "Initial":
+      return options.onWaiting(self)
+    case "Failure": {
+      const e = Cause.failureOrCause(self.cause)
+      if (e._tag === "Right") {
+        return options.onDefect(Cause.squash(e.right), self)
+      }
+      return options.onError(e.left, self)
+    }
+    case "Success":
+      return options.onSuccess(self)
+  }
+})
