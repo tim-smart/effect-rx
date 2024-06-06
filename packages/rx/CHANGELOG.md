@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.33.8
+
+### Patch Changes
+
+- [`af598a2`](https://github.com/tim-smart/effect-rx/commit/af598a2d410f48e1de9f87dcfe42a49e0592227a) Thanks [@tim-smart](https://github.com/tim-smart)! - rename Result.matchRefined to matchWithError
+
 ## 0.33.7
 
 ### Patch Changes
