@@ -19,6 +19,8 @@ Added in v1.0.0
 - [combinators](#combinators)
   - [map](#map)
   - [match](#match)
+  - [matchWithError](#matchwitherror)
+  - [matchWithWaiting](#matchwithwaiting)
   - [toExit](#toexit)
 - [constructors](#constructors)
   - [fail](#fail)
@@ -123,6 +125,58 @@ export declare const match: {
       readonly onSuccess: (_: Success<A, E>) => Z
     }
   ): X | Y | Z
+}
+```
+
+Added in v1.0.0
+
+## matchWithError
+
+**Signature**
+
+```ts
+export declare const matchWithError: {
+  <A, E, W, X, Y, Z>(options: {
+    readonly onInitial: (_: Initial<A, E>) => W
+    readonly onError: (error: E, _: Failure<A, E>) => X
+    readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
+    readonly onSuccess: (_: Success<A, E>) => Z
+  }): (self: Result<A, E>) => W | X | Y | Z
+  <A, E, W, X, Y, Z>(
+    self: Result<A, E>,
+    options: {
+      readonly onInitial: (_: Initial<A, E>) => W
+      readonly onError: (error: E, _: Failure<A, E>) => X
+      readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
+      readonly onSuccess: (_: Success<A, E>) => Z
+    }
+  ): W | X | Y | Z
+}
+```
+
+Added in v1.0.0
+
+## matchWithWaiting
+
+**Signature**
+
+```ts
+export declare const matchWithWaiting: {
+  <A, E, W, X, Y, Z>(options: {
+    readonly onWaiting: (_: Result<A, E>) => W
+    readonly onError: (error: E, _: Failure<A, E>) => X
+    readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
+    readonly onSuccess: (_: Success<A, E>) => Z
+  }): (self: Result<A, E>) => W | X | Y | Z
+  <A, E, W, X, Y, Z>(
+    self: Result<A, E>,
+    options: {
+      readonly onWaiting: (_: Result<A, E>) => W
+      readonly onError: (error: E, _: Failure<A, E>) => X
+      readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
+      readonly onSuccess: (_: Success<A, E>) => Z
+    }
+  ): W | X | Y | Z
 }
 ```
 

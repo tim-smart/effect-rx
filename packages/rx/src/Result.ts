@@ -359,25 +359,25 @@ export const match: {
  * @since 1.0.0
  * @category combinators
  */
-export const matchRefined: {
-  <A, E, X, Y, Z>(options: {
-    readonly onInitial: (_: Initial<A, E>) => X
-    readonly onError: (error: E, _: Failure<A, E>) => Y
+export const matchWithError: {
+  <A, E, W, X, Y, Z>(options: {
+    readonly onInitial: (_: Initial<A, E>) => W
+    readonly onError: (error: E, _: Failure<A, E>) => X
     readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
     readonly onSuccess: (_: Success<A, E>) => Z
-  }): (self: Result<A, E>) => X | Y | Z
-  <A, E, X, Y, Z>(self: Result<A, E>, options: {
-    readonly onInitial: (_: Initial<A, E>) => X
-    readonly onError: (error: E, _: Failure<A, E>) => Y
+  }): (self: Result<A, E>) => W | X | Y | Z
+  <A, E, W, X, Y, Z>(self: Result<A, E>, options: {
+    readonly onInitial: (_: Initial<A, E>) => W
+    readonly onError: (error: E, _: Failure<A, E>) => X
     readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
     readonly onSuccess: (_: Success<A, E>) => Z
-  }): X | Y | Z
-} = dual(2, <A, E, X, Y, Z>(self: Result<A, E>, options: {
-  readonly onInitial: (_: Initial<A, E>) => X
-  readonly onError: (error: E, _: Failure<A, E>) => Y
+  }): W | X | Y | Z
+} = dual(2, <A, E, W, X, Y, Z>(self: Result<A, E>, options: {
+  readonly onInitial: (_: Initial<A, E>) => W
+  readonly onError: (error: E, _: Failure<A, E>) => X
   readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
   readonly onSuccess: (_: Success<A, E>) => Z
-}): X | Y | Z => {
+}): W | X | Y | Z => {
   switch (self._tag) {
     case "Initial":
       return options.onInitial(self)
@@ -397,25 +397,25 @@ export const matchRefined: {
  * @since 1.0.0
  * @category combinators
  */
-export const matchRefinedWaiting: {
-  <A, E, X, Y, Z>(options: {
-    readonly onWaiting: (_: Result<A, E>) => X
-    readonly onError: (error: E, _: Failure<A, E>) => Y
+export const matchWithWaiting: {
+  <A, E, W, X, Y, Z>(options: {
+    readonly onWaiting: (_: Result<A, E>) => W
+    readonly onError: (error: E, _: Failure<A, E>) => X
     readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
     readonly onSuccess: (_: Success<A, E>) => Z
-  }): (self: Result<A, E>) => X | Y | Z
-  <A, E, X, Y, Z>(self: Result<A, E>, options: {
-    readonly onWaiting: (_: Result<A, E>) => X
-    readonly onError: (error: E, _: Failure<A, E>) => Y
+  }): (self: Result<A, E>) => W | X | Y | Z
+  <A, E, W, X, Y, Z>(self: Result<A, E>, options: {
+    readonly onWaiting: (_: Result<A, E>) => W
+    readonly onError: (error: E, _: Failure<A, E>) => X
     readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
     readonly onSuccess: (_: Success<A, E>) => Z
-  }): X | Y | Z
-} = dual(2, <A, E, X, Y, Z>(self: Result<A, E>, options: {
-  readonly onWaiting: (_: Result<A, E>) => X
-  readonly onError: (error: E, _: Failure<A, E>) => Y
+  }): W | X | Y | Z
+} = dual(2, <A, E, W, X, Y, Z>(self: Result<A, E>, options: {
+  readonly onWaiting: (_: Result<A, E>) => W
+  readonly onError: (error: E, _: Failure<A, E>) => X
   readonly onDefect: (defect: unknown, _: Failure<A, E>) => Y
   readonly onSuccess: (_: Success<A, E>) => Z
-}): X | Y | Z => {
+}): W | X | Y | Z => {
   if (self.waiting) {
     return options.onWaiting(self)
   }
