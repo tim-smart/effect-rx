@@ -1,36 +1,20 @@
 {
   inputs = {
-    nixpkgs = {
-      url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    };
-
-    flake-utils = {
-      url = "github:numtide/flake-utils";
-    };
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
   };
-
-  outputs = {
-    self,
-    nixpkgs,
-    flake-utils,
-    ...
-  }:
-    flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-      node = pkgs.nodejs_22;
-      corepackEnable = pkgs.runCommand "corepack-enable" {} ''
-        mkdir -p $out/bin
-        ${node}/bin/corepack enable --install-directory $out/bin
-      '';
-    in {
-      formatter = pkgs.alejandra;
-      devShells = {
-        default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            node
-            corepackEnable
-          ];
-        };
+  outputs = {nixpkgs, ...}: let
+    forAllSystems = function:
+      nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed
+      (system: function nixpkgs.legacyPackages.${system});
+  in {
+    formatter = forAllSystems (pkgs: pkgs.alejandra);
+    devShells = forAllSystems (pkgs: {
+      default = pkgs.mkShell {
+        packages = with pkgs; [
+          corepack
+          nodejs_22
+        ];
       };
     });
+  };
 }
