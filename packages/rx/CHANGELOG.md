@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.33.9
+
+### Patch Changes
+
+- [`d35dc44`](https://github.com/tim-smart/effect-rx/commit/d35dc44aa628734aa86a97c1a9a4b43ab0207938) Thanks [@tim-smart](https://github.com/tim-smart)! - fix queueMicrotask usage in browsers
+
 ## 0.33.8
 
 ### Patch Changes

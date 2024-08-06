@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.30.12
+
+### Patch Changes
+
+- [`d35dc44`](https://github.com/tim-smart/effect-rx/commit/d35dc44aa628734aa86a97c1a9a4b43ab0207938) Thanks [@tim-smart](https://github.com/tim-smart)! - add useRxInitialValues hook
+
+- Updated dependencies [[`d35dc44`](https://github.com/tim-smart/effect-rx/commit/d35dc44aa628734aa86a97c1a9a4b43ab0207938)]:
+  - @effect-rx/rx@0.33.9
+
 ## 0.30.11
 
 ### Patch Changes
