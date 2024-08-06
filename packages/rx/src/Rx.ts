@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 /**
  * @since 1.0.0
  */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { NoSuchElementException } from "effect/Cause"
 import * as Chunk from "effect/Chunk"
 import * as Duration from "effect/Duration"

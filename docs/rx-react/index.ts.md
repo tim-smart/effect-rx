@@ -16,6 +16,7 @@ Added in v1.0.0
   - [RegistryContext](#registrycontext)
 - [hooks](#hooks)
   - [useRx](#userx)
+  - [useRxInitialValues](#userxinitialvalues)
   - [useRxMount](#userxmount)
   - [useRxRef](#userxref)
   - [useRxRefProp](#userxrefprop)
@@ -57,6 +58,16 @@ Added in v1.0.0
 export declare const useRx: <R, W>(
   rx: Rx.Writable<R, W>
 ) => readonly [value: R, setOrUpdate: (_: W | ((_: R) => W)) => void]
+```
+
+Added in v1.0.0
+
+## useRxInitialValues
+
+**Signature**
+
+```ts
+export declare const useRxInitialValues: (initialValues: Iterable<readonly [Rx.Rx<any>, any]>) => void
 ```
 
 Added in v1.0.0
