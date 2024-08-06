@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 /**
  * @since 1.0.0
  */
@@ -1232,7 +1233,7 @@ export const debounce: {
         get.setSelfSync(get.once(self))
       }
       get.addFinalizer(function() {
-        timeout && clearTimeout(timeout)
+        if (timeout) clearTimeout(timeout)
       })
       get.subscribe(self, function(val) {
         value = val
