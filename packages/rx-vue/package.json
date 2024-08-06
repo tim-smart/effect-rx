@@ -21,7 +21,7 @@
   "keywords": [],
   "author": "Effect contributors",
   "license": "MIT",
-  "sideEffects": false,
+  "sideEffects": [],
   "devDependencies": {
     "effect": "^3.6.1",
     "vue": "^3.4.35"

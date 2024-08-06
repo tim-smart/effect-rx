@@ -21,7 +21,7 @@
   "keywords": [],
   "author": "Effect contributors",
   "license": "MIT",
-  "sideEffects": false,
+  "sideEffects": [],
   "devDependencies": {
     "@types/react": "^18.3.3",
     "@types/scheduler": "^0.23.0",
