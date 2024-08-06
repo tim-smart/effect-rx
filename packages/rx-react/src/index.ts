@@ -83,6 +83,30 @@ function useStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): A {
   return React.useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot)
 }
 
+const initialValuesSet = globalValue(
+  "@effect-rx/rx-react/initialValuesSet",
+  () => new WeakMap<Registry.Registry, WeakSet<Rx.Rx<any>>>()
+)
+
+/**
+ * @since 1.0.0
+ * @category hooks
+ */
+export const useRxInitialValues = (initialValues: Iterable<readonly [Rx.Rx<any>, any]>): void => {
+  const registry = React.useContext(RegistryContext)
+  let set = initialValuesSet.get(registry)
+  if (set === undefined) {
+    set = new WeakSet()
+    initialValuesSet.set(registry, set)
+  }
+  for (const [rx, value] of initialValues) {
+    if (!set.has(rx)) {
+      set.add(rx)
+      ;(registry as any).ensureNode(rx).setValue(value)
+    }
+  }
+}
+
 /**
  * @since 1.0.0
  * @category hooks

@@ -36,7 +36,7 @@ class RegistryImpl implements Registry.Registry {
 
   constructor(
     initialValues?: Iterable<readonly [Rx.Rx<any>, any]>,
-    readonly scheduleTask = queueMicrotask,
+    readonly scheduleTask = (cb: () => void): void => queueMicrotask(cb),
     timeoutResolution?: number,
     readonly defaultIdleTTL?: number
   ) {
