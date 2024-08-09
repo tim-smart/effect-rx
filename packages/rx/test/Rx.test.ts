@@ -783,6 +783,16 @@ describe("Rx", () => {
     unmount()
   })
 
+  it("Subscribable effect", async () => {
+    vitest.useRealTimers()
+    const sub = Subscribable.make({ get: Effect.succeed(123), changes: Stream.succeed(123) })
+    const rx = Rx.subscribable(Effect.succeed(sub))
+    const r = Registry.make()
+    const unmount = r.mount(rx)
+    assert.deepStrictEqual(r.get(rx), Result.success(123))
+    unmount()
+  })
+
   it("Subscribable/SubscriptionRef", async () => {
     vitest.useRealTimers()
     const ref = SubscriptionRef.make(123).pipe(Effect.runSync)

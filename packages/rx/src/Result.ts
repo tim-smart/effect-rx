@@ -280,6 +280,17 @@ export const getOrElse: {
  * @since 1.0.0
  * @category accessors
  */
+export const getOrThrow = <A, E>(self: Result<A, E>): A => {
+  if (self._tag === "Success") {
+    return self.value
+  }
+  throw new Error("Result.getOrThrow: called on a Failure")
+}
+
+/**
+ * @since 1.0.0
+ * @category accessors
+ */
 export const cause = <A, E>(self: Result<A, E>): Option.Option<Cause.Cause<E>> => {
   if (self._tag === "Failure") {
     return Option.some(self.cause)
