@@ -1,16 +1,18 @@
-import * as Fs from "node:fs";
-import * as Glob from "glob";
+import * as Glob from "glob"
+import * as Fs from "node:fs"
 
-[".", ...Glob.sync("packages/*")].forEach((pkg) => {
+const files = [".", ...Glob.sync("packages/*")]
+
+files.forEach((pkg) => {
   const files = [
     ...(pkg === "." ? [] : ["docs"]),
     ".tsbuildinfo",
     "build",
     "dist",
-    "coverage",
-  ];
+    "coverage"
+  ]
 
   files.forEach((file) => {
-    Fs.rmSync(`${pkg}/${file}`, { recursive: true, force: true }, () => {});
-  });
-});
+    Fs.rmSync(`${pkg}/${file}`, { recursive: true, force: true }, () => {})
+  })
+})
