@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.0
+
+### Minor Changes
+
+- [#156](https://github.com/tim-smart/effect-rx/pull/156) [`197170a`](https://github.com/tim-smart/effect-rx/commit/197170a30d442c4ea55bcc62823244955eba10bf) Thanks [@IMax153](https://github.com/IMax153)! - update to latest effect
+
 ## 0.33.10
 
 ### Patch Changes
