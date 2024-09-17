@@ -311,7 +311,9 @@ const RxRuntimeProto = {
           return Result.replacePrevious(runtimeResult, previous)
         }
         const value = typeof ref === "function" ? ref(get) : ref
-        return Effect.isEffect(value) ? makeEffect(get, value as any, Result.initial(true), runtimeResult.value) : value
+        return SubscriptionRef.SubscriptionRefTypeId in value
+          ? value
+          : makeEffect(get, value, Result.initial(true))
       }),
       (get, ref) => {
         const runtime = Result.getOrThrow(get(this))
@@ -328,10 +330,10 @@ const RxRuntimeProto = {
         return Result.replacePrevious(runtimeResult, previous)
       }
       const value = typeof arg === "function" ? arg(get) : arg
-      const sub = Effect.isEffect(value)
-        ? makeEffect(get, value as any, Result.initial(true), runtimeResult.value)
-        : value
-      return readSubscribable(get, sub, runtimeResult.value)
+      const sub = Subscribable.isSubscribable(value)
+        ? value
+        : makeEffect(get, value as any, Result.initial(true), runtimeResult.value)
+      return readSubscribable(get, sub as any, runtimeResult.value)
     })
   }
 }
@@ -755,7 +757,9 @@ export const subscriptionRef: {
   makeSubRef(
     readable((get) => {
       const value = typeof ref === "function" ? ref(get) : ref
-      return Effect.isEffect(value) ? makeEffect(get, value, Result.initial(true)) : value
+      return SubscriptionRef.SubscriptionRefTypeId in value
+        ? value
+        : makeEffect(get, value, Result.initial(true))
     }),
     readSubscribable
   )
@@ -784,7 +788,9 @@ export const subscribable: {
 ) =>
   readable((get) => {
     const value = typeof ref === "function" ? ref(get) : ref
-    const sub = Effect.isEffect(value) ? makeEffect(get, value, Result.initial(true)) : value
+    const sub = Subscribable.isSubscribable(value)
+      ? value
+      : makeEffect(get, value, Result.initial(true))
     return readSubscribable(get, sub)
   })
 
