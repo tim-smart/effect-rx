@@ -23,8 +23,8 @@
   "license": "MIT",
   "sideEffects": [],
   "devDependencies": {
-    "effect": "^3.8.0",
-    "vue": "^3.4.35"
+    "effect": "^3.9.1",
+    "vue": "^3.5.11"
   },
   "peerDependencies": {
     "effect": "^3.8.0",
