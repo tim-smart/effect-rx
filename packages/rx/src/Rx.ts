@@ -313,7 +313,7 @@ const RxRuntimeProto = {
         const value = typeof ref === "function" ? ref(get) : ref
         return SubscriptionRef.SubscriptionRefTypeId in value
           ? value
-          : makeEffect(get, value, Result.initial(true))
+          : makeEffect(get, value, Result.initial(true), runtimeResult.value)
       }),
       (get, ref) => {
         const runtime = Result.getOrThrow(get(this))
