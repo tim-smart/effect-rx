@@ -5,6 +5,7 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as FiberHandle from "effect/FiberHandle"
 import * as Hash from "effect/Hash"
+import * as Layer from "effect/Layer"
 import * as Mailbox from "effect/Mailbox"
 import * as PubSub from "effect/PubSub"
 import type { ReadonlyRecord } from "effect/Record"
@@ -25,7 +26,10 @@ export class Reactivity extends Context.Tag("@effect-rx/rx/Reactivity")<
  * @category constructors
  */
 export const make = Effect.gen(function*() {
-  const pubsub = yield* PubSub.unbounded<number>()
+  const pubsub = yield* Effect.acquireRelease(
+    PubSub.unbounded<number>(),
+    PubSub.shutdown
+  )
 
   const unsafeInvalidate = (keys: ReadonlyArray<unknown> | ReadonlyRecord<string, Array<unknown>>): void => {
     if (Array.isArray(keys)) {
@@ -93,6 +97,12 @@ export const make = Effect.gen(function*() {
 
   return Reactivity.of({ mutation, query, stream, unsafeInvalidate, invalidate })
 })
+
+/**
+ * @since 1.0.0
+ * @category layers
+ */
+export const layer: Layer.Layer<Reactivity> = Layer.scoped(Reactivity, make)
 
 /**
  * @since 1.0.0
