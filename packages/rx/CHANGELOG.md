@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.2
+
+### Patch Changes
+
+- [`a538303`](https://github.com/tim-smart/effect-rx/commit/a5383038039f125a03de4da212ade003c3fe511b) Thanks [@tim-smart](https://github.com/tim-smart)! - fix runtime.subscriptionRef missing service errors
+
 ## 0.34.1
 
 ### Patch Changes
