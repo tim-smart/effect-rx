@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.4
+
+### Patch Changes
+
+- [`06acdc7`](https://github.com/tim-smart/effect-rx/commit/06acdc7d5fba950b39bcbf3c93b4d767788d1f1a) Thanks [@tim-smart](https://github.com/tim-smart)! - expose Reativity layer
+
 ## 0.34.3
 
 ### Patch Changes
