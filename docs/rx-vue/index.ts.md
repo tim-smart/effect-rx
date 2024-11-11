@@ -36,7 +36,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRx: <R, W>(rx: Rx.Writable<R, W>) => readonly [Readonly<Ref<R, R>>, (_: W) => void]
+export declare const useRx: <R, W>(rx: Rx.Writable<R, W>) => readonly [Readonly<Ref<R>>, (_: W) => void]
 ```
 
 Added in v1.0.0
@@ -46,7 +46,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRxRef: <A>(rxRef: RxRef.ReadonlyRef<A>) => Readonly<Ref<A, A>>
+export declare const useRxRef: <A>(rxRef: RxRef.ReadonlyRef<A>) => Readonly<Ref<A>>
 ```
 
 Added in v1.0.0
@@ -66,7 +66,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRxValue: <A>(rx: Rx.Rx<A>) => Readonly<Ref<A, A>>
+export declare const useRxValue: <A>(rx: Rx.Rx<A>) => Readonly<Ref<A>>
 ```
 
 Added in v1.0.0

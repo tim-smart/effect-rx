@@ -1,6 +1,11 @@
 /**
  * @since 1.0.0
  */
+export * as Reactivity from "./Reactivity.js"
+
+/**
+ * @since 1.0.0
+ */
 export * as Registry from "./Registry.js"
 
 /**

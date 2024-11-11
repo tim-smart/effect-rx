@@ -1,6 +1,6 @@
 ---
 title: Rx.ts
-nav_order: 4
+nav_order: 5
 parent: "@effect-rx/rx"
 ---
 
@@ -226,14 +226,14 @@ export declare const withFallback: {
   ): <R extends Rx<Result.Result<any, any>>>(
     self: R
   ) => [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<A2 | Result.Result.InferA<Rx.Infer<R>>, E2 | Result.Result.InferE<Rx.Infer<R>>>, RW>
-    : Rx<Result.Result<A2 | Result.Result.InferA<Rx.Infer<R>>, E2 | Result.Result.InferE<Rx.Infer<R>>>>
+    ? Writable<Result.Result<Result.Result.InferA<Rx.Infer<R>> | A2, Result.Result.InferE<Rx.Infer<R>> | E2>, RW>
+    : Rx<Result.Result<Result.Result.InferA<Rx.Infer<R>> | A2, Result.Result.InferE<Rx.Infer<R>> | E2>>
   <R extends Rx<Result.Result<any, any>>, A2, E2>(
     self: R,
     fallback: Rx<Result.Result<A2, E2>>
   ): [R] extends [Writable<infer _, infer RW>]
-    ? Writable<Result.Result<A2 | Result.Result.InferA<Rx.Infer<R>>, E2 | Result.Result.InferE<Rx.Infer<R>>>, RW>
-    : Rx<Result.Result<A2 | Result.Result.InferA<Rx.Infer<R>>, E2 | Result.Result.InferE<Rx.Infer<R>>>>
+    ? Writable<Result.Result<Result.Result.InferA<Rx.Infer<R>> | A2, Result.Result.InferE<Rx.Infer<R>> | E2>, RW>
+    : Rx<Result.Result<Result.Result.InferA<Rx.Infer<R>> | A2, Result.Result.InferE<Rx.Infer<R>> | E2>>
 }
 ```
 
@@ -259,9 +259,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const context: () => <R, E>(
-  create: Layer.Layer<R, E, never> | Rx.Read<Layer.Layer<R, E, never>>
-) => RxRuntime<R, E>
+export declare const context: () => <R, E>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>) => RxRuntime<R, E>
 ```
 
 Added in v1.0.0
@@ -284,12 +282,12 @@ Added in v1.0.0
 export declare const fn: {
   <Arg, E, A>(
     fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope>>,
-    options?: { readonly initialValue?: A | undefined } | undefined
+    options?: { readonly initialValue?: A }
   ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
   <Arg, E, A>(
-    fn: Rx.ReadFn<Arg, Stream.Stream<A, E, never>>,
-    options?: { readonly initialValue?: A | undefined } | undefined
-  ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, NoSuchElementException | E>
+    fn: Rx.ReadFn<Arg, Stream.Stream<A, E>>,
+    options?: { readonly initialValue?: A }
+  ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
 }
 ```
 
@@ -314,22 +312,13 @@ Added in v1.0.0
 
 ```ts
 export declare const make: {
-  <A, E>(
-    effect: Effect.Effect<A, E, Scope.Scope>,
-    options?: { readonly initialValue?: A | undefined } | undefined
-  ): Rx<Result.Result<A, E>>
+  <A, E>(effect: Effect.Effect<A, E, Scope.Scope>, options?: { readonly initialValue?: A }): Rx<Result.Result<A, E>>
   <A, E>(
     create: Rx.Read<Effect.Effect<A, E, Scope.Scope>>,
-    options?: { readonly initialValue?: A | undefined } | undefined
+    options?: { readonly initialValue?: A }
   ): Rx<Result.Result<A, E>>
-  <A, E>(
-    stream: Stream.Stream<A, E, never>,
-    options?: { readonly initialValue?: A | undefined } | undefined
-  ): Rx<Result.Result<A, E>>
-  <A, E>(
-    create: Rx.Read<Stream.Stream<A, E, never>>,
-    options?: { readonly initialValue?: A | undefined } | undefined
-  ): Rx<Result.Result<A, E>>
+  <A, E>(stream: Stream.Stream<A, E>, options?: { readonly initialValue?: A }): Rx<Result.Result<A, E>>
+  <A, E>(create: Rx.Read<Stream.Stream<A, E>>, options?: { readonly initialValue?: A }): Rx<Result.Result<A, E>>
   <A>(create: Rx.Read<A>): Rx<A>
   <A>(initialValue: A): Writable<A, A>
 }
@@ -343,10 +332,8 @@ Added in v1.0.0
 
 ```ts
 export declare const pull: <A, E>(
-  create: Stream.Stream<A, E, never> | Rx.Read<Stream.Stream<A, E, never>>,
-  options?:
-    | { readonly disableAccumulation?: boolean | undefined; readonly initialValue?: readonly A[] | undefined }
-    | undefined
+  create: Rx.Read<Stream.Stream<A, E>> | Stream.Stream<A, E>,
+  options?: { readonly disableAccumulation?: boolean; readonly initialValue?: ReadonlyArray<A> }
 ) => Writable<PullResult<A, E>, void>
 ```
 
@@ -368,12 +355,12 @@ Added in v1.0.0
 
 ```ts
 export declare const subscribable: {
-  <A, E>(ref: Subscribable.Subscribable<A, E, never> | Rx.Read<Subscribable.Subscribable<A, E, never>>): Rx<A>
+  <A, E>(ref: Subscribable.Subscribable<A, E> | Rx.Read<Subscribable.Subscribable<A, E>>): Rx<A>
   <A, E, E1>(
     effect:
-      | Effect.Effect<Subscribable.Subscribable<A, E1, never>, E, never>
-      | Rx.Read<Effect.Effect<Subscribable.Subscribable<A, E1, never>, E, never>>
-  ): Rx<A>
+      | Effect.Effect<Subscribable.Subscribable<A, E1>, E, never>
+      | Rx.Read<Effect.Effect<Subscribable.Subscribable<A, E1>, E, never>>
+  ): Rx<Result.Result<A, E | E1>>
 }
 ```
 
@@ -476,9 +463,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const runtime: <R, E>(
-  create: Layer.Layer<R, E, never> | Rx.Read<Layer.Layer<R, E, never>>
-) => RxRuntime<R, E>
+export declare const runtime: <R, E>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>) => RxRuntime<R, E>
 ```
 
 Added in v1.0.0

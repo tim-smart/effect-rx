@@ -1,6 +1,6 @@
 ---
 title: Result.ts
-nav_order: 3
+nav_order: 4
 parent: "@effect-rx/rx"
 ---
 
@@ -15,6 +15,7 @@ Added in v1.0.0
 - [accessors](#accessors)
   - [cause](#cause)
   - [getOrElse](#getorelse)
+  - [getOrThrow](#getorthrow)
   - [value](#value)
 - [combinators](#combinators)
   - [map](#map)
@@ -74,9 +75,19 @@ Added in v1.0.0
 
 ```ts
 export declare const getOrElse: {
-  <B>(orElse: LazyArg<B>): <A, E>(self: Result<A, E>) => B | A
+  <B>(orElse: LazyArg<B>): <A, E>(self: Result<A, E>) => A | B
   <A, E, B>(self: Result<A, E>, orElse: LazyArg<B>): A | B
 }
+```
+
+Added in v1.0.0
+
+## getOrThrow
+
+**Signature**
+
+```ts
+export declare const getOrThrow: <A, E>(self: Result<A, E>) => A
 ```
 
 Added in v1.0.0
@@ -187,7 +198,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const toExit: <A, E>(self: Result<A, E>) => Exit.Exit<A, Cause.NoSuchElementException | E>
+export declare const toExit: <A, E>(self: Result<A, E>) => Exit.Exit<A, E | Cause.NoSuchElementException>
 ```
 
 Added in v1.0.0
@@ -199,11 +210,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const fail: <A, E>(
-  error: E,
-  previousData?: Option.Option<A> | undefined,
-  waiting?: boolean
-) => Failure<A, E>
+export declare const fail: <A, E>(error: E, previousData?: Option.Option<A>, waiting?: boolean) => Failure<A, E>
 ```
 
 Added in v1.0.0
