@@ -12,11 +12,6 @@ import { getCurrentScope, inject, onScopeDispose, ref } from "vue"
  * @since 1.0.0
  * @category modules
  */
-export * as Reactivity from "@effect-rx/rx/Reactivity"
-/**
- * @since 1.0.0
- * @category modules
- */
 export * as Registry from "@effect-rx/rx/Registry"
 /**
  * @since 1.0.0

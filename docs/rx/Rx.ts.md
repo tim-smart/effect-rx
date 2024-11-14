@@ -1,6 +1,6 @@
 ---
 title: Rx.ts
-nav_order: 5
+nav_order: 4
 parent: "@effect-rx/rx"
 ---
 

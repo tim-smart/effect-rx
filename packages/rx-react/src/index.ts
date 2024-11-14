@@ -15,11 +15,6 @@ import * as Scheduler from "scheduler"
  * @since 1.0.0
  * @category modules
  */
-export * as Reactivity from "@effect-rx/rx/Reactivity"
-/**
- * @since 1.0.0
- * @category modules
- */
 export * as Registry from "@effect-rx/rx/Registry"
 /**
  * @since 1.0.0
