@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.31.5
+
+### Patch Changes
+
+- [`51cec3c`](https://github.com/tim-smart/effect-rx/commit/51cec3c1dbcd7736ec6300f9a84649ae5d1a337a) Thanks [@tim-smart](https://github.com/tim-smart)! - Reactivity moved to @effect/experimental
+
+- Updated dependencies [[`51cec3c`](https://github.com/tim-smart/effect-rx/commit/51cec3c1dbcd7736ec6300f9a84649ae5d1a337a)]:
+  - @effect-rx/rx@0.34.5
+
 ## 0.31.4
 
 ### Patch Changes
