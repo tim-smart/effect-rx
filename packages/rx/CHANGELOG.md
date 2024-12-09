@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.6
+
+### Patch Changes
+
+- [`3198244`](https://github.com/tim-smart/effect-rx/commit/31982442cd6491fe3568f64758b204fadbb63625) Thanks [@tim-smart](https://github.com/tim-smart)! - use Channel for stream rx
+
 ## 0.34.5
 
 ### Patch Changes
