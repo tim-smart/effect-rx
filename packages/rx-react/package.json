@@ -31,7 +31,7 @@
   },
   "peerDependencies": {
     "effect": "^3.8.0",
-    "react": "^18",
+    "react": ">=18 <20",
     "scheduler": "*"
   },
   "dependencies": {
