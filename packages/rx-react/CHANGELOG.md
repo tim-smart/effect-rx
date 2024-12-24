@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.31.7
+
+### Patch Changes
+
+- [#165](https://github.com/tim-smart/effect-rx/pull/165) [`f2e9e28`](https://github.com/tim-smart/effect-rx/commit/f2e9e28692a9baf86ebcb47aed5e904111018625) Thanks [@boar-is](https://github.com/boar-is)! - Added support for React 19
+
 ## 0.31.6
 
 ### Patch Changes
