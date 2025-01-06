@@ -1026,23 +1026,23 @@ export const family = typeof WeakRef === "undefined" || typeof FinalizationRegis
   <Arg, T extends object>(
     f: (arg: Arg) => T
   ): (arg: Arg) => T => {
-    let atoms = MutableHashMap.empty<Arg, T>()
+    const atoms = MutableHashMap.empty<Arg, T>()
     return function(arg) {
       const atomEntry = MutableHashMap.get(atoms, arg)
       if (atomEntry._tag === "Some") {
         return atomEntry.value
       }
       const newAtom = f(arg)
-      atoms = MutableHashMap.set(atoms, arg, newAtom)
+      MutableHashMap.set(atoms, arg, newAtom)
       return newAtom
     }
   } :
   <Arg, T extends object>(
     f: (arg: Arg) => T
   ): (arg: Arg) => T => {
-    let atoms = MutableHashMap.empty<Arg, WeakRef<T>>()
+    const atoms = MutableHashMap.empty<Arg, WeakRef<T>>()
     const registry = new FinalizationRegistry<Arg>((arg) => {
-      atoms = MutableHashMap.remove(atoms, arg)
+      MutableHashMap.remove(atoms, arg)
     })
     return function(arg) {
       const atomEntry = MutableHashMap.get(atoms, arg).pipe(
@@ -1053,7 +1053,7 @@ export const family = typeof WeakRef === "undefined" || typeof FinalizationRegis
         return atomEntry.value
       }
       const newAtom = f(arg)
-      atoms = MutableHashMap.set(atoms, arg, new WeakRef(newAtom))
+      MutableHashMap.set(atoms, arg, new WeakRef(newAtom))
       registry.register(newAtom, arg)
       return newAtom
     }
