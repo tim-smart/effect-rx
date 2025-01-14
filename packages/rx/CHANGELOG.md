@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.7
+
+### Patch Changes
+
+- [#168](https://github.com/tim-smart/effect-rx/pull/168) [`f2d2341`](https://github.com/tim-smart/effect-rx/commit/f2d2341ed35b66ea79e4cb7c940667f4abc9d689) Thanks [@jvliwanag](https://github.com/jvliwanag)! - fix: family returning same atom if same hash
+
 ## 0.34.6
 
 ### Patch Changes
