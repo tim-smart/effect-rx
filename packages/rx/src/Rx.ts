@@ -12,7 +12,6 @@ import * as Either from "effect/Either"
 import * as Exit from "effect/Exit"
 import { constVoid, dual, pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
-import * as Hash from "effect/Hash"
 import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
 import * as MutableHashMap from "effect/MutableHashMap"
@@ -1047,7 +1046,7 @@ export const family = typeof WeakRef === "undefined" || typeof FinalizationRegis
     return function(arg) {
       const atomEntry = MutableHashMap.get(atoms, arg).pipe(
         Option.flatMapNullable((ref) => ref.deref())
-      );
+      )
 
       if (atomEntry._tag === "Some") {
         return atomEntry.value
