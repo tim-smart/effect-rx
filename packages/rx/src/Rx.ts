@@ -12,9 +12,9 @@ import * as Either from "effect/Either"
 import * as Exit from "effect/Exit"
 import { constVoid, dual, pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
-import * as Hash from "effect/Hash"
 import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
+import * as MutableHashMap from "effect/MutableHashMap"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
 import * as Runtime from "effect/Runtime"
@@ -1025,34 +1025,35 @@ export const family = typeof WeakRef === "undefined" || typeof FinalizationRegis
   <Arg, T extends object>(
     f: (arg: Arg) => T
   ): (arg: Arg) => T => {
-    const atoms = new Map<number, T>()
+    const atoms = MutableHashMap.empty<Arg, T>()
     return function(arg) {
-      const hash = Hash.hash(arg)
-      const atom = atoms.get(hash)
-      if (atom !== undefined) {
-        return atom
+      const atomEntry = MutableHashMap.get(atoms, arg)
+      if (atomEntry._tag === "Some") {
+        return atomEntry.value
       }
       const newAtom = f(arg)
-      atoms.set(hash, newAtom)
+      MutableHashMap.set(atoms, arg, newAtom)
       return newAtom
     }
   } :
   <Arg, T extends object>(
     f: (arg: Arg) => T
   ): (arg: Arg) => T => {
-    const atoms = new Map<number, WeakRef<T>>()
-    const registry = new FinalizationRegistry<number>((hash) => {
-      atoms.delete(hash)
+    const atoms = MutableHashMap.empty<Arg, WeakRef<T>>()
+    const registry = new FinalizationRegistry<Arg>((arg) => {
+      MutableHashMap.remove(atoms, arg)
     })
     return function(arg) {
-      const hash = Hash.hash(arg)
-      const atom = atoms.get(hash)?.deref()
-      if (atom !== undefined) {
-        return atom
+      const atomEntry = MutableHashMap.get(atoms, arg).pipe(
+        Option.flatMapNullable((ref) => ref.deref())
+      )
+
+      if (atomEntry._tag === "Some") {
+        return atomEntry.value
       }
       const newAtom = f(arg)
-      atoms.set(hash, new WeakRef(newAtom))
-      registry.register(newAtom, hash)
+      MutableHashMap.set(atoms, arg, new WeakRef(newAtom))
+      registry.register(newAtom, arg)
       return newAtom
     }
   }
