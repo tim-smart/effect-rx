@@ -667,13 +667,12 @@ function makeStream<A, E>(
       })
     },
     onFailure(cause: Cause.Cause<E>) {
-      return Channel.suspend(() => {
+      return Channel.sync(() => {
         ctx.setSelfSync(Result.failureWithPrevious(cause, previous))
-        return Channel.void
       })
     },
     onDone(_done: unknown) {
-      return Channel.suspend(() => {
+      return Channel.sync(() => {
         pipe(
           ctx.self<Result.Result<A, E | NoSuchElementException>>(),
           Option.flatMap(Result.value),
@@ -682,7 +681,6 @@ function makeStream<A, E>(
             onSome: (a) => ctx.setSelfSync(Result.success(a))
           })
         )
-        return Channel.void
       })
     }
   })
