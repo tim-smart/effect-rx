@@ -14,6 +14,8 @@ Added in v1.0.0
 
 - [context](#context)
   - [RegistryContext](#registrycontext)
+  - [RegistryProvider](#registryprovider)
+  - [scheduleTask](#scheduletask)
 - [hooks](#hooks)
   - [useRx](#userx)
   - [useRxInitialValues](#userxinitialvalues)
@@ -44,6 +46,32 @@ Added in v1.0.0
 
 ```ts
 export declare const RegistryContext: React.Context<Registry.Registry>
+```
+
+Added in v1.0.0
+
+## RegistryProvider
+
+**Signature**
+
+```ts
+export declare const RegistryProvider: (options: {
+  readonly children?: React.ReactNode | undefined
+  readonly initialValues?: Iterable<readonly [Rx.Rx<any>, any]> | undefined
+  readonly scheduleTask?: ((f: () => void) => void) | undefined
+  readonly timeoutResolution?: number | undefined
+  readonly defaultIdleTTL?: number | undefined
+}) => React.FunctionComponentElement<React.ProviderProps<Registry.Registry>>
+```
+
+Added in v1.0.0
+
+## scheduleTask
+
+**Signature**
+
+```ts
+export declare function scheduleTask(f: () => void): void
 ```
 
 Added in v1.0.0
