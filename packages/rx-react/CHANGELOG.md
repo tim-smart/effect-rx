@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.31.9
+
+### Patch Changes
+
+- [`7fe70db`](https://github.com/tim-smart/effect-rx/commit/7fe70db47535ce42067b39b0a742bcbf7e983e66) Thanks [@tim-smart](https://github.com/tim-smart)! - add RegistryProvider
+
+- Updated dependencies [[`7fe70db`](https://github.com/tim-smart/effect-rx/commit/7fe70db47535ce42067b39b0a742bcbf7e983e66)]:
+  - @effect-rx/rx@0.34.8
+
 ## 0.31.8
 
 ### Patch Changes
