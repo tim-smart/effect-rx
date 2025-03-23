@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.9
+
+### Patch Changes
+
+- [`8e33546`](https://github.com/tim-smart/effect-rx/commit/8e33546eca20da9de5d4c8d58ab709fa92651f79) Thanks [@tim-smart](https://github.com/tim-smart)! - add get.someOnce & get.resultOnce to prevent rebuilds in mutations
+
 ## 0.34.8
 
 ### Patch Changes
