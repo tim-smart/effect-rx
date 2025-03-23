@@ -469,12 +469,48 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
     }
   },
 
+  resultOnce<A, E>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<A, E>>): Effect.Effect<A, E> {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
+    return Effect.async<A, E>((resume) => {
+      const result = this.once(rx)
+      if (result._tag !== "Initial") {
+        return resume(Result.toExit(result) as any)
+      }
+      const cancel = this.node.registry.subscribe(rx, (result) => {
+        if (result._tag === "Initial") return
+        cancel()
+        resume(Result.toExit(result) as any)
+      }, { immediate: false })
+      return Effect.sync(cancel)
+    })
+  },
+
   some<A>(this: Lifetime<any>, rx: Rx.Rx<Option.Option<A>>): Effect.Effect<A> {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
     const result = this.get(rx)
     return result._tag === "None" ? Effect.never : Effect.succeed(result.value)
+  },
+
+  someOnce<A>(this: Lifetime<any>, rx: Rx.Rx<Option.Option<A>>): Effect.Effect<A> {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
+    return Effect.async<A>((resume) => {
+      const result = this.once(rx)
+      if (Option.isSome(result)) {
+        return resume(Effect.succeed(result.value))
+      }
+      const cancel = this.node.registry.subscribe(rx, (result) => {
+        if (Option.isNone(result)) return
+        cancel()
+        resume(Effect.succeed(result.value))
+      }, { immediate: false })
+      return Effect.sync(cancel)
+    })
   },
 
   once<A>(this: Lifetime<any>, rx: Rx.Rx<A>): A {
