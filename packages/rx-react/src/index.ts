@@ -134,7 +134,11 @@ export const useRxInitialValues = (initialValues: Iterable<readonly [Rx.Rx<any>,
   for (const [rx, value] of initialValues) {
     if (!set.has(rx)) {
       set.add(rx)
-      ;(registry as any).ensureNode(rx).setValue(value)
+      if (Rx.isWritable(rx)) {
+        registry.set(rx, value)
+      } else {
+        ;(registry as any).ensureNode(rx).setValue(value)
+      }
     }
   }
 }
