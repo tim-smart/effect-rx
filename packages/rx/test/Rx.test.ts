@@ -81,6 +81,17 @@ describe("Rx", () => {
     expect(result.value).toEqual(10)
   })
 
+  it("test writeable initial value", async () => {
+    const count = Rx.fnSync<number, number>((x) => x, { initialValue: 0 })
+    const r = Registry.make({
+      initialValues: [Rx.initialValue(count, 10)]
+    })
+    const result = r.get(count)
+    expect(result).toEqual(10)
+    r.set(count, 20)
+    expect(r.get(count)).toEqual(20)
+  })
+
   it("runtime multiple", async () => {
     const buildCount = buildCounterRuntime.fn((_: void) => Effect.flatMap(BuildCounter, (_) => _.get))
     const count = counterRuntime.rx(Effect.flatMap(Counter, (_) => _.get))

@@ -9,6 +9,7 @@ import * as Stream from "effect/Stream"
 import type * as Registry from "../Registry.js"
 import * as Result from "../Result.js"
 import type * as Rx from "../Rx.js"
+import * as internalRx from "./rx.js"
 
 const constImmediate = { immediate: true }
 function constListener(_: any) {}
@@ -48,7 +49,11 @@ class RegistryImpl implements Registry.Registry {
     }
     if (initialValues !== undefined) {
       for (const [rx, value] of initialValues) {
-        this.ensureNode(rx).setValue(value)
+        if (internalRx.isWritable(rx)) {
+          this.set(rx, value)
+        } else {
+          this.ensureNode(rx).setValue(value)
+        }
       }
     }
   }

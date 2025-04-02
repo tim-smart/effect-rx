@@ -24,6 +24,7 @@ import * as Subscribable from "effect/Subscribable"
 import * as SubscriptionRef from "effect/SubscriptionRef"
 import * as internalRegistry from "./internal/registry.js"
 import { runCallbackSync } from "./internal/runtime.js"
+import * as internal from "./internal/rx.js"
 import * as Result from "./Result.js"
 
 /**
@@ -175,7 +176,7 @@ export interface Refreshable {
  * @since 1.0.0
  * @category type ids
  */
-export const WritableTypeId = Symbol.for("@effect-rx/rx/Rx/Writable")
+export const WritableTypeId: unique symbol = internal.WritableTypeId
 
 /**
  * @since 1.0.0
@@ -351,7 +352,7 @@ const WritableProto = {
  * @since 1.0.0
  * @category refinements
  */
-export const isWritable = <R, W>(rx: Rx<R>): rx is Writable<R, W> => WritableTypeId in rx
+export const isWritable = <R, W>(rx: Rx<R>): rx is Writable<R, W> => internal.isWritable(rx)
 
 /**
  * @since 1.0.0
