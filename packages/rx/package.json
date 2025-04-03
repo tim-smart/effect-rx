@@ -24,9 +24,9 @@
   "license": "MIT",
   "sideEffects": [],
   "devDependencies": {
-    "effect": "^3.9.2"
+    "effect": "^3.14.0"
   },
   "peerDependencies": {
-    "effect": "^3.8.0"
+    "effect": "^3.14.0"
   }
 }

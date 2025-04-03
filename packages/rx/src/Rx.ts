@@ -1097,7 +1097,7 @@ export const withFallback: {
       self.refresh ?? function(refresh) {
         refresh(self)
       }
-    )
+    ) as any
     : readable(
       withFallback,
       self.refresh ?? function(refresh) {
