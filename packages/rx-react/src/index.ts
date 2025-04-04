@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 /**
  * @since 1.0.0
  */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import * as Reactive from "@effect-rx/rx/Reactive"
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
