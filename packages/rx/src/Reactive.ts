@@ -63,7 +63,7 @@ export interface Subscribable<out A, out E> {
   subscribe(onResult: (result: Result.Result<A, E>) => void): () => void
 }
 
-export const defaultMemoMap = globalValue(
+const defaultMemoMap = globalValue(
   "@effect-rx/rx/Reactive/defaultMemoMap",
   () => Effect.runSync(Layer.makeMemoMap)
 )
