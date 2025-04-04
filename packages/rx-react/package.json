@@ -25,12 +25,12 @@
   "devDependencies": {
     "@types/react": "^18.3.11",
     "@types/scheduler": "^0.23.0",
-    "effect": "^3.9.2",
+    "effect": "^3.14.0",
     "react": "^18.3.1",
     "scheduler": "^0.23"
   },
   "peerDependencies": {
-    "effect": "^3.8.0",
+    "effect": "^3.14.0",
     "react": ">=18 <20",
     "scheduler": "*"
   },
