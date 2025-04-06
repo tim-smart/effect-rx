@@ -25,6 +25,7 @@ import * as Result from "./Result.js"
 export class Reactive extends Context.Tag("@effect-rx/rx/Reactive")<
   Reactive,
   {
+    disposed: boolean
     notify(): void
     emit(value: unknown): void
     addHandle(handle: Handle): void
@@ -120,12 +121,10 @@ export const toSubscribableWith = <R, ER>(
       setResult(Result.fromExitWithPrevious(exit, Option.some(result)))
     }
 
-    function emit(value: A) {
-      setResult(Result.success(value, true))
-    }
-
     function start() {
       scope = Effect.runSync(Scope.make())
+      currentScope = Effect.runSync(Scope.make())
+
       const initial = Effect.flatMap(
         build(scope, buildMemoMap),
         (context) => {
@@ -154,13 +153,21 @@ export const toSubscribableWith = <R, ER>(
 
           let cache: MutableHashMap.MutableHashMap<unknown, Effect.Effect<any, any>> | undefined
           reactive = {
+            disposed: false,
             notify() {
-              if (pending) return
+              if (pending || this.disposed) return
               pending = true
               queueMicrotask(run)
             },
-            emit,
+            emit(value: A) {
+              if (this.disposed) return
+              setResult(Result.success(value, true))
+            },
             addHandle(handle) {
+              if (this.disposed) {
+                queueMicrotask(() => handle.unsubscribe(reactive!))
+                return
+              }
               handles.push(handle)
             },
             cache<A, E, R>(key: unknown, effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, Exclude<R, Scope.Scope>> {
@@ -189,9 +196,8 @@ export const toSubscribableWith = <R, ER>(
             runtimeFlags: Runtime.defaultRuntime.runtimeFlags,
             fiberRefs: fiber.getFiberRefs()
           })
-          currentScope = Effect.runSync(Scope.make())
           const runCallback = runCallbackSync(runtime)
-          return Effect.provide(effect, Context.add(contextReactive, Scope.Scope, currentScope))
+          return Effect.provide(effect, Context.add(contextReactive, Scope.Scope, currentScope!))
         }
       )
 
@@ -216,6 +222,7 @@ export const toSubscribableWith = <R, ER>(
           callbacks.delete(onResult)
           if (callbacks.size > 0) return
           result = Result.initial(true)
+          reactive!.disposed = true
           if (cancel) cancel()
           Effect.runFork(Scope.close(currentScope!, Exit.void))
           cancel = currentScope = undefined
