@@ -2,11 +2,16 @@
  * @since 1.0.0
  */
 import * as Context from "effect/Context"
+import * as Data from "effect/Data"
+import * as Deferred from "effect/Deferred"
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Fiber from "effect/Fiber"
+import { dual } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Layer from "effect/Layer"
+import * as MutableHashMap from "effect/MutableHashMap"
 import * as Option from "effect/Option"
 import * as Runtime from "effect/Runtime"
 import * as Scope from "effect/Scope"
@@ -23,6 +28,7 @@ export class Reactive extends Context.Tag("@effect-rx/rx/Reactive")<
     notify(): void
     emit(value: unknown): void
     addHandle(handle: Handle): void
+    cache<A, E, R>(key: unknown, value: Effect.Effect<A, E, R>): Effect.Effect<A, E, Exclude<R, Scope.Scope>>
   }
 >() {
   /**
@@ -37,15 +43,27 @@ export class Reactive extends Context.Tag("@effect-rx/rx/Reactive")<
 }
 
 /**
+ * Immediately emits a value for the current reactive context.
+ *
  * @since 1.0.0
  * @category Reactive
  */
 export const emit = <A = unknown>(value: A): Effect.Effect<void, never, Reactive> =>
-  Effect.withFiberRuntime((fiber) => {
-    const reactive = fiber.currentContext.unsafeMap.get(Reactive.key) as Reactive["Type"]
+  Reactive.with((reactive) => {
     reactive.emit(value)
     return Effect.void
   })
+
+/**
+ * Cache an Effect for the lifetime of the current reactive context.
+ *
+ * @since 1.0.0
+ * @category Reactive
+ */
+export const cache =
+  (...key: ReadonlyArray<unknown>) =>
+  <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, Exclude<R, Scope.Scope> | Reactive> =>
+    Reactive.with((reactive) => reactive.cache(Data.array(key), effect))
 
 /**
  * @since 1.0.0
@@ -81,7 +99,6 @@ export const toSubscribableWith = <R, ER>(
   return <A, E>(effect: Effect.Effect<A, E, R | Reactive | Scope.Scope>): Subscribable<A, E | ER> => {
     let result: Result.Result<A, E | ER> = Result.initial(true)
     let waiting = false
-    let running = false
     const callbacks = new Set<(result: Result.Result<A, E | ER>) => void>()
     let scope: Scope.CloseableScope | undefined
     let cancel: (() => void) | undefined
@@ -99,13 +116,11 @@ export const toSubscribableWith = <R, ER>(
 
     function onExit(exit: Exit.Exit<A, E | ER>) {
       waiting = false
-      running = false
       cancel = undefined
       setResult(Result.fromExitWithPrevious(exit, Option.some(result)))
     }
 
     function emit(value: A) {
-      if (!running) return
       setResult(Result.success(value, true))
     }
 
@@ -124,7 +139,6 @@ export const toSubscribableWith = <R, ER>(
             const prevHandles = handles
             handles = []
             waiting = true
-            running = true
             currentScope = Effect.runSync(Scope.make())
             cancel = runCallback(Scope.extend(effect, currentScope), onExit)
 
@@ -138,6 +152,7 @@ export const toSubscribableWith = <R, ER>(
             }
           }
 
+          let cache: MutableHashMap.MutableHashMap<unknown, Effect.Effect<any, any>> | undefined
           reactive = {
             notify() {
               if (pending) return
@@ -147,6 +162,23 @@ export const toSubscribableWith = <R, ER>(
             emit,
             addHandle(handle) {
               handles.push(handle)
+            },
+            cache<A, E, R>(key: unknown, effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, Exclude<R, Scope.Scope>> {
+              return Effect.withFiberRuntime((fiber) => {
+                if (!cache) {
+                  cache = MutableHashMap.empty()
+                }
+                const maybeValue = MutableHashMap.get(cache, key)
+                if (Option.isSome(maybeValue)) {
+                  return maybeValue.value
+                }
+                const deferred = Deferred.unsafeMake<any, any>(fiber.id())
+                MutableHashMap.set(cache, key, Deferred.await(deferred))
+                return effect.pipe(
+                  Scope.extend(scope!),
+                  Effect.onExit((exit) => Deferred.done(deferred, exit))
+                )
+              })
             }
           }
 
@@ -164,7 +196,6 @@ export const toSubscribableWith = <R, ER>(
       )
 
       waiting = true
-      running = true
       cancel = runCallbackSync(Runtime.defaultRuntime)(initial, onExit)
     }
 
@@ -353,3 +384,60 @@ export const readable = <A, E, R>(
     })
   }
 }
+
+/**
+ * @since 1.0.0
+ * @category Layer
+ */
+export const layerTimeToLive: {
+  (duration: Duration.DurationInput): <A, E, R>(self: Layer.Layer<A, E, R>) => Layer.Layer<A, E, R>
+  <A, E, R>(self: Layer.Layer<A, E, R>, duration: Duration.DurationInput): Layer.Layer<A, E, R>
+} = dual(2, <A, E, R>(self: Layer.Layer<A, E, R>, duration: Duration.DurationInput): Layer.Layer<A, E, R> => {
+  const cache = new Map<Layer.MemoMap, {
+    readonly context: Context.Context<A>
+    readonly finalizer: Effect.Effect<void>
+    refCount: number
+    fiber: Fiber.Fiber<void> | undefined
+  }>()
+  const resolvedDuration = Duration.decode(duration)
+
+  return Layer.scopedContext(Effect.gen(function*() {
+    const context = yield* Effect.context<Scope.Scope>()
+    const memoMap = Context.get(context, Layer.CurrentMemoMap)
+    const layerScope = Context.get(context, Scope.Scope)
+
+    if (cache.has(memoMap)) {
+      const entry = cache.get(memoMap)!
+      if (entry.fiber) {
+        yield* Fiber.interrupt(entry.fiber)
+        entry.fiber = undefined
+      }
+      if (Duration.isFinite(resolvedDuration)) {
+        yield* Scope.addFinalizer(layerScope, entry.finalizer)
+        entry.refCount++
+      }
+      return entry.context
+    }
+
+    const childScope = yield* Scope.make()
+    const built = yield* Layer.buildWithMemoMap(self, memoMap, childScope)
+    const entry = {
+      context: built,
+      finalizer: Effect.sync(() => {
+        entry.refCount--
+        if (entry.refCount > 0) return
+        entry.fiber = Effect.runFork(Effect.flatMap(Effect.sleep(resolvedDuration), () => {
+          cache.delete(memoMap)
+          return Scope.close(childScope, Exit.void)
+        }))
+      }),
+      refCount: 1,
+      fiber: undefined as Fiber.Fiber<void> | undefined
+    }
+    if (Duration.isFinite(resolvedDuration)) {
+      yield* Scope.addFinalizer(layerScope, entry.finalizer)
+    }
+    cache.set(memoMap, entry)
+    return built
+  }))
+})
