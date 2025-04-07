@@ -9,7 +9,6 @@ import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Fiber from "effect/Fiber"
 import { dual } from "effect/Function"
-import { globalValue } from "effect/GlobalValue"
 import * as Layer from "effect/Layer"
 import * as MutableHashMap from "effect/MutableHashMap"
 import * as Option from "effect/Option"
@@ -17,6 +16,7 @@ import * as Runtime from "effect/Runtime"
 import * as Scope from "effect/Scope"
 import { runCallbackSync } from "./internal/runtime.js"
 import * as Result from "./Result.js"
+import * as Rx from "./Rx.js"
 
 /**
  * @since 1.0.0
@@ -25,7 +25,6 @@ import * as Result from "./Result.js"
 export class Reactive extends Context.Tag("@effect-rx/rx/Reactive")<
   Reactive,
   {
-    parentScope: Scope.Scope
     disposed: boolean
     notify(): void
     emit(value: unknown): void
@@ -83,11 +82,6 @@ export interface Subscribable<out A, out E> {
   subscribe(onResult: (result: Result.Result<A, E>) => void): () => void
 }
 
-const defaultMemoMap = globalValue(
-  "@effect-rx/rx/Reactive/defaultMemoMap",
-  () => Effect.runSync(Layer.makeMemoMap)
-)
-
 /**
  * @since 1.0.0
  * @category Subscribable
@@ -96,7 +90,7 @@ export const toSubscribableWith = <R, ER>(
   build: (scope: Scope.Scope, memoMap: Layer.MemoMap) => Effect.Effect<Context.Context<R>, ER>,
   memoMap?: Layer.MemoMap | undefined
 ) => {
-  const buildMemoMap = memoMap ?? defaultMemoMap
+  const buildMemoMap = memoMap ?? Rx.defaultMemoMap
 
   return <A, E>(effect: Effect.Effect<A, E, R | Reactive | Scope.Scope>): Subscribable<A, E | ER> => {
     let result: Result.Result<A, E | ER> = Result.initial(true)
@@ -154,7 +148,6 @@ export const toSubscribableWith = <R, ER>(
           let cache: MutableHashMap.MutableHashMap<unknown, Effect.Effect<any, any>> | undefined
           reactive = {
             disposed: false,
-            parentScope: scope!,
             notify() {
               if (pending || this.disposed) return
               pending = true

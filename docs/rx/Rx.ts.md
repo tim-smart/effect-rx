@@ -39,10 +39,12 @@ Added in v1.0.0
 - [context](#context-1)
   - [Context (interface)](#context-interface)
   - [WriteContext (interface)](#writecontext-interface)
+  - [defaultMemoMap](#defaultmemomap)
   - [runtime](#runtime)
 - [models](#models)
   - [PullResult (type alias)](#pullresult-type-alias)
   - [Refreshable (interface)](#refreshable-interface)
+  - [RuntimeFactory (interface)](#runtimefactory-interface)
   - [Rx (interface)](#rx-interface)
   - [Rx (namespace)](#rx-namespace)
     - [Get (type alias)](#get-type-alias)
@@ -259,7 +261,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const context: () => <R, E>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>) => RxRuntime<R, E>
+export declare const context: (options?: { readonly memoMap?: Layer.MemoMap | undefined }) => RuntimeFactory
 ```
 
 Added in v1.0.0
@@ -460,12 +462,22 @@ export interface WriteContext<A> {
 
 Added in v1.0.0
 
+## defaultMemoMap
+
+**Signature**
+
+```ts
+export declare const defaultMemoMap: Layer.MemoMap
+```
+
+Added in v1.0.0
+
 ## runtime
 
 **Signature**
 
 ```ts
-export declare const runtime: <R, E>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>) => RxRuntime<R, E>
+export declare const runtime: RuntimeFactory
 ```
 
 Added in v1.0.0
@@ -495,6 +507,19 @@ Added in v1.0.0
 ```ts
 export interface Refreshable {
   readonly [RefreshableTypeId]: RefreshableTypeId
+}
+```
+
+Added in v1.0.0
+
+## RuntimeFactory (interface)
+
+**Signature**
+
+```ts
+export interface RuntimeFactory {
+  <R, E>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>): RxRuntime<R, E>
+  readonly memoMap: Layer.MemoMap
 }
 ```
 
