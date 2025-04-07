@@ -1,6 +1,16 @@
 /**
  * @since 1.0.0
  */
+export * as Reactive from "./Reactive.js"
+
+/**
+ * @since 1.0.0
+ */
+export * as ReactiveRef from "./ReactiveRef.js"
+
+/**
+ * @since 1.0.0
+ */
 export * as Registry from "./Registry.js"
 
 /**

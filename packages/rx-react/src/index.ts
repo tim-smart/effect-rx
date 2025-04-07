@@ -1,13 +1,21 @@
 /**
  * @since 1.0.0
  */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+import * as Reactive from "@effect-rx/rx/Reactive"
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
 import type * as RxRef from "@effect-rx/rx/RxRef"
 import * as Cause from "effect/Cause"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
 import type * as Exit from "effect/Exit"
+import * as FiberSet from "effect/FiberSet"
+import { constNull } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
+import * as Layer from "effect/Layer"
+import type { Scope } from "effect/Scope"
 import * as React from "react"
 import * as Scheduler from "scheduler"
 
@@ -31,6 +39,16 @@ export * as Rx from "@effect-rx/rx/Rx"
  * @category modules
  */
 export * as RxRef from "@effect-rx/rx/RxRef"
+/**
+ * @since 1.0.0
+ * @category modules
+ */
+export * as Reactive from "@effect-rx/rx/Reactive"
+/**
+ * @since 1.0.0
+ * @category modules
+ */
+export * as ReactiveRef from "@effect-rx/rx/ReactiveRef"
 
 /**
  * @since 1.0.0
@@ -349,3 +367,157 @@ export const useRxRefProp = <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K)
  */
 export const useRxRefPropValue = <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K): A[K] =>
   useRxRef(useRxRefProp(ref, prop))
+
+/**
+ * @since 1.0.0
+ * @category Reactive
+ */
+export interface ReactiveComponent<Props extends Record<string, any>, R = never> {
+  (
+    props: Props & [R] extends [never] ? {
+        readonly context?: Context.Context<never> | undefined
+      } :
+      { readonly context: Context.Context<R> }
+  ): React.ReactNode
+
+  provide<AL, EL, RL>(layer: Layer.Layer<AL, EL, RL>): ReactiveComponent<Props, Exclude<R, AL> | RL>
+
+  render: Effect.Effect<(props: Props) => React.ReactNode, never, R | Reactive.Reactive>
+}
+
+const depsAreEqual = (a: ReadonlyArray<any>, b: ReadonlyArray<any>) => {
+  if (a.length !== b.length) {
+    return false
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (!Object.is(a[i], b[i])) {
+      return false
+    }
+  }
+  return true
+}
+
+const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options: {
+  readonly name: string
+  readonly build: (
+    props: Props,
+    emit: (_: React.ReactNode) => Effect.Effect<void, never, Reactive.Reactive>
+  ) => Effect.Effect<React.ReactNode, E, R>
+  readonly layer: Layer.Layer<never>
+  readonly onInitial: (props: Props) => React.ReactNode
+  readonly deps: (props: Props) => ReadonlyArray<any>
+}): ReactiveComponent<Props, R> => {
+  function ReactiveComponent(props: Props & { readonly context?: Context.Context<R> }) {
+    const [result, setResult] = React.useState<Result.Result<React.ReactNode, E>>(Result.initial(true))
+
+    const ref = React.useRef<{
+      readonly subscribable: Reactive.Subscribable<React.ReactNode, E>
+      previousDeps: ReadonlyArray<any>
+      cancel: () => void
+      timeout: number | undefined
+    }>(undefined as any)
+
+    const deps = options.deps(props)
+
+    if (ref.current === undefined || !depsAreEqual(ref.current.previousDeps, deps)) {
+      if (ref.current) {
+        ref.current.cancel()
+        if (ref.current.timeout !== undefined) {
+          clearTimeout(ref.current.timeout)
+          ref.current.timeout = undefined
+        }
+      }
+
+      const layer = props.context
+        ? Layer.provideMerge(options.layer, Layer.succeedContext(props.context))
+        : options.layer
+      const subscribable = Reactive.toSubscribable(layer)(
+        options.build(props, Reactive.emit) as Effect.Effect<React.ReactNode, E, Reactive.Reactive>
+      )
+      const cancel = subscribable.subscribe(setResult)
+      ref.current = {
+        subscribable,
+        cancel,
+        previousDeps: deps,
+        timeout: undefined
+      }
+    }
+
+    React.useEffect(() => {
+      if (ref.current.timeout !== undefined) {
+        clearTimeout(ref.current.timeout)
+        ref.current.timeout = undefined
+      }
+      return () => {
+        ref.current.timeout = setTimeout(ref.current.cancel, 100)
+      }
+    }, [ref.current])
+    if (result._tag === "Initial") {
+      return options.onInitial(props)
+    } else if (result._tag === "Failure") {
+      throw Cause.squash(result.cause)
+    }
+    return result.value
+  }
+  ReactiveComponent.displayName = options.name
+  ReactiveComponent.provide = function provide(layer: Layer.Layer<any, any, any>) {
+    return makeReactiveComponent({
+      ...options,
+      layer: options.layer === Layer.empty ? layer : Layer.provideMerge(options.layer, layer) as any
+    })
+  }
+  let renderCache: WeakMap<Scope, (props: Props) => React.ReactNode> | undefined
+  ReactiveComponent.render = Effect.contextWith((context: Context.Context<any>) => {
+    const reactive = Context.unsafeGet(context, Reactive.Reactive)
+    if (renderCache?.has(reactive.parentScope)) {
+      return renderCache.get(reactive.parentScope)!
+    }
+    function Wrapped(props: Props) {
+      return React.createElement(ReactiveComponent, { ...props, context })
+    }
+    Wrapped.displayName = `${options.name}.render`
+    if (renderCache === undefined) {
+      renderCache = new WeakMap()
+    }
+    renderCache.set(reactive.parentScope, Wrapped)
+    return Wrapped
+  })
+  return ReactiveComponent as any
+}
+
+const defaultDeps = (props: Record<string, any>) => Object.values(props)
+
+/**
+ * @since 1.0.0
+ * @category Reactive
+ */
+export const component = <E, R, Props extends Record<string, any> = {}>(
+  name: string,
+  build: (
+    props: Props,
+    emit: (_: React.ReactNode) => Effect.Effect<void, never, Reactive.Reactive>
+  ) => Effect.Effect<React.ReactNode, E, R>,
+  options?: {
+    readonly onInitial?: (props: Props) => React.ReactNode
+    readonly deps?: (props: Props) => ReadonlyArray<any>
+  }
+): ReactiveComponent<Props, Exclude<R, Reactive.Reactive | Scope>> =>
+  makeReactiveComponent({
+    name,
+    build,
+    layer: Layer.empty,
+    onInitial: options?.onInitial ?? constNull,
+    deps: options?.deps ?? defaultDeps
+  }) as any
+
+/**
+ * @since 1.0.0
+ * @category Reactive
+ */
+export const action = <Args extends ReadonlyArray<any>, A, E, R>(
+  f: (...args: Args) => Effect.Effect<A, E, R>
+): Effect.Effect<(...args: Args) => Promise<A>, never, R | Scope> =>
+  Effect.map(
+    FiberSet.makeRuntimePromise<R, A, E>(),
+    (runPromise) => (...args) => runPromise(f(...args))
+  )
