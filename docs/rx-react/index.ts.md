@@ -12,6 +12,10 @@ Added in v1.0.0
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [Reactive](#reactive)
+  - [ReactiveComponent (interface)](#reactivecomponent-interface)
+  - [action](#action)
+  - [component](#component)
 - [context](#context)
   - [RegistryContext](#registrycontext)
   - [RegistryProvider](#registryprovider)
@@ -31,12 +35,70 @@ Added in v1.0.0
   - [useRxSuspenseSuccess](#userxsuspensesuccess)
   - [useRxValue](#userxvalue)
 - [modules](#modules)
+  - [From "@effect-rx/rx/Reactive"](#from-effect-rxrxreactive)
+  - [From "@effect-rx/rx/ReactiveRef"](#from-effect-rxrxreactiveref)
   - [From "@effect-rx/rx/Registry"](#from-effect-rxrxregistry)
   - [From "@effect-rx/rx/Result"](#from-effect-rxrxresult)
   - [From "@effect-rx/rx/Rx"](#from-effect-rxrxrx)
   - [From "@effect-rx/rx/RxRef"](#from-effect-rxrxrxref)
 
 ---
+
+# Reactive
+
+## ReactiveComponent (interface)
+
+**Signature**
+
+```ts
+export interface ReactiveComponent<Props extends Record<string, any>, R = never> {
+  (
+    props: Props & [R] extends [never]
+      ? {
+          readonly context?: Context.Context<never> | undefined
+        }
+      : { readonly context: Context.Context<R> }
+  ): React.ReactNode
+
+  provide<AL, EL, RL>(layer: Layer.Layer<AL, EL, RL>): ReactiveComponent<Props, Exclude<R, AL> | RL>
+
+  render: Effect.Effect<(props: Props) => React.ReactNode, never, R | Reactive.Reactive>
+}
+```
+
+Added in v1.0.0
+
+## action
+
+**Signature**
+
+```ts
+export declare const action: <Args extends ReadonlyArray<any>, A, E, R>(
+  f: (...args: Args) => Effect.Effect<A, E, R>
+) => Effect.Effect<(...args: Args) => Promise<A>, never, R | Scope>
+```
+
+Added in v1.0.0
+
+## component
+
+**Signature**
+
+```ts
+export declare const component: <E, R, Props extends Record<string, any> = {}>(
+  name: string,
+  build: (
+    props: Props,
+    emit: (_: React.ReactNode) => Effect.Effect<void, never, Reactive.Reactive>
+  ) => Effect.Effect<React.ReactNode, E, R>,
+  options?: {
+    readonly onInitial?: (props: Props) => React.ReactNode
+    readonly deps?: (props: Props) => ReadonlyArray<any>
+  }
+) => ReactiveComponent<Props, Exclude<R, Reactive.Reactive | Scope>>
+```
+
+Added in v1.0.0
 
 # context
 
@@ -223,6 +285,30 @@ export declare const useRxValue: { <A>(rx: Rx.Rx<A>): A; <A, B>(rx: Rx.Rx<A>, f:
 Added in v1.0.0
 
 # modules
+
+## From "@effect-rx/rx/Reactive"
+
+Re-exports all named exports from the "@effect-rx/rx/Reactive" module as `Reactive`.
+
+**Signature**
+
+```ts
+export * as Reactive from "@effect-rx/rx/Reactive"
+```
+
+Added in v1.0.0
+
+## From "@effect-rx/rx/ReactiveRef"
+
+Re-exports all named exports from the "@effect-rx/rx/ReactiveRef" module as `ReactiveRef`.
+
+**Signature**
+
+```ts
+export * as ReactiveRef from "@effect-rx/rx/ReactiveRef"
+```
+
+Added in v1.0.0
 
 ## From "@effect-rx/rx/Registry"
 
