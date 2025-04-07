@@ -466,11 +466,11 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
       layer: options.layer === Layer.empty ? layer : Layer.provideMerge(options.layer, layer) as any
     })
   }
-  let renderCache: WeakMap<Scope, (props: Props) => React.ReactNode> | undefined
+  let renderCache: WeakMap<Reactive.Reactive["Type"], (props: Props) => React.ReactNode> | undefined
   ReactiveComponent.render = Effect.contextWith((context: Context.Context<any>) => {
     const reactive = Context.unsafeGet(context, Reactive.Reactive)
-    if (renderCache?.has(reactive.parentScope)) {
-      return renderCache.get(reactive.parentScope)!
+    if (renderCache?.has(reactive)) {
+      return renderCache.get(reactive)!
     }
     function Wrapped(props: Props) {
       return React.createElement(ReactiveComponent, { ...props, context })
@@ -479,7 +479,7 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
     if (renderCache === undefined) {
       renderCache = new WeakMap()
     }
-    renderCache.set(reactive.parentScope, Wrapped)
+    renderCache.set(reactive, Wrapped)
     return Wrapped
   })
   return ReactiveComponent as any
