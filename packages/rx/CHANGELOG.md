@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.11
+
+### Patch Changes
+
+- [#176](https://github.com/tim-smart/effect-rx/pull/176) [`b62af9c`](https://github.com/tim-smart/effect-rx/commit/b62af9c0d195edf620d00a7a51552b18180e9a3d) Thanks [@tim-smart](https://github.com/tim-smart)! - share default Layer.MemoMap
+
 ## 0.34.10
 
 ### Patch Changes
