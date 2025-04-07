@@ -8,7 +8,7 @@ import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
 import type * as RxRef from "@effect-rx/rx/RxRef"
 import * as Cause from "effect/Cause"
-import type * as Context from "effect/Context"
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import type * as Exit from "effect/Exit"
 import * as FiberSet from "effect/FiberSet"
@@ -382,7 +382,19 @@ export interface ReactiveComponent<Props extends Record<string, any>, R = never>
 
   provide<AL, EL, RL>(layer: Layer.Layer<AL, EL, RL>): ReactiveComponent<Props, Exclude<R, AL> | RL>
 
-  render: Effect.Effect<(props: Props) => React.ReactNode, never, R>
+  render: Effect.Effect<(props: Props) => React.ReactNode, never, R | Reactive.Reactive>
+}
+
+const depsAreEqual = (a: ReadonlyArray<any>, b: ReadonlyArray<any>) => {
+  if (a.length !== b.length) {
+    return false
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (!Object.is(a[i], b[i])) {
+      return false
+    }
+  }
+  return true
 }
 
 const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options: {
@@ -396,19 +408,50 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
   readonly deps: (props: Props) => ReadonlyArray<any>
 }): ReactiveComponent<Props, R> => {
   function ReactiveComponent(props: Props & { readonly context?: Context.Context<R> }) {
-    const subscribable = React.useMemo(
-      () => {
-        const layer = props.context
-          ? Layer.provideMerge(options.layer, Layer.succeedContext(props.context))
-          : options.layer
-        return Reactive.toSubscribable(layer)(
-          options.build(props, Reactive.emit) as Effect.Effect<React.ReactNode, E, Reactive.Reactive>
-        )
-      },
-      options.deps(props)
-    )
-    const store = makeSubscribableStore(subscribable)
-    const result = React.useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot)
+    const [result, setResult] = React.useState<Result.Result<React.ReactNode, E>>(Result.initial(true))
+
+    const ref = React.useRef<{
+      readonly subscribable: Reactive.Subscribable<React.ReactNode, E>
+      previousDeps: ReadonlyArray<any>
+      cancel: () => void
+      timeout: number | undefined
+    }>(undefined as any)
+
+    const deps = options.deps(props)
+
+    if (ref.current === undefined || !depsAreEqual(ref.current.previousDeps, deps)) {
+      if (ref.current) {
+        ref.current.cancel()
+        if (ref.current.timeout !== undefined) {
+          clearTimeout(ref.current.timeout)
+          ref.current.timeout = undefined
+        }
+      }
+
+      const layer = props.context
+        ? Layer.provideMerge(options.layer, Layer.succeedContext(props.context))
+        : options.layer
+      const subscribable = Reactive.toSubscribable(layer)(
+        options.build(props, Reactive.emit) as Effect.Effect<React.ReactNode, E, Reactive.Reactive>
+      )
+      const cancel = subscribable.subscribe(setResult)
+      ref.current = {
+        subscribable,
+        cancel,
+        previousDeps: deps,
+        timeout: undefined
+      }
+    }
+
+    React.useEffect(() => {
+      if (ref.current.timeout !== undefined) {
+        clearTimeout(ref.current.timeout)
+        ref.current.timeout = undefined
+      }
+      return () => {
+        ref.current.timeout = setTimeout(ref.current.cancel, 100)
+      }
+    }, [ref.current])
     if (result._tag === "Initial") {
       return options.onInitial(props)
     } else if (result._tag === "Failure") {
@@ -423,42 +466,23 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
       layer: options.layer === Layer.empty ? layer : Layer.provideMerge(options.layer, layer) as any
     })
   }
-  ReactiveComponent.render = Effect.contextWith((context: Context.Context<any>) => (props: Props) =>
-    ReactiveComponent({
-      ...props,
-      context
-    })
-  )
-  return ReactiveComponent as any
-}
-
-const subscribableStores = globalValue(
-  "@effect-rx/rx-react/subscribableStores",
-  () => new WeakMap<Reactive.Subscribable<any, any>, RxStore<any>>()
-)
-const makeSubscribableStore = <A, E>(subscribable: Reactive.Subscribable<A, E>): RxStore<Result.Result<A, E>> => {
-  let store = subscribableStores.get(subscribable)
-  if (store !== undefined) {
-    return store
-  }
-
-  let result: Result.Result<A, E> = Result.initial(true)
-
-  store = {
-    subscribe(f) {
-      return subscribable.subscribe((result_) => {
-        result = result_
-        f()
-      })
-    },
-    snapshot() {
-      return result
+  let renderCache: WeakMap<Scope, (props: Props) => React.ReactNode> | undefined
+  ReactiveComponent.render = Effect.contextWith((context: Context.Context<any>) => {
+    const reactive = Context.unsafeGet(context, Reactive.Reactive)
+    if (renderCache?.has(reactive.parentScope)) {
+      return renderCache.get(reactive.parentScope)!
     }
-  }
-
-  subscribableStores.set(subscribable, store)
-
-  return store
+    function Wrapped(props: Props) {
+      return React.createElement(ReactiveComponent, { ...props, context })
+    }
+    Wrapped.displayName = `${options.name}.render`
+    if (renderCache === undefined) {
+      renderCache = new WeakMap()
+    }
+    renderCache.set(reactive.parentScope, Wrapped)
+    return Wrapped
+  })
+  return ReactiveComponent as any
 }
 
 const defaultDeps = (props: Record<string, any>) => Object.values(props)

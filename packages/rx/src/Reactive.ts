@@ -25,6 +25,7 @@ import * as Result from "./Result.js"
 export class Reactive extends Context.Tag("@effect-rx/rx/Reactive")<
   Reactive,
   {
+    parentScope: Scope.Scope
     disposed: boolean
     notify(): void
     emit(value: unknown): void
@@ -123,10 +124,9 @@ export const toSubscribableWith = <R, ER>(
 
     function start() {
       scope = Effect.runSync(Scope.make())
-      currentScope = Effect.runSync(Scope.make())
 
       const initial = Effect.flatMap(
-        build(scope, buildMemoMap),
+        Effect.uninterruptible(build(scope, buildMemoMap)),
         (context) => {
           let pending = false
           function run() {
@@ -154,6 +154,7 @@ export const toSubscribableWith = <R, ER>(
           let cache: MutableHashMap.MutableHashMap<unknown, Effect.Effect<any, any>> | undefined
           reactive = {
             disposed: false,
+            parentScope: scope!,
             notify() {
               if (pending || this.disposed) return
               pending = true
@@ -197,7 +198,8 @@ export const toSubscribableWith = <R, ER>(
             fiberRefs: fiber.getFiberRefs()
           })
           const runCallback = runCallbackSync(runtime)
-          return Effect.provide(effect, Context.add(contextReactive, Scope.Scope, currentScope!))
+          currentScope = Effect.runSync(Scope.make())
+          return Effect.provide(effect, Context.add(contextReactive, Scope.Scope, currentScope))
         }
       )
 
@@ -222,15 +224,16 @@ export const toSubscribableWith = <R, ER>(
           callbacks.delete(onResult)
           if (callbacks.size > 0) return
           result = Result.initial(true)
-          reactive!.disposed = true
           if (cancel) cancel()
-          Effect.runFork(Scope.close(currentScope!, Exit.void))
-          cancel = currentScope = undefined
+          if (reactive) {
+            reactive.disposed = true
+            Effect.runFork(Scope.close(currentScope!, Exit.void))
+          }
+          reactive = cancel = currentScope = undefined
           for (const handle of handles) {
             handle.unsubscribe(reactive!)
           }
           handles = []
-          reactive = undefined
           Effect.runFork(Scope.close(scope!, Exit.void))
           scope = undefined
         }
