@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.10
+
+### Patch Changes
+
+- [#174](https://github.com/tim-smart/effect-rx/pull/174) [`44ddfc2`](https://github.com/tim-smart/effect-rx/commit/44ddfc27d0cec928531bec4a5760efc1e473a9b7) Thanks [@tim-smart](https://github.com/tim-smart)! - add Reactive module
+
 ## 0.34.9
 
 ### Patch Changes
