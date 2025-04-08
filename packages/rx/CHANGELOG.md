@@ -1,5 +1,29 @@
 # @effect-rx/rx
 
+## 0.34.13
+
+### Patch Changes
+
+- [`fc4e4d4`](https://github.com/tim-smart/effect-rx/commit/fc4e4d4a524b62bcb814cd78f953cbf9f84ce984) Thanks [@tim-smart](https://github.com/tim-smart)! - improve Reactive api naming
+
+## 0.34.12
+
+### Patch Changes
+
+- [`1c7562e`](https://github.com/tim-smart/effect-rx/commit/1c7562ec05d1da02c5deb51b869038554932d143) Thanks [@tim-smart](https://github.com/tim-smart)! - add Reactive conversion helpers
+
+## 0.34.11
+
+### Patch Changes
+
+- [#176](https://github.com/tim-smart/effect-rx/pull/176) [`b62af9c`](https://github.com/tim-smart/effect-rx/commit/b62af9c0d195edf620d00a7a51552b18180e9a3d) Thanks [@tim-smart](https://github.com/tim-smart)! - share default Layer.MemoMap
+
+## 0.34.10
+
+### Patch Changes
+
+- [#174](https://github.com/tim-smart/effect-rx/pull/174) [`44ddfc2`](https://github.com/tim-smart/effect-rx/commit/44ddfc27d0cec928531bec4a5760efc1e473a9b7) Thanks [@tim-smart](https://github.com/tim-smart)! - add Reactive module
+
 ## 0.34.9
 
 ### Patch Changes

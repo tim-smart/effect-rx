@@ -13,6 +13,8 @@ Added in v1.0.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [exports](#exports)
+  - [From "./Reactive.js"](#from-reactivejs)
+  - [From "./ReactiveRef.js"](#from-reactiverefjs)
   - [From "./Registry.js"](#from-registryjs)
   - [From "./Result.js"](#from-resultjs)
   - [From "./Rx.js"](#from-rxjs)
@@ -21,6 +23,30 @@ Added in v1.0.0
 ---
 
 # exports
+
+## From "./Reactive.js"
+
+Re-exports all named exports from the "./Reactive.js" module as `Reactive`.
+
+**Signature**
+
+```ts
+export * as Reactive from "./Reactive.js"
+```
+
+Added in v1.0.0
+
+## From "./ReactiveRef.js"
+
+Re-exports all named exports from the "./ReactiveRef.js" module as `ReactiveRef`.
+
+**Signature**
+
+```ts
+export * as ReactiveRef from "./ReactiveRef.js"
+```
+
+Added in v1.0.0
 
 ## From "./Registry.js"
 

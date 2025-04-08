@@ -1,5 +1,51 @@
 # @effect-rx/rx-react
 
+## 0.31.16
+
+### Patch Changes
+
+- [`9839d6a`](https://github.com/tim-smart/effect-rx/commit/9839d6a17c1bc32498fcc386b1877dbbda83003a) Thanks [@tim-smart](https://github.com/tim-smart)! - improve react component api
+
+## 0.31.15
+
+### Patch Changes
+
+- [`9138c4a`](https://github.com/tim-smart/effect-rx/commit/9138c4a76aacae7123c103a0cfda9691beef451f) Thanks [@tim-smart](https://github.com/tim-smart)! - fix Reactive rendering in react
+
+## 0.31.14
+
+### Patch Changes
+
+- [`fc4e4d4`](https://github.com/tim-smart/effect-rx/commit/fc4e4d4a524b62bcb814cd78f953cbf9f84ce984) Thanks [@tim-smart](https://github.com/tim-smart)! - improve Reactive api naming
+
+- Updated dependencies [[`fc4e4d4`](https://github.com/tim-smart/effect-rx/commit/fc4e4d4a524b62bcb814cd78f953cbf9f84ce984)]:
+  - @effect-rx/rx@0.34.13
+
+## 0.31.13
+
+### Patch Changes
+
+- Updated dependencies [[`1c7562e`](https://github.com/tim-smart/effect-rx/commit/1c7562ec05d1da02c5deb51b869038554932d143)]:
+  - @effect-rx/rx@0.34.12
+
+## 0.31.12
+
+### Patch Changes
+
+- [#176](https://github.com/tim-smart/effect-rx/pull/176) [`b62af9c`](https://github.com/tim-smart/effect-rx/commit/b62af9c0d195edf620d00a7a51552b18180e9a3d) Thanks [@tim-smart](https://github.com/tim-smart)! - share default Layer.MemoMap
+
+- Updated dependencies [[`b62af9c`](https://github.com/tim-smart/effect-rx/commit/b62af9c0d195edf620d00a7a51552b18180e9a3d)]:
+  - @effect-rx/rx@0.34.11
+
+## 0.31.11
+
+### Patch Changes
+
+- [#174](https://github.com/tim-smart/effect-rx/pull/174) [`44ddfc2`](https://github.com/tim-smart/effect-rx/commit/44ddfc27d0cec928531bec4a5760efc1e473a9b7) Thanks [@tim-smart](https://github.com/tim-smart)! - add Reactive module
+
+- Updated dependencies [[`44ddfc2`](https://github.com/tim-smart/effect-rx/commit/44ddfc27d0cec928531bec4a5760efc1e473a9b7)]:
+  - @effect-rx/rx@0.34.10
+
 ## 0.31.10
 
 ### Patch Changes

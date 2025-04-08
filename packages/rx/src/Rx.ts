@@ -593,13 +593,22 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
 
 /**
  * @since 1.0.0
+ * @category models
+ */
+export interface RuntimeFactory {
+  <R, E>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>): RxRuntime<R, E>
+  readonly memoMap: Layer.MemoMap
+}
+
+/**
+ * @since 1.0.0
  * @category constructors
  */
-export const context: () => <R, E>(
-  create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>
-) => RxRuntime<R, E> = () => {
-  const memoMapRx = make(Layer.makeMemoMap)
-  return <E, R>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>): RxRuntime<R, E> => {
+export const context: (options?: {
+  readonly memoMap?: Layer.MemoMap | undefined
+}) => RuntimeFactory = (options) => {
+  const memoMap = options?.memoMap ?? Effect.runSync(Layer.makeMemoMap)
+  function factory<E, R>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>): RxRuntime<R, E> {
     const rx = Object.create(RxRuntimeProto)
     rx.keepAlive = false
     rx.refresh = undefined
@@ -608,11 +617,6 @@ export const context: () => <R, E>(
     rx.layer = layerRx
 
     rx.read = function read(get: Context) {
-      const memoMapResult = get(memoMapRx)
-      if (memoMapResult._tag !== "Success") {
-        return Result.initial(true)
-      }
-      const memoMap = memoMapResult.value
       const layer = get(layerRx)
       const build = Effect.flatMap(
         Effect.flatMap(Effect.scope, (scope) => Layer.buildWithMemoMap(layer, memoMap, scope)),
@@ -623,15 +627,26 @@ export const context: () => <R, E>(
 
     return rx
   }
+  factory.memoMap = memoMap
+  return factory
 }
 
 /**
  * @since 1.0.0
  * @category context
  */
-export const runtime: <R, E>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>) => RxRuntime<R, E> = globalValue(
+export const defaultMemoMap: Layer.MemoMap = globalValue(
+  "@effect-rx/rx/Rx/defaultMemoMap",
+  () => Effect.runSync(Layer.makeMemoMap)
+)
+
+/**
+ * @since 1.0.0
+ * @category context
+ */
+export const runtime: RuntimeFactory = globalValue(
   "@effect-rx/rx/Rx/defaultContext",
-  () => context()
+  () => context({ memoMap: defaultMemoMap })
 )
 
 // -----------------------------------------------------------------------------
@@ -1103,7 +1118,7 @@ export const withFallback: {
       self.refresh ?? function(refresh) {
         refresh(self)
       }
-    )
+    ) as any
     : readable(
       withFallback,
       self.refresh ?? function(refresh) {
