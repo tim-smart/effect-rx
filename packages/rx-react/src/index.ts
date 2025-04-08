@@ -12,10 +12,9 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import type * as Exit from "effect/Exit"
 import * as FiberSet from "effect/FiberSet"
-import { constNull, constVoid } from "effect/Function"
+import { constNull } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Layer from "effect/Layer"
-import * as Num from "effect/Number"
 import type { Scope } from "effect/Scope"
 import * as React from "react"
 import * as Scheduler from "scheduler"
@@ -409,14 +408,13 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
   readonly deps: (props: Props) => ReadonlyArray<any>
 }): ReactiveComponent<Props, R> => {
   function ReactiveComponent(props: Props & { readonly context?: Context.Context<R> }) {
-    const [, setCount] = React.useState<number>(0)
-
     const ref = React.useRef<{
       readonly subscribable: Reactive.Subscribable<React.ReactNode, E>
       previousDeps: ReadonlyArray<any>
       cancel: () => void
       timeout: number | undefined
       result: Result.Result<React.ReactNode, E>
+      updateCount: number
       rerender: () => void
     }>(undefined as any)
 
@@ -447,16 +445,24 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
           previousDeps: deps,
           timeout: undefined,
           result: Result.initial(true),
-          rerender: constVoid
+          updateCount: 0,
+          rerender() {
+            ref.current.updateCount++
+          }
         } as any
       ref.current.cancel = subscribable.subscribe((result) => {
         ref.current.result = result
         ref.current.rerender()
       })
-      ref.current.rerender = () => setCount(Num.increment)
     }
 
+    const [count, setCount] = React.useState<number>(ref.current.updateCount)
+
     React.useEffect(() => {
+      ref.current.rerender = () => setCount(++ref.current.updateCount)
+      if (ref.current.updateCount !== count) {
+        setCount(ref.current.updateCount)
+      }
       if (ref.current.timeout !== undefined) {
         clearTimeout(ref.current.timeout)
         ref.current.timeout = undefined
@@ -464,7 +470,7 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
       return () => {
         ref.current.timeout = setTimeout(ref.current.cancel, 100)
       }
-    }, [ref.current])
+    }, [])
 
     if (ref.current.result._tag === "Initial") {
       return options.onInitial(props)
