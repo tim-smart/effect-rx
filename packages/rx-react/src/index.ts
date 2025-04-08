@@ -7,11 +7,11 @@ import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
 import type * as RxRef from "@effect-rx/rx/RxRef"
+import { Runtime } from "effect"
 import * as Cause from "effect/Cause"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import type * as Exit from "effect/Exit"
-import * as FiberSet from "effect/FiberSet"
 import { constNull } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Layer from "effect/Layer"
@@ -397,15 +397,16 @@ const depsAreEqual = (a: ReadonlyArray<any>, b: ReadonlyArray<any>) => {
   return true
 }
 
-const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options: {
+const makeReactiveComponent = <Props extends Record<string, any>, E, R, Context = void>(options: {
   readonly name: string
   readonly build: (
     props: Props,
-    emit: (_: React.ReactNode) => Effect.Effect<void, never, Reactive.Reactive>
+    context: Context
   ) => Effect.Effect<React.ReactNode, E, R>
   readonly layer: Layer.Layer<never>
-  readonly onInitial: (props: Props) => React.ReactNode
+  readonly fallback: (props: Props) => React.ReactNode
   readonly deps: (props: Props) => ReadonlyArray<any>
+  readonly beforeBuild?: (props: Props) => Context
 }): ReactiveComponent<Props, R> => {
   function ReactiveComponent(props: Props & { readonly context?: Context.Context<R> }) {
     const ref = React.useRef<{
@@ -419,6 +420,7 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
     }>(undefined as any)
 
     const deps = options.deps(props)
+    const context = options.beforeBuild?.(props) as Context
 
     if (ref.current === undefined || !depsAreEqual(ref.current.previousDeps, deps)) {
       if (ref.current) {
@@ -432,7 +434,7 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
         ? Layer.provideMerge(options.layer, Layer.succeedContext(props.context))
         : options.layer
       const subscribable = Reactive.toSubscribable(layer)(
-        options.build(props, Reactive.emit) as Effect.Effect<React.ReactNode, E, Reactive.Reactive>
+        options.build(props, context) as Effect.Effect<React.ReactNode, E, Reactive.Reactive>
       )
       ref.current = ref.current ?
         {
@@ -473,7 +475,7 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
     }, [])
 
     if (ref.current.result._tag === "Initial") {
-      return options.onInitial(props)
+      return options.fallback(props)
     } else if (ref.current.result._tag === "Failure") {
       throw Cause.squash(ref.current.result.cause)
     }
@@ -511,24 +513,44 @@ const defaultDeps = (props: Record<string, any>) => Object.values(props)
  * @since 1.0.0
  * @category Reactive
  */
-export const component = <E, R, Props extends Record<string, any> = {}>(
-  name: string,
-  build: (
-    props: Props,
-    emit: (_: React.ReactNode) => Effect.Effect<void, never, Reactive.Reactive>
-  ) => Effect.Effect<React.ReactNode, E, R>,
-  options?: {
-    readonly onInitial?: (props: Props) => React.ReactNode
-    readonly deps?: (props: Props) => ReadonlyArray<any>
+export const component = <Props extends Record<string, any> = {}>(name: string): {
+  <E, R>(
+    build: (props: Props) => Effect.Effect<React.ReactNode, E, R>,
+    options?: {
+      readonly fallback?: (props: Props) => React.ReactNode
+      readonly deps?: (props: Props) => ReadonlyArray<any>
+    }
+  ): ReactiveComponent<Props, Exclude<R, Reactive.Reactive | Scope>>
+  <E, R, Context>(
+    beforeBuild: (props: Props) => Context,
+    build: (props: Props, context: Context) => Effect.Effect<React.ReactNode, E, R>,
+    options?: {
+      readonly fallback?: (props: Props) => React.ReactNode
+      readonly deps?: (props: Props) => ReadonlyArray<any>
+    }
+  ): ReactiveComponent<Props, Exclude<R, Reactive.Reactive | Scope>>
+} =>
+  function() {
+    let beforeBuild: any
+    let build: any
+    let options: any
+    if (typeof arguments[1] === "function") {
+      beforeBuild = arguments[0]
+      build = arguments[1]
+      options = arguments[2]
+    } else {
+      build = arguments[0]
+      options = arguments[1]
+    }
+    return makeReactiveComponent({
+      name,
+      build,
+      layer: Layer.empty,
+      fallback: options?.fallback ?? constNull,
+      deps: options?.deps ?? defaultDeps,
+      beforeBuild
+    }) as any
   }
-): ReactiveComponent<Props, Exclude<R, Reactive.Reactive | Scope>> =>
-  makeReactiveComponent({
-    name,
-    build,
-    layer: Layer.empty,
-    onInitial: options?.onInitial ?? constNull,
-    deps: options?.deps ?? defaultDeps
-  }) as any
 
 /**
  * @since 1.0.0
@@ -536,8 +558,14 @@ export const component = <E, R, Props extends Record<string, any> = {}>(
  */
 export const action = <Args extends ReadonlyArray<any>, A, E, R>(
   f: (...args: Args) => Effect.Effect<A, E, R>
-): Effect.Effect<(...args: Args) => Promise<A>, never, R | Scope> =>
-  Effect.map(
-    FiberSet.makeRuntimePromise<R, A, E>(),
-    (runPromise) => (...args) => runPromise(f(...args))
+): Effect.Effect<(...args: Args) => Promise<A>, never, R> =>
+  Effect.withFiberRuntime((parent) =>
+    Effect.succeed((...args: Args) => {
+      const runtime = Runtime.make({
+        context: parent.currentContext as Context.Context<R>,
+        fiberRefs: parent.getFiberRefs(),
+        runtimeFlags: Runtime.defaultRuntime.runtimeFlags
+      })
+      return Runtime.runPromise(runtime)(f(...args))
+    })
   )
