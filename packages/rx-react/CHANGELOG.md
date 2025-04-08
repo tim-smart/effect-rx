@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.31.15
+
+### Patch Changes
+
+- [`9138c4a`](https://github.com/tim-smart/effect-rx/commit/9138c4a76aacae7123c103a0cfda9691beef451f) Thanks [@tim-smart](https://github.com/tim-smart)! - fix Reactive rendering in react
+
 ## 0.31.14
 
 ### Patch Changes
