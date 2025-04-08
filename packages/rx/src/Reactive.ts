@@ -1,6 +1,7 @@
 /**
  * @since 1.0.0
  */
+import type * as Cause from "effect/Cause"
 import * as Context from "effect/Context"
 import * as Data from "effect/Data"
 import * as Deferred from "effect/Deferred"
@@ -14,9 +15,19 @@ import * as MutableHashMap from "effect/MutableHashMap"
 import * as Option from "effect/Option"
 import * as Runtime from "effect/Runtime"
 import * as Scope from "effect/Scope"
+import type * as Stream from "effect/Stream"
 import { runCallbackSync } from "./internal/runtime.js"
+import * as ReactiveRef from "./ReactiveRef.js"
 import * as Result from "./Result.js"
 import * as Rx from "./Rx.js"
+
+/**
+ * @since 1.0.0
+ * @category Notifiable
+ */
+export interface Notifiable {
+  notify(): void
+}
 
 /**
  * @since 1.0.0
@@ -65,6 +76,62 @@ export const cache =
   (...key: ReadonlyArray<unknown>) =>
   <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, Exclude<R, Scope.Scope> | Reactive> =>
     Reactive.with((reactive) => reactive.cache(Data.array(key), effect))
+
+/**
+ * Run an Effect into a Result value, using the given cache key.
+ *
+ * @since 1.0.0
+ * @category Reactive
+ */
+export const effectResult = (...key: ReadonlyArray<unknown>) =>
+<A, E, R>(
+  effect: Effect.Effect<A, E, R>
+): Effect.Effect<Result.Result<A, E>, never, Exclude<R, Scope.Scope> | Reactive> =>
+  Effect.flatMap(
+    cache(...key)(ReactiveRef.fromEffect(effect)),
+    ReactiveRef.subscribe
+  )
+
+/**
+ * Run a Stream into a Result value, using the given cache key.
+ *
+ * @since 1.0.0
+ * @category Reactive
+ */
+export const streamResult = (...key: ReadonlyArray<unknown>) =>
+<A, E, R>(
+  stream: Stream.Stream<A, E, R>
+): Effect.Effect<Result.Result<A, E | Cause.NoSuchElementException>, never, Exclude<R, Scope.Scope> | Reactive> =>
+  Effect.flatMap(
+    cache(...key)(ReactiveRef.fromStream(stream)),
+    ReactiveRef.subscribe
+  )
+
+/**
+ * Run a Stream into a PullResult value, using the given cache key.
+ *
+ * @since 1.0.0
+ * @category Reactive
+ */
+export const streamPull = (...key: ReadonlyArray<unknown>) =>
+<A, E, R>(
+  stream: Stream.Stream<A, E, R>
+): Effect.Effect<
+  {
+    readonly value: Rx.PullResult<A, E>
+    pull(): void
+  },
+  never,
+  Exclude<R, Scope.Scope> | Reactive
+> =>
+  Effect.flatMap(
+    cache(...key)(ReactiveRef.fromStreamPull(stream)),
+    ({ pull, ref }) =>
+      Effect.map(ReactiveRef.subscribe(ref), (value) => ({
+        value,
+        pull
+      }))
+  )
 
 /**
  * @since 1.0.0

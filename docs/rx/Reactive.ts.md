@@ -16,11 +16,16 @@ Added in v1.0.0
   - [Handle (interface)](#handle-interface)
 - [Layer](#layer)
   - [layerTimeToLive](#layertimetolive)
+- [Notifiable](#notifiable)
+  - [Notifiable (interface)](#notifiable-interface)
 - [Reactive](#reactive)
   - [Reactive (class)](#reactive-class)
     - [with (static method)](#with-static-method)
   - [cache](#cache)
+  - [effectResult](#effectresult)
   - [emit](#emit)
+  - [streamPull](#streampull)
+  - [streamResult](#streamresult)
 - [Readable](#readable)
   - [Readable (interface)](#readable-interface)
   - [readable](#readable-1)
@@ -55,6 +60,20 @@ Added in v1.0.0
 export declare const layerTimeToLive: {
   (duration: Duration.DurationInput): <A, E, R>(self: Layer.Layer<A, E, R>) => Layer.Layer<A, E, R>
   <A, E, R>(self: Layer.Layer<A, E, R>, duration: Duration.DurationInput): Layer.Layer<A, E, R>
+}
+```
+
+Added in v1.0.0
+
+# Notifiable
+
+## Notifiable (interface)
+
+**Signature**
+
+```ts
+export interface Notifiable {
+  notify(): void
 }
 ```
 
@@ -96,6 +115,22 @@ export declare const cache: (
 
 Added in v1.0.0
 
+## effectResult
+
+Run an Effect into a Result value, using the given cache key.
+
+**Signature**
+
+```ts
+export declare const effectResult: (
+  ...key: ReadonlyArray<unknown>
+) => <A, E, R>(
+  effect: Effect.Effect<A, E, R>
+) => Effect.Effect<Result.Result<A, E>, never, Exclude<R, Scope.Scope> | Reactive>
+```
+
+Added in v1.0.0
+
 ## emit
 
 Immediately emits a value for the current reactive context.
@@ -104,6 +139,38 @@ Immediately emits a value for the current reactive context.
 
 ```ts
 export declare const emit: <A = unknown>(value: A) => Effect.Effect<void, never, Reactive>
+```
+
+Added in v1.0.0
+
+## streamPull
+
+Run a Stream into a PullResult value, using the given cache key.
+
+**Signature**
+
+```ts
+export declare const streamPull: (
+  ...key: ReadonlyArray<unknown>
+) => <A, E, R>(
+  stream: Stream.Stream<A, E, R>
+) => Effect.Effect<{ readonly value: Rx.PullResult<A, E>; pull(): void }, never, Exclude<R, Scope.Scope> | Reactive>
+```
+
+Added in v1.0.0
+
+## streamResult
+
+Run a Stream into a Result value, using the given cache key.
+
+**Signature**
+
+```ts
+export declare const streamResult: (
+  ...key: ReadonlyArray<unknown>
+) => <A, E, R>(
+  stream: Stream.Stream<A, E, R>
+) => Effect.Effect<Result.Result<A, E | Cause.NoSuchElementException>, never, Exclude<R, Scope.Scope> | Reactive>
 ```
 
 Added in v1.0.0

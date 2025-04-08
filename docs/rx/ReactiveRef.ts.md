@@ -17,6 +17,8 @@ Added in v1.0.0
   - [modify](#modify)
   - [set](#set)
   - [subscribe](#subscribe)
+  - [subscribeResult](#subscriberesult)
+  - [subscribeResultUnwrap](#subscriberesultunwrap)
   - [unsafeGet](#unsafeget)
   - [unsafeModify](#unsafemodify)
   - [unsafeSet](#unsafeset)
@@ -26,12 +28,15 @@ Added in v1.0.0
   - [make](#make)
   - [unsafeMake](#unsafemake)
 - [Conversions](#conversions)
+  - [fromEffect](#fromeffect)
   - [fromStream](#fromstream)
   - [fromStreamPull](#fromstreampull)
+  - [into](#into)
   - [intoStream](#intostream)
   - [intoStreamPull](#intostreampull)
 - [Models](#models)
   - [ReactiveRef (interface)](#reactiveref-interface)
+  - [ReadonlyReactiveRef (interface)](#readonlyreactiveref-interface)
 - [Symbols](#symbols)
   - [TypeId](#typeid)
   - [TypeId (type alias)](#typeid-type-alias)
@@ -45,7 +50,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const get: <A>(self: ReactiveRef<A>) => Effect.Effect<A>
+export declare const get: <A>(self: ReadonlyReactiveRef<A>) => Effect.Effect<A>
 ```
 
 Added in v1.0.0
@@ -81,7 +86,31 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const subscribe: <A>(self: ReactiveRef<A>) => Effect.Effect<A, never, Reactive.Reactive>
+export declare const subscribe: <A>(self: ReadonlyReactiveRef<A>) => Effect.Effect<A, never, Reactive>
+```
+
+Added in v1.0.0
+
+## subscribeResult
+
+**Signature**
+
+```ts
+export declare const subscribeResult: <A, E>(
+  self: ReactiveRef<Result.Result<A, E>>
+) => Effect.Effect<Result.Success<A, E> | Result.Failure<A, E>, never, Reactive>
+```
+
+Added in v1.0.0
+
+## subscribeResultUnwrap
+
+**Signature**
+
+```ts
+export declare const subscribeResultUnwrap: <A, E>(
+  self: ReadonlyReactiveRef<Result.Result<A, E>>
+) => Effect.Effect<A, E, Reactive>
 ```
 
 Added in v1.0.0
@@ -172,6 +201,18 @@ Added in v1.0.0
 
 # Conversions
 
+## fromEffect
+
+**Signature**
+
+```ts
+export declare const fromEffect: <A, E, R>(
+  effect: Effect.Effect<A, E, R>
+) => Effect.Effect<ReadonlyReactiveRef<Result.Result<A, E>>, never, R | Scope.Scope>
+```
+
+Added in v1.0.0
+
 ## fromStream
 
 **Signature**
@@ -179,7 +220,7 @@ Added in v1.0.0
 ```ts
 export declare const fromStream: <A, E, R>(
   stream: Stream.Stream<A, E, R>
-) => Effect.Effect<ReactiveRef<Result.Result<A, E | Cause.NoSuchElementException>>, never, R | Scope.Scope>
+) => Effect.Effect<ReadonlyReactiveRef<Result.Result<A, E | Cause.NoSuchElementException>>, never, R | Scope.Scope>
 ```
 
 Added in v1.0.0
@@ -191,7 +232,29 @@ Added in v1.0.0
 ```ts
 export declare const fromStreamPull: <A, E, R>(
   stream: Stream.Stream<A, E, R>
-) => Effect.Effect<{ readonly ref: ReactiveRef<PullResult<A, E>>; readonly pull: () => void }, never, R | Scope.Scope>
+) => Effect.Effect<
+  { readonly ref: ReadonlyReactiveRef<PullResult<A, E>>; readonly pull: () => void },
+  never,
+  R | Scope.Scope
+>
+```
+
+Added in v1.0.0
+
+## into
+
+**Signature**
+
+```ts
+export declare const into: {
+  <A, E>(
+    self: ReactiveRef<Result.Result<A, E>>
+  ): <R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<void, never, R | Scope.Scope>
+  <A, E, R>(
+    self: ReactiveRef<Result.Result<A, E>>,
+    effect: Effect.Effect<A, E, R>
+  ): Effect.Effect<void, never, R | Scope.Scope>
+}
 ```
 
 Added in v1.0.0
@@ -239,10 +302,24 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface ReactiveRef<in out A> extends Handle, Effect.Effect<A, never, Reactive.Reactive> {
+export interface ReactiveRef<in out A> extends ReadonlyReactiveRef<A> {
   readonly [TypeId]: TypeId
-  subscribe(reactive: Reactive.Reactive["Type"]): void
+  subscribe(notifiable: Notifiable): void
   unsafeSet(value: A): void
+  value: A
+}
+```
+
+Added in v1.0.0
+
+## ReadonlyReactiveRef (interface)
+
+**Signature**
+
+```ts
+export interface ReadonlyReactiveRef<out A> extends Handle, Effect.Effect<A, never, Reactive> {
+  readonly [TypeId]: TypeId
+  subscribe(notifiable: Notifiable): void
   value: A
 }
 ```
