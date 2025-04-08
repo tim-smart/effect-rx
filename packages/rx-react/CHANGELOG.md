@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.31.16
+
+### Patch Changes
+
+- [`9839d6a`](https://github.com/tim-smart/effect-rx/commit/9839d6a17c1bc32498fcc386b1877dbbda83003a) Thanks [@tim-smart](https://github.com/tim-smart)! - improve react component api
+
 ## 0.31.15
 
 ### Patch Changes
