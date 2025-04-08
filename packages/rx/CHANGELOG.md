@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.12
+
+### Patch Changes
+
+- [`1c7562e`](https://github.com/tim-smart/effect-rx/commit/1c7562ec05d1da02c5deb51b869038554932d143) Thanks [@tim-smart](https://github.com/tim-smart)! - add Reactive conversion helpers
+
 ## 0.34.11
 
 ### Patch Changes
