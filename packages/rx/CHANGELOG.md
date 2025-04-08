@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.13
+
+### Patch Changes
+
+- [`fc4e4d4`](https://github.com/tim-smart/effect-rx/commit/fc4e4d4a524b62bcb814cd78f953cbf9f84ce984) Thanks [@tim-smart](https://github.com/tim-smart)! - improve Reactive api naming
+
 ## 0.34.12
 
 ### Patch Changes
