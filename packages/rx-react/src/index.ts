@@ -12,9 +12,10 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import type * as Exit from "effect/Exit"
 import * as FiberSet from "effect/FiberSet"
-import { constNull } from "effect/Function"
+import { constNull, constVoid } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Layer from "effect/Layer"
+import * as Num from "effect/Number"
 import type { Scope } from "effect/Scope"
 import * as React from "react"
 import * as Scheduler from "scheduler"
@@ -408,13 +409,15 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
   readonly deps: (props: Props) => ReadonlyArray<any>
 }): ReactiveComponent<Props, R> => {
   function ReactiveComponent(props: Props & { readonly context?: Context.Context<R> }) {
-    const [result, setResult] = React.useState<Result.Result<React.ReactNode, E>>(Result.initial(true))
+    const [, setCount] = React.useState<number>(0)
 
     const ref = React.useRef<{
       readonly subscribable: Reactive.Subscribable<React.ReactNode, E>
       previousDeps: ReadonlyArray<any>
       cancel: () => void
       timeout: number | undefined
+      result: Result.Result<React.ReactNode, E>
+      rerender: () => void
     }>(undefined as any)
 
     const deps = options.deps(props)
@@ -427,20 +430,30 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
           ref.current.timeout = undefined
         }
       }
-
       const layer = props.context
         ? Layer.provideMerge(options.layer, Layer.succeedContext(props.context))
         : options.layer
       const subscribable = Reactive.toSubscribable(layer)(
         options.build(props, Reactive.emit) as Effect.Effect<React.ReactNode, E, Reactive.Reactive>
       )
-      const cancel = subscribable.subscribe(setResult)
-      ref.current = {
-        subscribable,
-        cancel,
-        previousDeps: deps,
-        timeout: undefined
-      }
+      ref.current = ref.current ?
+        {
+          ...ref.current,
+          subscribable,
+          previousDeps: deps
+        } :
+        {
+          subscribable,
+          previousDeps: deps,
+          timeout: undefined,
+          result: Result.initial(true),
+          rerender: constVoid
+        } as any
+      ref.current.cancel = subscribable.subscribe((result) => {
+        ref.current.result = result
+        ref.current.rerender()
+      })
+      ref.current.rerender = () => setCount(Num.increment)
     }
 
     React.useEffect(() => {
@@ -452,12 +465,13 @@ const makeReactiveComponent = <Props extends Record<string, any>, E, R>(options:
         ref.current.timeout = setTimeout(ref.current.cancel, 100)
       }
     }, [ref.current])
-    if (result._tag === "Initial") {
+
+    if (ref.current.result._tag === "Initial") {
       return options.onInitial(props)
-    } else if (result._tag === "Failure") {
-      throw Cause.squash(result.cause)
+    } else if (ref.current.result._tag === "Failure") {
+      throw Cause.squash(ref.current.result.cause)
     }
-    return result.value
+    return ref.current.result.value
   }
   ReactiveComponent.displayName = options.name
   ReactiveComponent.provide = function provide(layer: Layer.Layer<any, any, any>) {

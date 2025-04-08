@@ -12,6 +12,10 @@ Added in v1.0.0
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [Conversions](#conversions)
+  - [toPull](#topull)
+  - [toResult](#toresult)
+  - [toResultStream](#toresultstream)
 - [Handle](#handle)
   - [Handle (interface)](#handle-interface)
 - [Layer](#layer)
@@ -22,10 +26,7 @@ Added in v1.0.0
   - [Reactive (class)](#reactive-class)
     - [with (static method)](#with-static-method)
   - [cache](#cache)
-  - [effectResult](#effectresult)
   - [emit](#emit)
-  - [streamPull](#streampull)
-  - [streamResult](#streamresult)
 - [Readable](#readable)
   - [Readable (interface)](#readable-interface)
   - [readable](#readable-1)
@@ -35,6 +36,56 @@ Added in v1.0.0
   - [toSubscribableWith](#tosubscribablewith)
 
 ---
+
+# Conversions
+
+## toPull
+
+Run a Stream into a PullResult value, using the given cache key.
+
+**Signature**
+
+```ts
+export declare const toPull: (
+  ...key: ReadonlyArray<unknown>
+) => <A, E, R>(
+  stream: Stream.Stream<A, E, R>
+) => Effect.Effect<{ readonly value: Rx.PullResult<A, E>; pull(): void }, never, Exclude<R, Scope.Scope> | Reactive>
+```
+
+Added in v1.0.0
+
+## toResult
+
+Run an Effect into a Result value, using the given cache key.
+
+**Signature**
+
+```ts
+export declare const toResult: (
+  ...key: ReadonlyArray<unknown>
+) => <A, E, R>(
+  effect: Effect.Effect<A, E, R>
+) => Effect.Effect<Result.Result<A, E>, never, Exclude<R, Scope.Scope> | Reactive>
+```
+
+Added in v1.0.0
+
+## toResultStream
+
+Run a Stream into a Result value, using the given cache key.
+
+**Signature**
+
+```ts
+export declare const toResultStream: (
+  ...key: ReadonlyArray<unknown>
+) => <A, E, R>(
+  stream: Stream.Stream<A, E, R>
+) => Effect.Effect<Result.Result<A, E | Cause.NoSuchElementException>, never, Exclude<R, Scope.Scope> | Reactive>
+```
+
+Added in v1.0.0
 
 # Handle
 
@@ -115,22 +166,6 @@ export declare const cache: (
 
 Added in v1.0.0
 
-## effectResult
-
-Run an Effect into a Result value, using the given cache key.
-
-**Signature**
-
-```ts
-export declare const effectResult: (
-  ...key: ReadonlyArray<unknown>
-) => <A, E, R>(
-  effect: Effect.Effect<A, E, R>
-) => Effect.Effect<Result.Result<A, E>, never, Exclude<R, Scope.Scope> | Reactive>
-```
-
-Added in v1.0.0
-
 ## emit
 
 Immediately emits a value for the current reactive context.
@@ -139,38 +174,6 @@ Immediately emits a value for the current reactive context.
 
 ```ts
 export declare const emit: <A = unknown>(value: A) => Effect.Effect<void, never, Reactive>
-```
-
-Added in v1.0.0
-
-## streamPull
-
-Run a Stream into a PullResult value, using the given cache key.
-
-**Signature**
-
-```ts
-export declare const streamPull: (
-  ...key: ReadonlyArray<unknown>
-) => <A, E, R>(
-  stream: Stream.Stream<A, E, R>
-) => Effect.Effect<{ readonly value: Rx.PullResult<A, E>; pull(): void }, never, Exclude<R, Scope.Scope> | Reactive>
-```
-
-Added in v1.0.0
-
-## streamResult
-
-Run a Stream into a Result value, using the given cache key.
-
-**Signature**
-
-```ts
-export declare const streamResult: (
-  ...key: ReadonlyArray<unknown>
-) => <A, E, R>(
-  stream: Stream.Stream<A, E, R>
-) => Effect.Effect<Result.Result<A, E | Cause.NoSuchElementException>, never, Exclude<R, Scope.Scope> | Reactive>
 ```
 
 Added in v1.0.0

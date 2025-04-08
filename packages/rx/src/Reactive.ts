@@ -81,9 +81,9 @@ export const cache =
  * Run an Effect into a Result value, using the given cache key.
  *
  * @since 1.0.0
- * @category Reactive
+ * @category Conversions
  */
-export const effectResult = (...key: ReadonlyArray<unknown>) =>
+export const toResult = (...key: ReadonlyArray<unknown>) =>
 <A, E, R>(
   effect: Effect.Effect<A, E, R>
 ): Effect.Effect<Result.Result<A, E>, never, Exclude<R, Scope.Scope> | Reactive> =>
@@ -96,9 +96,9 @@ export const effectResult = (...key: ReadonlyArray<unknown>) =>
  * Run a Stream into a Result value, using the given cache key.
  *
  * @since 1.0.0
- * @category Reactive
+ * @category Conversions
  */
-export const streamResult = (...key: ReadonlyArray<unknown>) =>
+export const toResultStream = (...key: ReadonlyArray<unknown>) =>
 <A, E, R>(
   stream: Stream.Stream<A, E, R>
 ): Effect.Effect<Result.Result<A, E | Cause.NoSuchElementException>, never, Exclude<R, Scope.Scope> | Reactive> =>
@@ -111,9 +111,9 @@ export const streamResult = (...key: ReadonlyArray<unknown>) =>
  * Run a Stream into a PullResult value, using the given cache key.
  *
  * @since 1.0.0
- * @category Reactive
+ * @category Conversions
  */
-export const streamPull = (...key: ReadonlyArray<unknown>) =>
+export const toPull = (...key: ReadonlyArray<unknown>) =>
 <A, E, R>(
   stream: Stream.Stream<A, E, R>
 ): Effect.Effect<
