@@ -854,7 +854,10 @@ export const fnSync: {
     }
     return hasInitialValue ? f(arg, get) : Option.some(f(arg, get))
   }, function(ctx, arg) {
-    ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg as Arg])
+    batch(() => {
+      ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg as Arg])
+      ctx.refreshSelf()
+    })
   })
 }
 
@@ -925,11 +928,14 @@ function makeResultFn<Arg, E, A>(
     return makeStream(get, value, initialValue, runtime)
   }
   function write(ctx: WriteContext<Result.Result<A, E | NoSuchElementException>>, arg: Arg | Reset) {
-    if (arg === Reset) {
-      ctx.set(argRx, [0, undefined as any])
-    } else {
-      ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
-    }
+    batch(() => {
+      if (arg === Reset) {
+        ctx.set(argRx, [0, undefined as any])
+      } else {
+        ctx.set(argRx, [ctx.get(argRx)[0] + 1, arg])
+      }
+      ctx.refreshSelf()
+    })
   }
   return [read, write, argRx] as const
 }
