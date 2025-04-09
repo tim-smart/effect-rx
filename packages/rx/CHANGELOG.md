@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.14
+
+### Patch Changes
+
+- [#172](https://github.com/tim-smart/effect-rx/pull/172) [`2b5863c`](https://github.com/tim-smart/effect-rx/commit/2b5863cfc159cd0a9b3d92dc83739d5f0284e1a5) Thanks [@leonitousconforti](https://github.com/leonitousconforti)! - ensure Rx.fn updates from initial value
+
 ## 0.34.13
 
 ### Patch Changes
