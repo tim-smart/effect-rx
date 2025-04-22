@@ -3,13 +3,14 @@
  */
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import { NoSuchElementException } from "effect/Cause"
-import type * as Cause from "effect/Cause"
+import * as Cause from "effect/Cause"
 import * as Channel from "effect/Channel"
 import * as Chunk from "effect/Chunk"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Either from "effect/Either"
 import * as Exit from "effect/Exit"
+import * as FiberRef from "effect/FiberRef"
 import { constVoid, dual, pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Inspectable from "effect/Inspectable"
@@ -298,7 +299,7 @@ const RxRuntimeProto = {
       }
       return makeEffect(
         get,
-        makeStreamPullEffect(get, arg, options, runtimeResult.value),
+        makeStreamPullEffect(get, arg, options),
         Result.initial(true),
         runtimeResult.value
       )
@@ -946,7 +947,7 @@ function makeResultFn<Arg, E, A>(
  */
 export type PullResult<A, E = never> = Result.Result<{
   readonly done: boolean
-  readonly items: Array<A>
+  readonly items: ReadonlyArray<A>
 }, E | NoSuchElementException>
 
 /**
@@ -965,28 +966,76 @@ export const pull = <A, E>(create: Rx.Read<Stream.Stream<A, E>> | Stream.Stream<
   return makeStreamPull(pullRx, options)
 }
 
-const makeStreamPullEffect = <A, E>(
+const makeStreamPullEffect: <A, E>(
+  get: Context,
+  create: Stream.Stream<A, E, never> | Rx.Read<Stream.Stream<A, E, never>>,
+  options?: { readonly disableAccumulation?: boolean } | undefined
+) => Effect.Effect<
+  Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, NoSuchElementException | E>,
+  never,
+  Scope.Scope
+> = Effect.fnUntraced(function*<A, E>(
   get: Context,
   create: Rx.Read<Stream.Stream<A, E>> | Stream.Stream<A, E>,
-  options?: { readonly disableAccumulation?: boolean },
-  runtime?: Runtime.Runtime<any>
-) => {
+  options?: {
+    readonly disableAccumulation?: boolean
+  }
+) {
   const stream = typeof create === "function" ? create(get) : create
-  return Effect.map(
-    Stream.toPull(
-      options?.disableAccumulation ? stream : Stream.accumulateChunks(stream)
+  const pullChunk = yield* Stream.toPull(stream)
+  let acc = Chunk.empty<A>()
+  const context = yield* Effect.context<never>()
+  const pull = Effect.matchCauseEffect(
+    Effect.locally(
+      pullChunk,
+      FiberRef.currentContext,
+      context
     ),
-    (pull) => [pull, runtime] as const
+    {
+      onSuccess(chunk) {
+        let items: Chunk.Chunk<A>
+        if (options?.disableAccumulation) {
+          items = chunk
+        } else {
+          items = Chunk.appendAll(acc, chunk)
+          acc = items
+        }
+        return Effect.succeed({
+          done: false,
+          items: Chunk.toReadonlyArray(items)
+        })
+      },
+      onFailure(
+        cause
+      ): Effect.Effect<{ readonly done: boolean; readonly items: ReadonlyArray<A> }, NoSuchElementException | E> {
+        const failure = Cause.failureOption(cause)
+        if (failure._tag === "None") {
+          return Effect.failCause(cause as Cause.Cause<never>)
+        } else if (failure.value._tag === "None") {
+          if (acc.length === 0) {
+            return Effect.fail(new NoSuchElementException())
+          }
+          return Effect.succeed({
+            done: true,
+            items: Chunk.toReadonlyArray(acc)
+          })
+        }
+        return Effect.fail(failure.value.value)
+      }
+    }
   )
-}
+  return pull as any
+})
 
 const makeStreamPull = <A, E>(
   pullRx: Rx<
     Result.Result<
-      readonly [Effect.Effect<Chunk.Chunk<A>, Option.Option<E>>, Runtime.Runtime<any> | undefined]
+      Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, NoSuchElementException | E>
     >
   >,
-  options?: { readonly initialValue?: ReadonlyArray<A> }
+  options?: {
+    readonly initialValue?: ReadonlyArray<A>
+  }
 ) => {
   const initialValue: Result.Result<{
     readonly done: boolean
@@ -1001,36 +1050,7 @@ const makeStreamPull = <A, E>(
     if (pullResult._tag !== "Success") {
       return Result.replacePrevious(pullResult, previous)
     }
-    const [pullEffect, runtime] = pullResult.value
-    const pull = pipe(
-      pullEffect,
-      Effect.map((_) => ({
-        done: false,
-        items: Chunk.toReadonlyArray(_) as Array<A>
-      })),
-      Effect.catchAll((error): Effect.Effect<{
-        readonly done: boolean
-        readonly items: Array<A>
-      }, E | NoSuchElementException> =>
-        Option.match(error, {
-          onNone: () =>
-            pipe(
-              get.self<PullResult<A, E>>(),
-              Option.flatMap(Result.value),
-              Option.match({
-                onNone: () => Effect.fail(new NoSuchElementException()),
-                onSome: ({ items }) =>
-                  Effect.succeed({
-                    done: true,
-                    items
-                  })
-              })
-            ),
-          onSome: Effect.fail
-        })
-      )
-    )
-    return makeEffect(get, pull, initialValue, runtime)
+    return makeEffect(get, pullResult.value, initialValue)
   }, function(ctx, _) {
     ctx.refreshSelf()
   }, function(refresh) {
