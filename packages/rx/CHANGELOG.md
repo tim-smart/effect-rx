@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.15
+
+### Patch Changes
+
+- [#183](https://github.com/tim-smart/effect-rx/pull/183) [`a983322`](https://github.com/tim-smart/effect-rx/commit/a983322aadbec0a513fd90827c17c2bb82bcae48) Thanks [@tim-smart](https://github.com/tim-smart)! - refactor .pull
+
 ## 0.34.14
 
 ### Patch Changes
