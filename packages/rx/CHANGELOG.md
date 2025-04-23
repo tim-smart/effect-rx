@@ -1,5 +1,15 @@
 # @effect-rx/rx
 
+## 0.35.0
+
+### Minor Changes
+
+- [`5ed4a59`](https://github.com/tim-smart/effect-rx/commit/5ed4a59ddf40849d3836b375363de89eca31cbb1) Thanks [@tim-smart](https://github.com/tim-smart)! - remove NoSuchElementException from Rx.pull
+
+### Patch Changes
+
+- [`8041aed`](https://github.com/tim-smart/effect-rx/commit/8041aedb0f697c4bb80f334a3221298edb156e5c) Thanks [@tim-smart](https://github.com/tim-smart)! - fix Rx.debounce behaviour
+
 ## 0.34.19
 
 ### Patch Changes
