@@ -1350,7 +1350,7 @@ export const searchParam = (name: string): Writable<string> =>
       searchParamState.updates.set(name, value)
       ctx.setSelf(value)
       if (!searchParamState.timeout) {
-        searchParamState.timeout = setTimeout(updateSearchParams, 200)
+        searchParamState.timeout = setTimeout(updateSearchParams, 500)
       }
     }
   )
