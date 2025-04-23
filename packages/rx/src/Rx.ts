@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import * as KeyValueStore from "@effect/platform/KeyValueStore"
 import { NoSuchElementException } from "effect/Cause"
-import * as Cause from "effect/Cause"
+import type * as Cause from "effect/Cause"
 import * as Channel from "effect/Channel"
 import * as Chunk from "effect/Chunk"
 import * as EffectContext from "effect/Context"
@@ -226,6 +226,7 @@ const RxRuntimeProto = {
     readonly disableAccumulation?: boolean
     readonly initialValue?: ReadonlyArray<any>
   }) {
+    const pullSignal = state(0)
     const pullRx = readable((get) => {
       const previous = get.self<Result.Result<any, any>>()
       const runtimeResult = get(this)
@@ -234,12 +235,12 @@ const RxRuntimeProto = {
       }
       return makeEffect(
         get,
-        makeStreamPullEffect(get, arg, options),
+        makeStreamPullEffect(get, pullSignal, arg, options),
         Result.initial(true),
         runtimeResult.value
       )
     })
-    return makeStreamPull(pullRx as any, options)
+    return makeStreamPull(pullSignal, pullRx)
   },
 
   subscriptionRef(this: RxRuntime<any, any>, ref: any) {
@@ -916,94 +917,102 @@ export const pull = <A, E>(
   create: ((get: Context) => Stream.Stream<A, E, RxRegistry>) | Stream.Stream<A, E, RxRegistry>,
   options?: {
     readonly disableAccumulation?: boolean
-    readonly initialValue?: ReadonlyArray<A>
   }
 ): Writable<PullResult<A, E>, void> => {
+  const pullSignal = state(0)
   const pullRx = readable(
     makeRead(function(get) {
-      return makeStreamPullEffect(get, create, options)
+      return makeStreamPullEffect(get, pullSignal, create, options)
     })
   )
-  return makeStreamPull(pullRx, options)
+  return makeStreamPull(pullSignal, pullRx)
 }
 
 const makeStreamPullEffect = <A, E>(
   get: Context,
+  pullSignal: Rx<number>,
   create: Stream.Stream<A, E, RxRegistry> | ((get: Context) => Stream.Stream<A, E, RxRegistry>),
   options?: {
     readonly disableAccumulation?: boolean
   }
 ): Effect.Effect<
-  Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, E>,
-  never,
+  { readonly done: boolean; readonly items: Array<A> },
+  E,
   Scope.Scope | RxRegistry
 > =>
-  Effect.map(Stream.toPull(typeof create === "function" ? create(get) : create), (pullChunk) => {
-    const fiber = Option.getOrThrow(Fiber.getCurrentFiber())
-    let acc = Chunk.empty<A>()
-    const pull = Effect.matchCauseEffect(
-      Effect.locally(
-        pullChunk,
-        FiberRef.currentContext,
-        fiber.currentContext
-      ),
-      {
-        onSuccess(chunk) {
-          let items: Chunk.Chunk<A>
-          if (options?.disableAccumulation) {
-            items = chunk
-          } else {
-            items = Chunk.appendAll(acc, chunk)
-            acc = items
-          }
-          return Effect.succeed({
-            done: false,
-            items: Chunk.toReadonlyArray(items)
-          })
-        },
-        onFailure(cause) {
-          const failure = Cause.failureOption(cause)
-          if (failure._tag === "None") {
-            return Effect.failCause(cause as Cause.Cause<never>)
-          } else if (failure.value._tag === "None") {
-            return Effect.succeed({
+  Effect.flatMap(
+    Channel.toPull(
+      Stream.toChannel(typeof create === "function" ? create(get) : create)
+    ),
+    (pullChunk) => {
+      const semaphore = Effect.unsafeMakeSemaphore(1)
+      const fiber = Option.getOrThrow(Fiber.getCurrentFiber())
+      const context = fiber.currentContext as EffectContext.Context<RxRegistry | Scope.Scope>
+      let acc = Chunk.empty<A>()
+      const pull = semaphore.withPermits(1)(Effect.flatMap(
+        Effect.locally(
+          Effect.suspend(() => {
+            return pullChunk
+          }),
+          FiberRef.currentContext,
+          context
+        ),
+        Either.match({
+          onLeft: () =>
+            Effect.succeed({
               done: true,
-              items: Chunk.toReadonlyArray(acc)
+              items: Chunk.toReadonlyArray(acc) as Array<A>
+            }),
+          onRight(chunk) {
+            let items: Chunk.Chunk<A>
+            if (options?.disableAccumulation) {
+              items = chunk
+            } else {
+              items = Chunk.appendAll(acc, chunk)
+              acc = items
+            }
+            return Effect.succeed({
+              done: false,
+              items: Chunk.toReadonlyArray(items) as Array<A>
             })
           }
-          return Effect.fail(failure.value.value)
-        }
-      }
-    )
-    return pull as any
-  })
+        })
+      ))
+
+      const runCallback = runCallbackSync(Runtime.make({
+        context,
+        fiberRefs: fiber.getFiberRefs(),
+        runtimeFlags: Runtime.defaultRuntime.runtimeFlags
+      }))
+      const cancels = new Set<() => void>()
+      get.addFinalizer(() => {
+        for (const cancel of cancels) cancel()
+      })
+      get.once(pullSignal)
+      get.subscribe(pullSignal, () => {
+        get.setSelfSync(Result.waitingFrom(get.self<PullResult<A, E>>()))
+        let cancel: (() => void) | undefined
+        // eslint-disable-next-line prefer-const
+        cancel = runCallback(pull, (exit) => {
+          if (cancel) cancels.delete(cancel)
+          const result = Result.fromExitWithPrevious(exit, get.self())
+          const pending = cancels.size > 0
+          get.setSelfSync(pending ? Result.waiting(result) : result)
+        })
+        if (cancel) cancels.add(cancel)
+      })
+
+      return pull
+    }
+  )
 
 const makeStreamPull = <A, E>(
-  pullRx: Rx<Result.Result<Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, E>>>,
-  options?: {
-    readonly initialValue?: ReadonlyArray<A>
-  }
-) => {
-  const initialValue: Result.Result<{
-    readonly done: boolean
-    readonly items: Array<A>
-  }, E> = options?.initialValue !== undefined
-    ? Result.success({ done: false, items: options.initialValue as Array<A> })
-    : Result.initial()
-
-  return writable(function(get: Context): PullResult<A, E> {
-    const previous = get.self<PullResult<A, E>>()
-    const pullResult = get(pullRx)
-    if (pullResult._tag !== "Success") {
-      return Result.replacePrevious(pullResult, previous)
-    }
-    return makeEffect(get, pullResult.value, initialValue)
-  }, function(ctx, _) {
-    ctx.refreshSelf()
-  }, function(refresh) {
-    refresh(pullRx)
+  pullSignal: Writable<number>,
+  pullRx: Rx<PullResult<A, E>>
+) =>
+  writable(pullRx.read, function(ctx, _) {
+    ctx.set(pullSignal, ctx.get(pullSignal) + 1)
   })
-}
 
 /**
  * @since 1.0.0

@@ -492,18 +492,18 @@ describe("Rx", () => {
     assert(Option.isNone(Result.value(result)))
   })
 
-  it("pull initial", async () => {
+  it("pull refreshable", async () => {
     const count = Rx.pull(() =>
       Stream.range(1, 2, 1).pipe(
         Stream.tap(() => Effect.sleep(50))
-      ), { initialValue: [0] }).pipe(Rx.refreshable)
+      )
+    ).pipe(Rx.refreshable)
     const r = Registry.make()
     const unmount = r.mount(count)
 
     let result = r.get(count)
     assert(result.waiting)
-    assert(Result.isSuccess(result))
-    assert.deepEqual(result.value, { done: false, items: [0] })
+    assert(Result.isInitial(result))
 
     await vitest.advanceTimersByTimeAsync(50)
     result = r.get(count)
