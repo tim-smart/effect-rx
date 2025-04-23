@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.16
+
+### Patch Changes
+
+- [`fd4d1ce`](https://github.com/tim-smart/effect-rx/commit/fd4d1cea2eb02de723b40f2fcf8d7ad5251c65dc) Thanks [@tim-smart](https://github.com/tim-smart)! - add RxRegistry tag for reading Rx's inside effects
+
 ## 0.34.15
 
 ### Patch Changes
