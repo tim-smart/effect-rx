@@ -12,6 +12,11 @@ Added in v1.0.0
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [Conversions](#conversions)
+  - [get](#get)
+  - [getResult](#getresult)
+  - [toStream](#tostream)
+  - [toStreamResult](#tostreamresult)
 - [batching](#batching)
   - [batch](#batch)
 - [combinators](#combinators)
@@ -47,22 +52,10 @@ Added in v1.0.0
   - [RuntimeFactory (interface)](#runtimefactory-interface)
   - [Rx (interface)](#rx-interface)
   - [Rx (namespace)](#rx-namespace)
-    - [Get (type alias)](#get-type-alias)
-    - [GetResult (type alias)](#getresult-type-alias)
     - [Infer (type alias)](#infer-type-alias)
     - [InferFailure (type alias)](#inferfailure-type-alias)
     - [InferPullSuccess (type alias)](#inferpullsuccess-type-alias)
     - [InferSuccess (type alias)](#infersuccess-type-alias)
-    - [Mount (type alias)](#mount-type-alias)
-    - [Read (type alias)](#read-type-alias)
-    - [ReadFn (type alias)](#readfn-type-alias)
-    - [Refresh (type alias)](#refresh-type-alias)
-    - [RefreshRx (type alias)](#refreshrx-type-alias)
-    - [RefreshRxSync (type alias)](#refreshrxsync-type-alias)
-    - [Set (type alias)](#set-type-alias)
-    - [SetEffect (type alias)](#seteffect-type-alias)
-    - [Subscribe (type alias)](#subscribe-type-alias)
-    - [Write (type alias)](#write-type-alias)
   - [RxResultFn (interface)](#rxresultfn-interface)
   - [RxRuntime (interface)](#rxruntime-interface)
   - [Writable (interface)](#writable-interface)
@@ -83,6 +76,48 @@ Added in v1.0.0
     - [ArgToVoid (type alias)](#argtovoid-type-alias)
 
 ---
+
+# Conversions
+
+## get
+
+**Signature**
+
+```ts
+export declare const get: <A>(self: Rx<A>) => Effect.Effect<A, never, RxRegistry>
+```
+
+Added in v1.0.0
+
+## getResult
+
+**Signature**
+
+```ts
+export declare const getResult: <A, E>(self: Rx<Result.Result<A, E>>) => Effect.Effect<A, E, RxRegistry>
+```
+
+Added in v1.0.0
+
+## toStream
+
+**Signature**
+
+```ts
+export declare const toStream: <A>(self: Rx<A>) => Stream.Stream<A, never, RxRegistry>
+```
+
+Added in v1.0.0
+
+## toStreamResult
+
+**Signature**
+
+```ts
+export declare const toStreamResult: <A, E>(self: Rx<Result.Result<A, E>>) => Stream.Stream<A, E, RxRegistry>
+```
+
+Added in v1.0.0
 
 # batching
 
@@ -283,11 +318,11 @@ Added in v1.0.0
 ```ts
 export declare const fn: {
   <Arg, E, A>(
-    fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope>>,
+    fn: (arg: Arg, get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry>,
     options?: { readonly initialValue?: A }
   ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
   <Arg, E, A>(
-    fn: Rx.ReadFn<Arg, Stream.Stream<A, E>>,
+    fn: (arg: Arg, get: Context) => Stream.Stream<A, E, RxRegistry>,
     options?: { readonly initialValue?: A }
   ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
 }
@@ -301,8 +336,11 @@ Added in v1.0.0
 
 ```ts
 export declare const fnSync: {
-  <Arg, A>(f: Rx.ReadFn<Arg, A>): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
-  <Arg, A>(f: Rx.ReadFn<Arg, A>, options: { readonly initialValue: A }): Writable<A, RxResultFn.ArgToVoid<Arg>>
+  <Arg, A>(f: (arg: Arg, get: Context) => A): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
+  <Arg, A>(
+    f: (arg: Arg, get: Context) => A,
+    options: { readonly initialValue: A }
+  ): Writable<A, RxResultFn.ArgToVoid<Arg>>
 }
 ```
 
@@ -314,14 +352,20 @@ Added in v1.0.0
 
 ```ts
 export declare const make: {
-  <A, E>(effect: Effect.Effect<A, E, Scope.Scope>, options?: { readonly initialValue?: A }): Rx<Result.Result<A, E>>
   <A, E>(
-    create: Rx.Read<Effect.Effect<A, E, Scope.Scope>>,
+    effect: Effect.Effect<A, E, Scope.Scope | RxRegistry>,
     options?: { readonly initialValue?: A }
   ): Rx<Result.Result<A, E>>
-  <A, E>(stream: Stream.Stream<A, E>, options?: { readonly initialValue?: A }): Rx<Result.Result<A, E>>
-  <A, E>(create: Rx.Read<Stream.Stream<A, E>>, options?: { readonly initialValue?: A }): Rx<Result.Result<A, E>>
-  <A>(create: Rx.Read<A>): Rx<A>
+  <A, E>(
+    create: (get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry>,
+    options?: { readonly initialValue?: A }
+  ): Rx<Result.Result<A, E>>
+  <A, E>(stream: Stream.Stream<A, E, RxRegistry>, options?: { readonly initialValue?: A }): Rx<Result.Result<A, E>>
+  <A, E>(
+    create: (get: Context) => Stream.Stream<A, E, RxRegistry>,
+    options?: { readonly initialValue?: A }
+  ): Rx<Result.Result<A, E>>
+  <A>(create: (get: Context) => A): Rx<A>
   <A>(initialValue: A): Writable<A, A>
 }
 ```
@@ -334,7 +378,7 @@ Added in v1.0.0
 
 ```ts
 export declare const pull: <A, E>(
-  create: Rx.Read<Stream.Stream<A, E>> | Stream.Stream<A, E>,
+  create: ((get: Context) => Stream.Stream<A, E, RxRegistry>) | Stream.Stream<A, E, RxRegistry>,
   options?: { readonly disableAccumulation?: boolean; readonly initialValue?: ReadonlyArray<A> }
 ) => Writable<PullResult<A, E>, void>
 ```
@@ -346,7 +390,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const readable: <A>(read: Rx.Read<A>, refresh?: Rx.Refresh) => Rx<A>
+export declare const readable: <A>(read: (get: Context) => A, refresh?: (f: <A>(rx: Rx<A>) => void) => void) => Rx<A>
 ```
 
 Added in v1.0.0
@@ -357,11 +401,11 @@ Added in v1.0.0
 
 ```ts
 export declare const subscribable: {
-  <A, E>(ref: Subscribable.Subscribable<A, E> | Rx.Read<Subscribable.Subscribable<A, E>>): Rx<A>
+  <A, E>(ref: Subscribable.Subscribable<A, E> | ((get: Context) => Subscribable.Subscribable<A, E>)): Rx<A>
   <A, E, E1>(
     effect:
-      | Effect.Effect<Subscribable.Subscribable<A, E1>, E, never>
-      | Rx.Read<Effect.Effect<Subscribable.Subscribable<A, E1>, E, never>>
+      | Effect.Effect<Subscribable.Subscribable<A, E1>, E, Scope.Scope | RxRegistry>
+      | ((get: Context) => Effect.Effect<Subscribable.Subscribable<A, E1>, E, Scope.Scope | RxRegistry>)
   ): Rx<Result.Result<A, E | E1>>
 }
 ```
@@ -374,11 +418,11 @@ Added in v1.0.0
 
 ```ts
 export declare const subscriptionRef: {
-  <A>(ref: SubscriptionRef.SubscriptionRef<A> | Rx.Read<SubscriptionRef.SubscriptionRef<A>>): Writable<A, A>
+  <A>(ref: SubscriptionRef.SubscriptionRef<A> | ((get: Context) => SubscriptionRef.SubscriptionRef<A>)): Writable<A, A>
   <A, E>(
     effect:
-      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, never>
-      | Rx.Read<Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, never>>
+      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, Scope.Scope | RxRegistry>
+      | ((get: Context) => Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, Scope.Scope | RxRegistry>)
   ): Writable<Result.Result<A, E>, A>
 }
 ```
@@ -390,7 +434,11 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const writable: <R, W>(read: Rx.Read<R>, write: Rx.Write<R, W>, refresh?: Rx.Refresh) => Writable<R, W>
+export declare const writable: <R, W>(
+  read: (get: Context) => R,
+  write: (ctx: WriteContext<R>, value: W) => void,
+  refresh?: (f: <A>(rx: Rx<A>) => void) => void
+) => Writable<R, W>
 ```
 
 Added in v1.0.0
@@ -442,6 +490,7 @@ export interface Context {
       readonly immediate?: boolean
     }
   ) => void
+  readonly registry: Registry
 }
 ```
 
@@ -492,7 +541,7 @@ Added in v1.0.0
 export type PullResult<A, E = never> = Result.Result<
   {
     readonly done: boolean
-    readonly items: Array<A>
+    readonly items: ReadonlyArray<A>
   },
   E | NoSuchElementException
 >
@@ -518,7 +567,7 @@ Added in v1.0.0
 
 ```ts
 export interface RuntimeFactory {
-  <R, E>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>): RxRuntime<R, E>
+  <R, E>(create: Layer.Layer<R, E, RxRegistry> | ((get: Context) => Layer.Layer<R, E, RxRegistry>)): RxRuntime<R, E>
   readonly memoMap: Layer.MemoMap
 }
 ```
@@ -533,8 +582,8 @@ Added in v1.0.0
 export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
-  readonly read: Rx.Read<A>
-  readonly refresh?: Rx.Refresh
+  readonly read: (get: Context) => A
+  readonly refresh?: (f: <A>(rx: Rx<A>) => void) => void
   readonly label?: readonly [name: string, stack: string]
   readonly idleTTL?: number
 }
@@ -543,26 +592,6 @@ export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
 Added in v1.0.0
 
 ## Rx (namespace)
-
-Added in v1.0.0
-
-### Get (type alias)
-
-**Signature**
-
-```ts
-export type Get = <A>(rx: Rx<A>) => A
-```
-
-Added in v1.0.0
-
-### GetResult (type alias)
-
-**Signature**
-
-```ts
-export type GetResult = <A, E>(rx: Rx<Result.Result<A, E>>) => Effect.Effect<A, E>
-```
 
 Added in v1.0.0
 
@@ -606,112 +635,6 @@ export type InferSuccess<T extends Rx<any>> = T extends Rx<Result.Result<infer A
 
 Added in v1.0.0
 
-### Mount (type alias)
-
-**Signature**
-
-```ts
-export type Mount = <A>(rx: Rx<A>) => () => void
-```
-
-Added in v1.0.0
-
-### Read (type alias)
-
-**Signature**
-
-```ts
-export type Read<A> = (ctx: Context) => A
-```
-
-Added in v1.0.0
-
-### ReadFn (type alias)
-
-**Signature**
-
-```ts
-export type ReadFn<Arg, A> = (arg: Arg, ctx: Context) => A
-```
-
-Added in v1.0.0
-
-### Refresh (type alias)
-
-**Signature**
-
-```ts
-export type Refresh = (f: <A>(rx: Rx<A>) => void) => void
-```
-
-Added in v1.0.0
-
-### RefreshRx (type alias)
-
-**Signature**
-
-```ts
-export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => Effect.Effect<void>
-```
-
-Added in v1.0.0
-
-### RefreshRxSync (type alias)
-
-**Signature**
-
-```ts
-export type RefreshRxSync = <A>(rx: Rx<A> & Refreshable) => void
-```
-
-Added in v1.0.0
-
-### Set (type alias)
-
-**Signature**
-
-```ts
-export type Set = <R, W>(rx: Writable<R, W>, value: W) => void
-```
-
-Added in v1.0.0
-
-### SetEffect (type alias)
-
-**Signature**
-
-```ts
-export type SetEffect = <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<void>
-```
-
-Added in v1.0.0
-
-### Subscribe (type alias)
-
-**Signature**
-
-```ts
-export type Subscribe = <A>(
-  rx: Rx<A>,
-  f: (_: A) => void,
-  options?: {
-    readonly immediate?: boolean
-  }
-) => () => void
-```
-
-Added in v1.0.0
-
-### Write (type alias)
-
-**Signature**
-
-```ts
-export type Write<R, W> = (ctx: WriteContext<R>, value: W) => void
-```
-
-Added in v1.0.0
-
 ## RxResultFn (interface)
 
 **Signature**
@@ -738,19 +661,19 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
       }
     ): Rx<Result.Result<A, E | ER>>
     <A, E>(
-      create: Rx.Read<Effect.Effect<A, E, Scope.Scope | R>>,
+      create: (get: Context) => Effect.Effect<A, E, Scope.Scope | R | RxRegistry>,
       options?: {
         readonly initialValue?: A
       }
     ): Rx<Result.Result<A, E | ER>>
     <A, E>(
-      stream: Stream.Stream<A, E, never | R>,
+      stream: Stream.Stream<A, E, RxRegistry | R>,
       options?: {
         readonly initialValue?: A
       }
     ): Rx<Result.Result<A, E | ER>>
     <A, E>(
-      create: Rx.Read<Stream.Stream<A, E, never | R>>,
+      create: (get: Context) => Stream.Stream<A, E, RxRegistry | R>,
       options?: {
         readonly initialValue?: A
       }
@@ -759,13 +682,13 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
 
   readonly fn: {
     <Arg, E, A>(
-      fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope | R>>,
+      fn: (arg: Arg, get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry | R>,
       options?: {
         readonly initialValue?: A
       }
     ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
     <Arg, E, A>(
-      fn: Rx.ReadFn<Arg, Stream.Stream<A, E, R>>,
+      fn: (arg: Arg, get: Context) => Stream.Stream<A, E, RxRegistry | R>,
       options?: {
         readonly initialValue?: A
       }
@@ -773,7 +696,7 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
   }
 
   readonly pull: <A, E>(
-    create: Rx.Read<Stream.Stream<A, E, R>> | Stream.Stream<A, E, R>,
+    create: ((get: Context) => Stream.Stream<A, E, R | RxRegistry>) | Stream.Stream<A, E, R | RxRegistry>,
     options?: {
       readonly disableAccumulation?: boolean
       readonly initialValue?: ReadonlyArray<A>
@@ -782,14 +705,14 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
 
   readonly subscriptionRef: <A, E>(
     create:
-      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R>
-      | Rx.Read<Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R>>
+      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R | RxRegistry>
+      | ((get: Context) => Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R | RxRegistry>)
   ) => Writable<Result.Result<A, E>, A>
 
   readonly subscribable: <A, E, E1 = never>(
     create:
-      | Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R>
-      | Rx.Read<Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R>>
+      | Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R | RxRegistry>
+      | ((get: Context) => Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R | RxRegistry>)
   ) => Rx<Result.Result<A, E | E1>>
 }
 ```
@@ -803,7 +726,7 @@ Added in v1.0.0
 ```ts
 export interface Writable<R, W> extends Rx<R> {
   readonly [WritableTypeId]: WritableTypeId
-  readonly write: Rx.Write<R, W>
+  readonly write: (ctx: WriteContext<R>, value: W) => void
 }
 ```
 

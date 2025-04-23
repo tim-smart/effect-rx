@@ -263,6 +263,7 @@ describe("Rx", () => {
   it("stream", async () => {
     const count = Rx.make(
       Stream.range(0, 2).pipe(
+        Stream.tap(() => Registry.RxRegistry),
         Stream.tap(() => Effect.sleep(50))
       )
     )
@@ -911,6 +912,7 @@ const MultiplierLive = Layer.effect(
   Multiplier,
   Effect.gen(function*() {
     const counter = yield* Counter
+    yield* Registry.RxRegistry // test that we can access the registry
     return Multiplier.of({
       times: (n) => Effect.map(counter.get, (_) => _ * n)
     })

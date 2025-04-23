@@ -1,6 +1,7 @@
 /**
  * @since 1.0.0
  */
+import * as Context from "effect/Context"
 import * as internal from "./internal/registry.js"
 import type * as Rx from "./Rx.js"
 
@@ -22,11 +23,13 @@ export type TypeId = typeof TypeId
  */
 export interface Registry {
   readonly [TypeId]: TypeId
-  readonly get: Rx.Rx.Get
-  readonly mount: Rx.Rx.Mount
-  readonly refresh: Rx.Rx.RefreshRxSync
-  readonly set: Rx.Rx.Set
-  readonly subscribe: Rx.Rx.Subscribe
+  readonly get: <A>(rx: Rx.Rx<A>) => A
+  readonly mount: <A>(rx: Rx.Rx<A>) => () => void
+  readonly refresh: <A>(rx: Rx.Rx<A> & Rx.Refreshable) => void
+  readonly set: <R, W>(rx: Rx.Writable<R, W>, value: W) => void
+  readonly subscribe: <A>(rx: Rx.Rx<A>, f: (_: A) => void, options?: {
+    readonly immediate?: boolean
+  }) => () => void
   readonly reset: () => void
   readonly dispose: () => void
 }
@@ -43,3 +46,13 @@ export const make: (
     readonly defaultIdleTTL?: number | undefined
   } | undefined
 ) => Registry = internal.make
+
+/**
+ * @since 1.0.0
+ * @category Tags
+ */
+export class RxRegistry extends Context.Tag("@effect/rx/Registry/CurrentRegistry")<
+  RxRegistry,
+  Registry
+>() {
+}

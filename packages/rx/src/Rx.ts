@@ -2,6 +2,7 @@
  * @since 1.0.0
  */
 /* eslint-disable @typescript-eslint/no-empty-object-type */
+import { Context } from "effect"
 import { NoSuchElementException } from "effect/Cause"
 import * as Cause from "effect/Cause"
 import * as Channel from "effect/Channel"
@@ -15,6 +16,7 @@ import { constVoid, dual, pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
+import * as Mailbox from "effect/Mailbox"
 import * as MutableHashMap from "effect/MutableHashMap"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
@@ -25,6 +27,8 @@ import * as Subscribable from "effect/Subscribable"
 import * as SubscriptionRef from "effect/SubscriptionRef"
 import * as internalRegistry from "./internal/registry.js"
 import { runCallbackSync } from "./internal/runtime.js"
+import type { Registry } from "./Registry.js"
+import { RxRegistry } from "./Registry.js"
 import * as Result from "./Result.js"
 
 /**
@@ -46,8 +50,8 @@ export type TypeId = typeof TypeId
 export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
-  readonly read: Rx.Read<A>
-  readonly refresh?: Rx.Refresh
+  readonly read: (get: Context) => A
+  readonly refresh?: (f: <A>(rx: Rx<A>) => void) => void
   readonly label?: readonly [name: string, stack: string]
   readonly idleTTL?: number
 }
@@ -57,80 +61,6 @@ export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
  * @category models
  */
 export declare namespace Rx {
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type Read<A> = (ctx: Context) => A
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type ReadFn<Arg, A> = (arg: Arg, ctx: Context) => A
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type Write<R, W> = (ctx: WriteContext<R>, value: W) => void
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type Refresh = (f: <A>(rx: Rx<A>) => void) => void
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type Get = <A>(rx: Rx<A>) => A
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type GetResult = <A, E>(rx: Rx<Result.Result<A, E>>) => Effect.Effect<A, E>
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type Set = <R, W>(rx: Writable<R, W>, value: W) => void
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type SetEffect = <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<void>
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type RefreshRxSync = <A>(rx: Rx<A> & Refreshable) => void
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type RefreshRx = <A>(rx: Rx<A> & Refreshable) => Effect.Effect<void>
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type Mount = <A>(rx: Rx<A>) => () => void
-
-  /**
-   * @since 1.0.0
-   * @category models
-   */
-  export type Subscribe = <A>(rx: Rx<A>, f: (_: A) => void, options?: {
-    readonly immediate?: boolean
-  }) => () => void
-
   /**
    * @since 1.0.0
    */
@@ -190,7 +120,7 @@ export type WritableTypeId = typeof WritableTypeId
  */
 export interface Writable<R, W> extends Rx<R> {
   readonly [WritableTypeId]: WritableTypeId
-  readonly write: Rx.Write<R, W>
+  readonly write: (ctx: WriteContext<R>, value: W) => void
 }
 
 /**
@@ -227,6 +157,7 @@ export interface Context {
   readonly subscribe: <A>(rx: Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }) => void
+  readonly registry: Registry
 }
 
 /**
@@ -359,8 +290,8 @@ export const isWritable = <R, W>(rx: Rx<R>): rx is Writable<R, W> => WritableTyp
  * @category constructors
  */
 export const readable = <A>(
-  read: Rx.Read<A>,
-  refresh?: Rx.Refresh
+  read: (get: Context) => A,
+  refresh?: (f: <A>(rx: Rx<A>) => void) => void
 ): Rx<A> => {
   const rx = Object.create(RxProto)
   rx.keepAlive = false
@@ -374,9 +305,9 @@ export const readable = <A>(
  * @category constructors
  */
 export const writable = <R, W>(
-  read: Rx.Read<R>,
-  write: Rx.Write<R, W>,
-  refresh?: Rx.Refresh
+  read: (get: Context) => R,
+  write: (ctx: WriteContext<R>, value: W) => void,
+  refresh?: (f: <A>(rx: Rx<A>) => void) => void
 ): Writable<R, W> => {
   const rx = Object.create(WritableProto)
   rx.keepAlive = false
@@ -399,19 +330,19 @@ function constSetSelf<A>(ctx: WriteContext<A>, value: A) {
  * @category constructors
  */
 export const make: {
-  <A, E>(effect: Effect.Effect<A, E, Scope.Scope>, options?: {
+  <A, E>(effect: Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
     readonly initialValue?: A
   }): Rx<Result.Result<A, E>>
-  <A, E>(create: Rx.Read<Effect.Effect<A, E, Scope.Scope>>, options?: {
+  <A, E>(create: (get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
     readonly initialValue?: A
   }): Rx<Result.Result<A, E>>
-  <A, E>(stream: Stream.Stream<A, E>, options?: {
+  <A, E>(stream: Stream.Stream<A, E, RxRegistry>, options?: {
     readonly initialValue?: A
   }): Rx<Result.Result<A, E>>
-  <A, E>(create: Rx.Read<Stream.Stream<A, E>>, options?: {
+  <A, E>(create: (get: Context) => Stream.Stream<A, E, RxRegistry>, options?: {
     readonly initialValue?: A
   }): Rx<Result.Result<A, E>>
-  <A>(create: Rx.Read<A>): Rx<A>
+  <A>(create: (get: Context) => A): Rx<A>
   <A>(initialValue: A): Writable<A, A>
 } = (arg: any, options?: { readonly initialValue?: unknown }) => {
   const readOrRx = makeRead(arg, options)
@@ -430,32 +361,32 @@ const isDataType = (u: object): u is Option.Option<unknown> | Either.Either<unkn
   Either.TypeId in u
 
 const makeRead: {
-  <A, E>(effect: Effect.Effect<A, E, Scope.Scope>, options?: {
+  <A, E>(effect: Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
     readonly initialValue?: A
   }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<A, E>
-  <A, E>(create: Rx.Read<Effect.Effect<A, E, Scope.Scope>>, options?: {
+  <A, E>(create: (get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
     readonly initialValue?: A
   }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<A, E>
-  <A, E>(stream: Stream.Stream<A, E>, options?: {
+  <A, E>(stream: Stream.Stream<A, E, RxRegistry>, options?: {
     readonly initialValue?: A
   }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<A, E>
-  <A, E>(create: Rx.Read<Stream.Stream<A, E>>, options?: {
+  <A, E>(create: (get: Context) => Stream.Stream<A, E, RxRegistry>, options?: {
     readonly initialValue?: A
   }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<A, E>
-  <A>(create: Rx.Read<A>): (get: Context, runtime?: Runtime.Runtime<any>) => A
+  <A>(create: (get: Context) => A): (get: Context, runtime?: Runtime.Runtime<any>) => A
   <A>(initialValue: A): Writable<A, A>
 } = <A, E>(
   arg:
-    | Effect.Effect<A, E, Scope.Scope>
-    | Rx.Read<Effect.Effect<A, E, Scope.Scope>>
-    | Stream.Stream<A, E>
-    | Rx.Read<Stream.Stream<A, E>>
-    | Rx.Read<A>
+    | Effect.Effect<A, E, Scope.Scope | RxRegistry>
+    | ((get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry>)
+    | Stream.Stream<A, E, RxRegistry>
+    | ((get: Context) => Stream.Stream<A, E, RxRegistry>)
+    | ((get: Context) => A)
     | A,
   options?: { readonly initialValue?: unknown }
 ) => {
   if (typeof arg === "function") {
-    const create = arg as Rx.Read<any>
+    const create = arg as (get: Context) => any
     return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
       const value = create(get)
       if (typeof value === "object" && value !== null) {
@@ -495,7 +426,7 @@ const state = <A>(
 
 const effect = <A, E>(
   get: Context,
-  effect: Effect.Effect<A, E, Scope.Scope>,
+  effect: Effect.Effect<A, E, Scope.Scope | RxRegistry>,
   options?: { readonly initialValue?: A; readonly uninterruptible?: boolean },
   runtime?: Runtime.Runtime<any>
 ): Result.Result<A, E> => {
@@ -507,7 +438,7 @@ const effect = <A, E>(
 
 function makeEffect<A, E>(
   ctx: Context,
-  effect: Effect.Effect<A, E, Scope.Scope>,
+  effect: Effect.Effect<A, E, Scope.Scope | RxRegistry>,
   initialValue: Result.Result<A, E>,
   runtime = Runtime.defaultRuntime,
   uninterruptible = false
@@ -518,10 +449,17 @@ function makeEffect<A, E>(
   ctx.addFinalizer(() => {
     Effect.runFork(Scope.close(scope, Exit.void))
   })
-  const scopedEffect = Scope.extend(effect, scope)
+  const contextMap = new Map(runtime.context.unsafeMap)
+  contextMap.set(Scope.Scope.key, scope)
+  contextMap.set(RxRegistry.key, ctx.registry)
+  const scopedRuntime = Runtime.make({
+    context: Context.unsafeMake(contextMap),
+    fiberRefs: runtime.fiberRefs,
+    runtimeFlags: runtime.runtimeFlags
+  })
   let syncResult: Result.Result<A, E> | undefined
-  const cancel = runCallbackSync(runtime)(
-    scopedEffect,
+  const cancel = runCallbackSync(scopedRuntime)(
+    effect,
     function(exit) {
       syncResult = Result.fromExitWithPrevious(exit, previous)
       ctx.setSelfSync(syncResult)
@@ -554,41 +492,44 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
     <A, E>(effect: Effect.Effect<A, E, Scope.Scope | R>, options?: {
       readonly initialValue?: A
     }): Rx<Result.Result<A, E | ER>>
-    <A, E>(create: Rx.Read<Effect.Effect<A, E, Scope.Scope | R>>, options?: {
+    <A, E>(create: (get: Context) => Effect.Effect<A, E, Scope.Scope | R | RxRegistry>, options?: {
       readonly initialValue?: A
     }): Rx<Result.Result<A, E | ER>>
-    <A, E>(stream: Stream.Stream<A, E, never | R>, options?: {
+    <A, E>(stream: Stream.Stream<A, E, RxRegistry | R>, options?: {
       readonly initialValue?: A
     }): Rx<Result.Result<A, E | ER>>
-    <A, E>(create: Rx.Read<Stream.Stream<A, E, never | R>>, options?: {
+    <A, E>(create: (get: Context) => Stream.Stream<A, E, RxRegistry | R>, options?: {
       readonly initialValue?: A
     }): Rx<Result.Result<A, E | ER>>
   }
 
   readonly fn: {
-    <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope | R>>, options?: {
+    <Arg, E, A>(fn: (arg: Arg, get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry | R>, options?: {
       readonly initialValue?: A
     }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
-    <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<A, E, R>>, options?: {
+    <Arg, E, A>(fn: (arg: Arg, get: Context) => Stream.Stream<A, E, RxRegistry | R>, options?: {
       readonly initialValue?: A
     }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER | NoSuchElementException>
   }
 
-  readonly pull: <A, E>(create: Rx.Read<Stream.Stream<A, E, R>> | Stream.Stream<A, E, R>, options?: {
-    readonly disableAccumulation?: boolean
-    readonly initialValue?: ReadonlyArray<A>
-  }) => Writable<PullResult<A, E | ER>, void>
+  readonly pull: <A, E>(
+    create: ((get: Context) => Stream.Stream<A, E, R | RxRegistry>) | Stream.Stream<A, E, R | RxRegistry>,
+    options?: {
+      readonly disableAccumulation?: boolean
+      readonly initialValue?: ReadonlyArray<A>
+    }
+  ) => Writable<PullResult<A, E | ER>, void>
 
   readonly subscriptionRef: <A, E>(
     create:
-      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R>
-      | Rx.Read<Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R>>
+      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R | RxRegistry>
+      | ((get: Context) => Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R | RxRegistry>)
   ) => Writable<Result.Result<A, E>, A>
 
   readonly subscribable: <A, E, E1 = never>(
     create:
-      | Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R>
-      | Rx.Read<Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R>>
+      | Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R | RxRegistry>
+      | ((get: Context) => Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R | RxRegistry>)
   ) => Rx<Result.Result<A, E | E1>>
 }
 
@@ -597,7 +538,7 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
  * @category models
  */
 export interface RuntimeFactory {
-  <R, E>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>): RxRuntime<R, E>
+  <R, E>(create: Layer.Layer<R, E, RxRegistry> | ((get: Context) => Layer.Layer<R, E, RxRegistry>)): RxRuntime<R, E>
   readonly memoMap: Layer.MemoMap
 }
 
@@ -609,7 +550,9 @@ export const context: (options?: {
   readonly memoMap?: Layer.MemoMap | undefined
 }) => RuntimeFactory = (options) => {
   const memoMap = options?.memoMap ?? Effect.runSync(Layer.makeMemoMap)
-  function factory<E, R>(create: Layer.Layer<R, E> | Rx.Read<Layer.Layer<R, E>>): RxRuntime<R, E> {
+  function factory<E, R>(
+    create: Layer.Layer<R, E, RxRegistry> | ((get: Context) => Layer.Layer<R, E, RxRegistry>)
+  ): RxRuntime<R, E> {
     const rx = Object.create(RxRuntimeProto)
     rx.keepAlive = false
     rx.refresh = undefined
@@ -656,7 +599,7 @@ export const runtime: RuntimeFactory = globalValue(
 
 const stream = <A, E>(
   get: Context,
-  stream: Stream.Stream<A, E>,
+  stream: Stream.Stream<A, E, RxRegistry>,
   options?: { readonly initialValue?: A },
   runtime?: Runtime.Runtime<any>
 ): Result.Result<A, E | NoSuchElementException> => {
@@ -668,7 +611,7 @@ const stream = <A, E>(
 
 function makeStream<A, E>(
   ctx: Context,
-  stream: Stream.Stream<A, E>,
+  stream: Stream.Stream<A, E, RxRegistry>,
   initialValue: Result.Result<A, E | NoSuchElementException>,
   runtime = Runtime.defaultRuntime
 ): Result.Result<A, E | NoSuchElementException> {
@@ -703,7 +646,13 @@ function makeStream<A, E>(
     }
   })
 
-  const cancel = runCallbackSync(runtime)(
+  const registryRuntime = Runtime.make({
+    context: Context.add(runtime.context, RxRegistry, ctx.registry),
+    fiberRefs: runtime.fiberRefs,
+    runtimeFlags: runtime.runtimeFlags
+  })
+
+  const cancel = runCallbackSync(registryRuntime)(
     Channel.runDrain(Channel.pipeTo(Stream.toChannel(stream), writer)),
     constVoid
   )
@@ -774,18 +723,18 @@ const makeSubRef = (
  * @category constructors
  */
 export const subscriptionRef: {
-  <A>(ref: SubscriptionRef.SubscriptionRef<A> | Rx.Read<SubscriptionRef.SubscriptionRef<A>>): Writable<A, A>
+  <A>(ref: SubscriptionRef.SubscriptionRef<A> | ((get: Context) => SubscriptionRef.SubscriptionRef<A>)): Writable<A, A>
   <A, E>(
     effect:
-      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, never>
-      | Rx.Read<Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, never>>
+      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, Scope.Scope | RxRegistry>
+      | ((get: Context) => Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, Scope.Scope | RxRegistry>)
   ): Writable<Result.Result<A, E>, A>
 } = (
   ref:
     | SubscriptionRef.SubscriptionRef<any>
-    | Rx.Read<SubscriptionRef.SubscriptionRef<any>>
-    | Effect.Effect<SubscriptionRef.SubscriptionRef<any>, any, never>
-    | Rx.Read<Effect.Effect<SubscriptionRef.SubscriptionRef<any>, any, never>>
+    | ((get: Context) => SubscriptionRef.SubscriptionRef<any>)
+    | Effect.Effect<SubscriptionRef.SubscriptionRef<any>, any, Scope.Scope | RxRegistry>
+    | ((get: Context) => Effect.Effect<SubscriptionRef.SubscriptionRef<any>, any, Scope.Scope | RxRegistry>)
 ) =>
   makeSubRef(
     readable((get) => {
@@ -806,18 +755,20 @@ export const subscriptionRef: {
  * @category constructors
  */
 export const subscribable: {
-  <A, E>(ref: Subscribable.Subscribable<A, E> | Rx.Read<Subscribable.Subscribable<A, E>>): Rx<A>
+  <A, E>(
+    ref: Subscribable.Subscribable<A, E> | ((get: Context) => Subscribable.Subscribable<A, E>)
+  ): Rx<A>
   <A, E, E1>(
     effect:
-      | Effect.Effect<Subscribable.Subscribable<A, E1>, E, never>
-      | Rx.Read<Effect.Effect<Subscribable.Subscribable<A, E1>, E, never>>
+      | Effect.Effect<Subscribable.Subscribable<A, E1>, E, Scope.Scope | RxRegistry>
+      | ((get: Context) => Effect.Effect<Subscribable.Subscribable<A, E1>, E, Scope.Scope | RxRegistry>)
   ): Rx<Result.Result<A, E | E1>>
 } = (
   ref:
     | Subscribable.Subscribable<any, any>
-    | Rx.Read<Subscribable.Subscribable<any, any>>
-    | Effect.Effect<Subscribable.Subscribable<any, any>, any, never>
-    | Rx.Read<Effect.Effect<Subscribable.Subscribable<any, any>, any, never>>
+    | ((get: Context) => Subscribable.Subscribable<any, any>)
+    | Effect.Effect<Subscribable.Subscribable<any, any>, any, Scope.Scope | RxRegistry>
+    | ((get: Context) => Effect.Effect<Subscribable.Subscribable<any, any>, any, Scope.Scope | RxRegistry>)
 ) =>
   readable((get) => {
     const value = typeof ref === "function" ? ref(get) : ref
@@ -837,13 +788,13 @@ export const subscribable: {
  */
 export const fnSync: {
   <Arg, A>(
-    f: Rx.ReadFn<Arg, A>
+    f: (arg: Arg, get: Context) => A
   ): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
   <Arg, A>(
-    f: Rx.ReadFn<Arg, A>,
+    f: (arg: Arg, get: Context) => A,
     options: { readonly initialValue: A }
   ): Writable<A, RxResultFn.ArgToVoid<Arg>>
-} = <Arg, A>(f: Rx.ReadFn<Arg, A>, options?: {
+} = <Arg, A>(f: (arg: Arg, get: Context) => A, options?: {
   readonly initialValue?: A
 }): Writable<Option.Option<A> | A, RxResultFn.ArgToVoid<Arg>> => {
   const argRx = state<[number, Arg]>([0, undefined as any])
@@ -895,21 +846,24 @@ export type Reset = typeof Reset
  * @category constructors
  */
 export const fn: {
-  <Arg, E, A>(fn: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope>>, options?: {
+  <Arg, E, A>(fn: (arg: Arg, get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
     readonly initialValue?: A
   }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
-  <Arg, E, A>(fn: Rx.ReadFn<Arg, Stream.Stream<A, E>>, options?: {
+  <Arg, E, A>(fn: (arg: Arg, get: Context) => Stream.Stream<A, E, RxRegistry>, options?: {
     readonly initialValue?: A
   }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
-} = <Arg, E, A>(f: Rx.ReadFn<Arg, Stream.Stream<A, E> | Effect.Effect<A, E, Scope.Scope>>, options?: {
-  readonly initialValue?: A
-}): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException> => {
+} = <Arg, E, A>(
+  f: (arg: Arg, get: Context) => Stream.Stream<A, E, RxRegistry> | Effect.Effect<A, E, Scope.Scope | RxRegistry>,
+  options?: {
+    readonly initialValue?: A
+  }
+): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException> => {
   const [read, write] = makeResultFn(f, options)
   return writable(read, write) as any
 }
 
 function makeResultFn<Arg, E, A>(
-  f: Rx.ReadFn<Arg, Effect.Effect<A, E, Scope.Scope> | Stream.Stream<A, E>>,
+  f: (arg: Arg, get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry> | Stream.Stream<A, E, RxRegistry>,
   options?: { readonly initialValue?: A }
 ) {
   const argRx = state<[number, Arg]>([0, undefined as any])
@@ -954,10 +908,13 @@ export type PullResult<A, E = never> = Result.Result<{
  * @since 1.0.0
  * @category constructors
  */
-export const pull = <A, E>(create: Rx.Read<Stream.Stream<A, E>> | Stream.Stream<A, E>, options?: {
-  readonly disableAccumulation?: boolean
-  readonly initialValue?: ReadonlyArray<A>
-}): Writable<PullResult<A, E>, void> => {
+export const pull = <A, E>(
+  create: ((get: Context) => Stream.Stream<A, E, RxRegistry>) | Stream.Stream<A, E, RxRegistry>,
+  options?: {
+    readonly disableAccumulation?: boolean
+    readonly initialValue?: ReadonlyArray<A>
+  }
+): Writable<PullResult<A, E>, void> => {
   const pullRx = readable(
     makeRead(function(get) {
       return makeStreamPullEffect(get, create, options)
@@ -968,15 +925,15 @@ export const pull = <A, E>(create: Rx.Read<Stream.Stream<A, E>> | Stream.Stream<
 
 const makeStreamPullEffect: <A, E>(
   get: Context,
-  create: Stream.Stream<A, E, never> | Rx.Read<Stream.Stream<A, E, never>>,
+  create: Stream.Stream<A, E, RxRegistry> | ((get: Context) => Stream.Stream<A, E, RxRegistry>),
   options?: { readonly disableAccumulation?: boolean } | undefined
 ) => Effect.Effect<
   Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, NoSuchElementException | E>,
   never,
-  Scope.Scope
+  Scope.Scope | RxRegistry
 > = Effect.fnUntraced(function*<A, E>(
   get: Context,
-  create: Rx.Read<Stream.Stream<A, E>> | Stream.Stream<A, E>,
+  create: Stream.Stream<A, E, RxRegistry> | ((get: Context) => Stream.Stream<A, E, RxRegistry>),
   options?: {
     readonly disableAccumulation?: boolean
   }
@@ -1301,7 +1258,7 @@ export const debounce: {
       let value = get.once(self)
       function update() {
         timeout = undefined
-        get.setSelfSync(get.once(self))
+        get.setSelfSync(value)
       }
       get.addFinalizer(function() {
         if (timeout) clearTimeout(timeout)
@@ -1321,3 +1278,67 @@ export const debounce: {
  * @category batching
  */
 export const batch: (f: () => void) => void = internalRegistry.batch
+
+// -----------------------------------------------------------------------------
+// conversions
+// -----------------------------------------------------------------------------
+
+/**
+ * @since 1.0.0
+ * @category Conversions
+ */
+export const toStream: <A>(self: Rx<A>) => Stream.Stream<
+  A,
+  never,
+  RxRegistry
+> = Effect.fnUntraced(function*<A>(self: Rx<A>) {
+  const context = yield* Effect.context<RxRegistry | Scope.Scope>()
+  const registry = Context.get(context, RxRegistry)
+  const scope = Context.get(context, Scope.Scope)
+  const mailbox = yield* Mailbox.make<A>()
+  yield* Scope.addFinalizer(scope, mailbox.shutdown)
+  const cancel = registry.subscribe(self, (value) => mailbox.unsafeOffer(value))
+  yield* Scope.addFinalizer(scope, Effect.sync(cancel))
+  return Mailbox.toStream(mailbox)
+}, Stream.unwrapScoped)
+
+/**
+ * @since 1.0.0
+ * @category Conversions
+ */
+export const toStreamResult = <A, E>(self: Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry> =>
+  toStream(self).pipe(
+    Stream.filter(Result.isNotInitial),
+    Stream.mapEffect((result) =>
+      result._tag === "Success" ? Effect.succeed(result.value) : Effect.failCause(result.cause)
+    )
+  )
+
+/**
+ * @since 1.0.0
+ * @category Conversions
+ */
+export const get = <A>(self: Rx<A>): Effect.Effect<A, never, RxRegistry> =>
+  Effect.map(RxRegistry, (registry) => registry.get(self))
+
+/**
+ * @since 1.0.0
+ * @category Conversions
+ */
+export const getResult = <A, E>(
+  self: Rx<Result.Result<A, E>>
+): Effect.Effect<A, E, RxRegistry> =>
+  Effect.flatMap(RxRegistry, (registry) =>
+    Effect.async((resume) => {
+      const result = registry.get(self)
+      if (result._tag !== "Initial") {
+        return resume(Result.toExit(result) as any)
+      }
+      const cancel = registry.subscribe(self, (value) => {
+        if (value._tag !== "Initial") {
+          resume(Result.toExit(value) as any)
+          cancel()
+        }
+      })
+      return Effect.sync(cancel)
+    }))

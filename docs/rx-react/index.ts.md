@@ -75,7 +75,7 @@ Added in v1.0.0
 ```ts
 export declare const action: <Args extends ReadonlyArray<any>, A, E, R>(
   f: (...args: Args) => Effect.Effect<A, E, R>
-) => Effect.Effect<(...args: Args) => Promise<A>, never, R | Scope>
+) => Effect.Effect<(...args: Args) => Promise<A>, never, R>
 ```
 
 Added in v1.0.0
@@ -85,17 +85,25 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const component: <E, R, Props extends Record<string, any> = {}>(
-  name: string,
-  build: (
-    props: Props,
-    emit: (_: React.ReactNode) => Effect.Effect<void, never, Reactive.Reactive>
-  ) => Effect.Effect<React.ReactNode, E, R>,
-  options?: {
-    readonly onInitial?: (props: Props) => React.ReactNode
-    readonly deps?: (props: Props) => ReadonlyArray<any>
-  }
-) => ReactiveComponent<Props, Exclude<R, Reactive.Reactive | Scope>>
+export declare const component: <Props extends Record<string, any> = {}>(
+  name: string
+) => {
+  <E, R>(
+    build: (props: Props) => Effect.Effect<React.ReactNode, E, R>,
+    options?: {
+      readonly fallback?: (props: Props) => React.ReactNode
+      readonly deps?: (props: Props) => ReadonlyArray<any>
+    }
+  ): ReactiveComponent<Props, Exclude<R, Reactive.Reactive | Scope>>
+  <E, R, Context>(
+    beforeBuild: (props: Props) => Context,
+    build: (props: Props, context: Context) => Effect.Effect<React.ReactNode, E, R>,
+    options?: {
+      readonly fallback?: (props: Props) => React.ReactNode
+      readonly deps?: (props: Props) => ReadonlyArray<any>
+    }
+  ): ReactiveComponent<Props, Exclude<R, Reactive.Reactive | Scope>>
+}
 ```
 
 Added in v1.0.0

@@ -434,6 +434,10 @@ interface Lifetime<A> extends Rx.Context {
 const disposedError = (rx: Rx.Rx<any>): Error => new Error(`Cannot use context of disposed Rx: ${rx}`)
 
 const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
+  get registry(): RegistryImpl {
+    return (this as Lifetime<any>).node.registry
+  },
+
   addFinalizer(this: Lifetime<any>, f: () => void): void {
     if (this.disposed) {
       throw disposedError(this.node.rx)
@@ -642,7 +646,7 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
   streamResult<A, E>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<A, E>>, options?: {
     readonly withoutInitialValue?: boolean
     readonly bufferSize?: number
-  }) {
+  }): Stream.Stream<A, E> {
     return pipe(
       this.stream(rx, options),
       Stream.filter(Result.isNotInitial),

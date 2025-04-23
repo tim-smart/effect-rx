@@ -12,6 +12,8 @@ Added in v1.0.0
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [Tags](#tags)
+  - [RxRegistry (class)](#rxregistry-class)
 - [constructors](#constructors)
   - [make](#make)
 - [models](#models)
@@ -21,6 +23,18 @@ Added in v1.0.0
   - [TypeId (type alias)](#typeid-type-alias)
 
 ---
+
+# Tags
+
+## RxRegistry (class)
+
+**Signature**
+
+```ts
+export declare class RxRegistry
+```
+
+Added in v1.0.0
 
 # constructors
 
@@ -52,11 +66,17 @@ Added in v1.0.0
 ```ts
 export interface Registry {
   readonly [TypeId]: TypeId
-  readonly get: Rx.Rx.Get
-  readonly mount: Rx.Rx.Mount
-  readonly refresh: Rx.Rx.RefreshRxSync
-  readonly set: Rx.Rx.Set
-  readonly subscribe: Rx.Rx.Subscribe
+  readonly get: <A>(rx: Rx.Rx<A>) => A
+  readonly mount: <A>(rx: Rx.Rx<A>) => () => void
+  readonly refresh: <A>(rx: Rx.Rx<A> & Rx.Refreshable) => void
+  readonly set: <R, W>(rx: Rx.Writable<R, W>, value: W) => void
+  readonly subscribe: <A>(
+    rx: Rx.Rx<A>,
+    f: (_: A) => void,
+    options?: {
+      readonly immediate?: boolean
+    }
+  ) => () => void
   readonly reset: () => void
   readonly dispose: () => void
 }
