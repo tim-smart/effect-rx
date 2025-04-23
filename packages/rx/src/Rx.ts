@@ -1268,7 +1268,7 @@ export const debounce: {
       })
       get.subscribe(self, function(val) {
         value = val
-        if (timeout) return
+        if (timeout) clearTimeout(timeout)
         timeout = setTimeout(update, millis)
       })
       return value
@@ -1349,9 +1349,10 @@ export const searchParam = (name: string): Writable<string> =>
     (ctx, value: string) => {
       searchParamState.updates.set(name, value)
       ctx.setSelf(value)
-      if (!searchParamState.timeout) {
-        searchParamState.timeout = setTimeout(updateSearchParams, 500)
+      if (searchParamState.timeout) {
+        clearTimeout(searchParamState.timeout)
       }
+      searchParamState.timeout = setTimeout(updateSearchParams, 500)
     }
   )
 
