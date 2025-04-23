@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.19
+
+### Patch Changes
+
+- [`3e3ebc3`](https://github.com/tim-smart/effect-rx/commit/3e3ebc3c2f6fbb82530868a3b43f35d54d2f32d5) Thanks [@tim-smart](https://github.com/tim-smart)! - increase Rx.searchParam debounce
+
 ## 0.34.18
 
 ### Patch Changes
