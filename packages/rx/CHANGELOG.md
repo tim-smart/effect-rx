@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.34.18
+
+### Patch Changes
+
+- [`f8f6dfa`](https://github.com/tim-smart/effect-rx/commit/f8f6dfacbf3502c1d790634ac93b8f498f9fb0f9) Thanks [@tim-smart](https://github.com/tim-smart)! - fix Rx.kvs
+
 ## 0.34.17
 
 ### Patch Changes
