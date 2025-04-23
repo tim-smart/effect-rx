@@ -12,6 +12,7 @@ import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Either from "effect/Either"
 import * as Exit from "effect/Exit"
+import * as Fiber from "effect/Fiber"
 import * as FiberRef from "effect/FiberRef"
 import type { LazyArg } from "effect/Function"
 import { constVoid, dual, pipe } from "effect/Function"
@@ -926,61 +927,56 @@ export const pull = <A, E>(
   return makeStreamPull(pullRx, options)
 }
 
-const makeStreamPullEffect: <A, E>(
-  get: Context,
-  create: Stream.Stream<A, E, RxRegistry> | ((get: Context) => Stream.Stream<A, E, RxRegistry>),
-  options?: { readonly disableAccumulation?: boolean } | undefined
-) => Effect.Effect<
-  Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, E>,
-  never,
-  Scope.Scope | RxRegistry
-> = Effect.fnUntraced(function*<A, E>(
+const makeStreamPullEffect = <A, E>(
   get: Context,
   create: Stream.Stream<A, E, RxRegistry> | ((get: Context) => Stream.Stream<A, E, RxRegistry>),
   options?: {
     readonly disableAccumulation?: boolean
   }
-) {
-  const stream = typeof create === "function" ? create(get) : create
-  const pullChunk = yield* Stream.toPull(stream)
-  let acc = Chunk.empty<A>()
-  const context = yield* Effect.context<never>()
-  const pull = Effect.matchCauseEffect(
-    Effect.locally(
-      pullChunk,
-      FiberRef.currentContext,
-      context
-    ),
-    {
-      onSuccess(chunk) {
-        let items: Chunk.Chunk<A>
-        if (options?.disableAccumulation) {
-          items = chunk
-        } else {
-          items = Chunk.appendAll(acc, chunk)
-          acc = items
-        }
-        return Effect.succeed({
-          done: false,
-          items: Chunk.toReadonlyArray(items)
-        })
-      },
-      onFailure(cause) {
-        const failure = Cause.failureOption(cause)
-        if (failure._tag === "None") {
-          return Effect.failCause(cause as Cause.Cause<never>)
-        } else if (failure.value._tag === "None") {
+): Effect.Effect<
+  Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, E>,
+  never,
+  Scope.Scope | RxRegistry
+> =>
+  Effect.map(Stream.toPull(typeof create === "function" ? create(get) : create), (pullChunk) => {
+    const fiber = Option.getOrThrow(Fiber.getCurrentFiber())
+    let acc = Chunk.empty<A>()
+    const pull = Effect.matchCauseEffect(
+      Effect.locally(
+        pullChunk,
+        FiberRef.currentContext,
+        fiber.currentContext
+      ),
+      {
+        onSuccess(chunk) {
+          let items: Chunk.Chunk<A>
+          if (options?.disableAccumulation) {
+            items = chunk
+          } else {
+            items = Chunk.appendAll(acc, chunk)
+            acc = items
+          }
           return Effect.succeed({
-            done: true,
-            items: Chunk.toReadonlyArray(acc)
+            done: false,
+            items: Chunk.toReadonlyArray(items)
           })
+        },
+        onFailure(cause) {
+          const failure = Cause.failureOption(cause)
+          if (failure._tag === "None") {
+            return Effect.failCause(cause as Cause.Cause<never>)
+          } else if (failure.value._tag === "None") {
+            return Effect.succeed({
+              done: true,
+              items: Chunk.toReadonlyArray(acc)
+            })
+          }
+          return Effect.fail(failure.value.value)
         }
-        return Effect.fail(failure.value.value)
       }
-    }
-  )
-  return pull as any
-})
+    )
+    return pull as any
+  })
 
 const makeStreamPull = <A, E>(
   pullRx: Rx<Result.Result<Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, E>>>,
@@ -1149,6 +1145,7 @@ export const setIdleTTL: {
 >(2, (self, duration) =>
   Object.assign(Object.create(Object.getPrototypeOf(self)), {
     ...self,
+    keepAlive: false,
     idleTTL: Duration.toMillis(duration)
   }))
 
@@ -1324,18 +1321,21 @@ export const kvs = <A>(options: {
 export const searchParam = (name: string): Writable<string> =>
   writable(
     (get) => {
-      const searchParams = new URLSearchParams(window.location.search)
-      const value = searchParams.get(name) || ""
-      const handlePopState = () => {
+      const handleUpdate = () => {
+        if (searchParamState.updating) return
         const searchParams = new URLSearchParams(window.location.search)
         const newValue = searchParams.get(name) || ""
-        if (newValue !== value) {
+        if (newValue !== Option.getOrUndefined(get.self())) {
           get.setSelfSync(newValue)
         }
       }
-      window.addEventListener("popstate", handlePopState)
-      get.addFinalizer(() => window.removeEventListener("popstate", handlePopState))
-      return value
+      window.addEventListener("popstate", handleUpdate)
+      window.addEventListener("pushstate", handleUpdate)
+      get.addFinalizer(() => {
+        window.removeEventListener("popstate", handleUpdate)
+        window.removeEventListener("pushstate", handleUpdate)
+      })
+      return new URLSearchParams(window.location.search).get(name) || ""
     },
     (ctx, value: string) => {
       searchParamState.updates.set(name, value)
@@ -1349,11 +1349,13 @@ export const searchParam = (name: string): Writable<string> =>
 
 const searchParamState = {
   timeout: undefined as number | undefined,
-  updates: new Map<string, string>()
+  updates: new Map<string, string>(),
+  updating: false
 }
 
 function updateSearchParams() {
   searchParamState.timeout = undefined
+  searchParamState.updating = true
   const searchParams = new URLSearchParams(window.location.search)
   for (const [key, value] of searchParamState.updates.entries()) {
     if (value) {
@@ -1365,6 +1367,7 @@ function updateSearchParams() {
   searchParamState.updates.clear()
   const newUrl = `${window.location.pathname}?${searchParams.toString()}`
   window.history.pushState({}, "", newUrl)
+  searchParamState.updating = false
 }
 
 // -----------------------------------------------------------------------------
