@@ -576,7 +576,7 @@ export type PullResult<A, E = never> = Result.Result<
     readonly done: boolean
     readonly items: ReadonlyArray<A>
   },
-  E | NoSuchElementException
+  E
 >
 ```
 

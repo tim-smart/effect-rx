@@ -905,7 +905,7 @@ function makeResultFn<Arg, E, A>(
 export type PullResult<A, E = never> = Result.Result<{
   readonly done: boolean
   readonly items: ReadonlyArray<A>
-}, E | NoSuchElementException>
+}, E>
 
 /**
  * @since 1.0.0
@@ -931,7 +931,7 @@ const makeStreamPullEffect: <A, E>(
   create: Stream.Stream<A, E, RxRegistry> | ((get: Context) => Stream.Stream<A, E, RxRegistry>),
   options?: { readonly disableAccumulation?: boolean } | undefined
 ) => Effect.Effect<
-  Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, NoSuchElementException | E>,
+  Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, E>,
   never,
   Scope.Scope | RxRegistry
 > = Effect.fnUntraced(function*<A, E>(
@@ -965,16 +965,11 @@ const makeStreamPullEffect: <A, E>(
           items: Chunk.toReadonlyArray(items)
         })
       },
-      onFailure(
-        cause
-      ): Effect.Effect<{ readonly done: boolean; readonly items: ReadonlyArray<A> }, NoSuchElementException | E> {
+      onFailure(cause) {
         const failure = Cause.failureOption(cause)
         if (failure._tag === "None") {
           return Effect.failCause(cause as Cause.Cause<never>)
         } else if (failure.value._tag === "None") {
-          if (acc.length === 0) {
-            return Effect.fail(new NoSuchElementException())
-          }
           return Effect.succeed({
             done: true,
             items: Chunk.toReadonlyArray(acc)
@@ -988,11 +983,7 @@ const makeStreamPullEffect: <A, E>(
 })
 
 const makeStreamPull = <A, E>(
-  pullRx: Rx<
-    Result.Result<
-      Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, NoSuchElementException | E>
-    >
-  >,
+  pullRx: Rx<Result.Result<Effect.Effect<{ readonly done: boolean; readonly items: Array<A> }, E>>>,
   options?: {
     readonly initialValue?: ReadonlyArray<A>
   }
@@ -1000,7 +991,7 @@ const makeStreamPull = <A, E>(
   const initialValue: Result.Result<{
     readonly done: boolean
     readonly items: Array<A>
-  }, E | NoSuchElementException> = options?.initialValue !== undefined
+  }, E> = options?.initialValue !== undefined
     ? Result.success({ done: false, items: options.initialValue as Array<A> })
     : Result.initial()
 
