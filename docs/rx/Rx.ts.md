@@ -17,6 +17,8 @@ Added in v1.0.0
   - [getResult](#getresult)
   - [toStream](#tostream)
   - [toStreamResult](#tostreamresult)
+- [KeyValueStore](#keyvaluestore)
+  - [kvs](#kvs)
 - [batching](#batching)
   - [batch](#batch)
 - [combinators](#combinators)
@@ -115,6 +117,23 @@ Added in v1.0.0
 
 ```ts
 export declare const toStreamResult: <A, E>(self: Rx<Result.Result<A, E>>) => Stream.Stream<A, E, RxRegistry>
+```
+
+Added in v1.0.0
+
+# KeyValueStore
+
+## kvs
+
+**Signature**
+
+```ts
+export declare const kvs: <A>(options: {
+  readonly runtime: RxRuntime<KeyValueStore.KeyValueStore, any>
+  readonly key: string
+  readonly schema: Schema.Schema<A, any>
+  readonly defaultValue: LazyArg<A>
+}) => Writable<A, A>
 ```
 
 Added in v1.0.0

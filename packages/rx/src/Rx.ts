@@ -2,16 +2,18 @@
  * @since 1.0.0
  */
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import { Context } from "effect"
+import * as KeyValueStore from "@effect/platform/KeyValueStore"
 import { NoSuchElementException } from "effect/Cause"
 import * as Cause from "effect/Cause"
 import * as Channel from "effect/Channel"
 import * as Chunk from "effect/Chunk"
+import * as EffectContext from "effect/Context"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Either from "effect/Either"
 import * as Exit from "effect/Exit"
 import * as FiberRef from "effect/FiberRef"
+import type { LazyArg } from "effect/Function"
 import { constVoid, dual, pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Inspectable from "effect/Inspectable"
@@ -21,6 +23,7 @@ import * as MutableHashMap from "effect/MutableHashMap"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
 import * as Runtime from "effect/Runtime"
+import type * as Schema from "effect/Schema"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
 import * as Subscribable from "effect/Subscribable"
@@ -453,7 +456,7 @@ function makeEffect<A, E>(
   contextMap.set(Scope.Scope.key, scope)
   contextMap.set(RxRegistry.key, ctx.registry)
   const scopedRuntime = Runtime.make({
-    context: Context.unsafeMake(contextMap),
+    context: EffectContext.unsafeMake(contextMap),
     fiberRefs: runtime.fiberRefs,
     runtimeFlags: runtime.runtimeFlags
   })
@@ -647,7 +650,7 @@ function makeStream<A, E>(
   })
 
   const registryRuntime = Runtime.make({
-    context: Context.add(runtime.context, RxRegistry, ctx.registry),
+    context: EffectContext.add(runtime.context, RxRegistry, ctx.registry),
     fiberRefs: runtime.fiberRefs,
     runtimeFlags: runtime.runtimeFlags
   })
@@ -1280,6 +1283,49 @@ export const debounce: {
 export const batch: (f: () => void) => void = internalRegistry.batch
 
 // -----------------------------------------------------------------------------
+// KeyValueStore
+// -----------------------------------------------------------------------------
+
+/**
+ * @since 1.0.0
+ * @category KeyValueStore
+ */
+export const kvs = <A>(options: {
+  readonly runtime: RxRuntime<KeyValueStore.KeyValueStore, any>
+  readonly key: string
+  readonly schema: Schema.Schema<A, any>
+  readonly defaultValue: LazyArg<A>
+}): Writable<A, A> => {
+  const setRx = options.runtime.fn(
+    Effect.fnUntraced(function*(value: A) {
+      const store = (yield* KeyValueStore.KeyValueStore).forSchema(
+        options.schema
+      )
+      yield* store.set(options.key, value)
+    })
+  )
+  const resultRx = options.runtime.rx(
+    Effect.fnUntraced(function*(get: Context) {
+      const store = (yield* KeyValueStore.KeyValueStore).forSchema(
+        options.schema
+      )
+      get.mount(setRx)
+      return Option.getOrElse(
+        yield* store.get(options.key),
+        options.defaultValue
+      )
+    })
+  )
+  return writable(
+    (get) => Result.getOrElse(resultRx.read(get), options.defaultValue),
+    (ctx, value: A) => {
+      ctx.set(setRx, value as any)
+      ctx.setSelf(value)
+    }
+  )
+}
+
+// -----------------------------------------------------------------------------
 // conversions
 // -----------------------------------------------------------------------------
 
@@ -1293,8 +1339,8 @@ export const toStream: <A>(self: Rx<A>) => Stream.Stream<
   RxRegistry
 > = Effect.fnUntraced(function*<A>(self: Rx<A>) {
   const context = yield* Effect.context<RxRegistry | Scope.Scope>()
-  const registry = Context.get(context, RxRegistry)
-  const scope = Context.get(context, Scope.Scope)
+  const registry = EffectContext.get(context, RxRegistry)
+  const scope = EffectContext.get(context, Scope.Scope)
   const mailbox = yield* Mailbox.make<A>()
   yield* Scope.addFinalizer(scope, mailbox.shutdown)
   const cancel = registry.subscribe(self, (value) => mailbox.unsafeOffer(value))
