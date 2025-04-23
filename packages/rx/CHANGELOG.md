@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.35.2
+
+### Patch Changes
+
+- [`2c44f00`](https://github.com/tim-smart/effect-rx/commit/2c44f002bb7ce71479cd300ecdaf42fded9c5169) Thanks [@tim-smart](https://github.com/tim-smart)! - use pull signal for Rx.pull, which queues up subsequent pulls
+
 ## 0.35.1
 
 ### Patch Changes
