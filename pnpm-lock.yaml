@@ -125,8 +125,8 @@ importers:
         specifier: ^0.23.0
         version: 0.23.0
       effect:
-        specifier: ^3.14.0
-        version: 3.14.5
+        specifier: ^3.14.12
+        version: 3.14.12
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -142,8 +142,8 @@ importers:
         version: link:../rx/dist
     devDependencies:
       effect:
-        specifier: ^3.9.2
-        version: 3.14.5
+        specifier: ^3.4.12
+        version: 3.14.12
       vue:
         specifier: ^3.5.12
         version: 3.5.13(typescript@5.8.2)
@@ -1528,9 +1528,6 @@ packages:
 
   effect@3.14.12:
     resolution: {integrity: sha512-DEHmOGWhAKP1U4jZH9QpV4UusXxYOMvN60AkLjibWqsRo1mh4gItlXlX7Fbjujn6hum68JEXOtm7C5/TGClHdA==}
-
-  effect@3.14.5:
-    resolution: {integrity: sha512-X3/365UyPLyXGgS+kcqh7OTDJJVmjC6n2dDPBSppjwOpS7PV5d/UdBStwvCfkuz7kFajwLkd5KFhjDUtTl5SRA==}
 
   electron-to-chromium@1.5.131:
     resolution: {integrity: sha512-fJFRYXVEJgDCiqFOgRGJm8XR97hZ13tw7FXI9k2yC5hgY+nyzC2tMO8baq1cQR7Ur58iCkASx2zrkZPZUnfzPg==}
@@ -4863,11 +4860,6 @@ snapshots:
   eastasianwidth@0.2.0: {}
 
   effect@3.14.12:
-    dependencies:
-      '@standard-schema/spec': 1.0.0
-      fast-check: 3.23.2
-
-  effect@3.14.5:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2

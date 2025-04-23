@@ -23,12 +23,12 @@
   "license": "MIT",
   "sideEffects": [],
   "devDependencies": {
-    "effect": "^3.9.2",
+    "effect": "^3.4.12",
     "vue": "^3.5.12"
   },
   "peerDependencies": {
     "effect": "^3.8.0",
-    "vue": "^3.4"
+    "vue": "^3.4.12"
   },
   "dependencies": {
     "@effect-rx/rx": "workspace:^"
