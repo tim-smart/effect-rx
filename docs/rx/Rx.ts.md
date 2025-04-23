@@ -19,6 +19,8 @@ Added in v1.0.0
   - [toStreamResult](#tostreamresult)
 - [KeyValueStore](#keyvaluestore)
   - [kvs](#kvs)
+- [URL search params](#url-search-params)
+  - [searchParam](#searchparam)
 - [batching](#batching)
   - [batch](#batch)
 - [combinators](#combinators)
@@ -133,7 +135,19 @@ export declare const kvs: <A>(options: {
   readonly key: string
   readonly schema: Schema.Schema<A, any>
   readonly defaultValue: LazyArg<A>
-}) => Writable<A, A>
+}) => Writable<A>
+```
+
+Added in v1.0.0
+
+# URL search params
+
+## searchParam
+
+**Signature**
+
+```ts
+export declare const searchParam: (name: string) => Writable<string>
 ```
 
 Added in v1.0.0
@@ -385,7 +399,7 @@ export declare const make: {
     options?: { readonly initialValue?: A }
   ): Rx<Result.Result<A, E>>
   <A>(create: (get: Context) => A): Rx<A>
-  <A>(initialValue: A): Writable<A, A>
+  <A>(initialValue: A): Writable<A>
 }
 ```
 
@@ -437,7 +451,7 @@ Added in v1.0.0
 
 ```ts
 export declare const subscriptionRef: {
-  <A>(ref: SubscriptionRef.SubscriptionRef<A> | ((get: Context) => SubscriptionRef.SubscriptionRef<A>)): Writable<A, A>
+  <A>(ref: SubscriptionRef.SubscriptionRef<A> | ((get: Context) => SubscriptionRef.SubscriptionRef<A>)): Writable<A>
   <A, E>(
     effect:
       | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, Scope.Scope | RxRegistry>
@@ -743,7 +757,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface Writable<R, W> extends Rx<R> {
+export interface Writable<R, W = R> extends Rx<R> {
   readonly [WritableTypeId]: WritableTypeId
   readonly write: (ctx: WriteContext<R>, value: W) => void
 }

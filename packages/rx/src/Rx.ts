@@ -121,7 +121,7 @@ export type WritableTypeId = typeof WritableTypeId
  * @since 1.0.0
  * @category models
  */
-export interface Writable<R, W> extends Rx<R> {
+export interface Writable<R, W = R> extends Rx<R> {
   readonly [WritableTypeId]: WritableTypeId
   readonly write: (ctx: WriteContext<R>, value: W) => void
 }
@@ -346,7 +346,7 @@ export const make: {
     readonly initialValue?: A
   }): Rx<Result.Result<A, E>>
   <A>(create: (get: Context) => A): Rx<A>
-  <A>(initialValue: A): Writable<A, A>
+  <A>(initialValue: A): Writable<A>
 } = (arg: any, options?: { readonly initialValue?: unknown }) => {
   const readOrRx = makeRead(arg, options)
   if (TypeId in readOrRx) {
@@ -377,7 +377,7 @@ const makeRead: {
     readonly initialValue?: A
   }): (get: Context, runtime?: Runtime.Runtime<any>) => Result.Result<A, E>
   <A>(create: (get: Context) => A): (get: Context, runtime?: Runtime.Runtime<any>) => A
-  <A>(initialValue: A): Writable<A, A>
+  <A>(initialValue: A): Writable<A>
 } = <A, E>(
   arg:
     | Effect.Effect<A, E, Scope.Scope | RxRegistry>
@@ -422,7 +422,7 @@ const makeRead: {
 
 const state = <A>(
   initialValue: A
-): Writable<A, A> =>
+): Writable<A> =>
   writable(function(_get) {
     return initialValue
   }, constSetSelf)
@@ -726,7 +726,7 @@ const makeSubRef = (
  * @category constructors
  */
 export const subscriptionRef: {
-  <A>(ref: SubscriptionRef.SubscriptionRef<A> | ((get: Context) => SubscriptionRef.SubscriptionRef<A>)): Writable<A, A>
+  <A>(ref: SubscriptionRef.SubscriptionRef<A> | ((get: Context) => SubscriptionRef.SubscriptionRef<A>)): Writable<A>
   <A, E>(
     effect:
       | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, Scope.Scope | RxRegistry>
@@ -1295,7 +1295,7 @@ export const kvs = <A>(options: {
   readonly key: string
   readonly schema: Schema.Schema<A, any>
   readonly defaultValue: LazyArg<A>
-}): Writable<A, A> => {
+}): Writable<A> => {
   const setRx = options.runtime.fn(
     Effect.fnUntraced(function*(value: A) {
       const store = (yield* KeyValueStore.KeyValueStore).forSchema(
@@ -1323,6 +1323,59 @@ export const kvs = <A>(options: {
       ctx.setSelf(value)
     }
   )
+}
+
+// -----------------------------------------------------------------------------
+// URL search params
+// -----------------------------------------------------------------------------
+
+/**
+ * @since 1.0.0
+ * @category URL search params
+ */
+export const searchParam = (name: string): Writable<string> =>
+  writable(
+    (get) => {
+      const searchParams = new URLSearchParams(window.location.search)
+      const value = searchParams.get(name) || ""
+      const handlePopState = () => {
+        const searchParams = new URLSearchParams(window.location.search)
+        const newValue = searchParams.get(name) || ""
+        if (newValue !== value) {
+          get.setSelfSync(newValue)
+        }
+      }
+      window.addEventListener("popstate", handlePopState)
+      get.addFinalizer(() => window.removeEventListener("popstate", handlePopState))
+      return value
+    },
+    (ctx, value: string) => {
+      searchParamState.updates.set(name, value)
+      ctx.setSelf(value)
+      if (!searchParamState.timeout) {
+        searchParamState.timeout = setTimeout(updateSearchParams, 200)
+      }
+    }
+  )
+
+const searchParamState = {
+  timeout: undefined as number | undefined,
+  updates: new Map<string, string>()
+}
+
+function updateSearchParams() {
+  searchParamState.timeout = undefined
+  const searchParams = new URLSearchParams(window.location.search)
+  for (const [key, value] of searchParamState.updates.entries()) {
+    if (value) {
+      searchParams.set(key, value)
+    } else {
+      searchParams.delete(key)
+    }
+  }
+  searchParamState.updates.clear()
+  const newUrl = `${window.location.pathname}?${searchParams.toString()}`
+  window.history.pushState({}, "", newUrl)
 }
 
 // -----------------------------------------------------------------------------
