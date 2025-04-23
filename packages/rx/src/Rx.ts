@@ -1305,19 +1305,16 @@ export const kvs = <A>(options: {
     })
   )
   const resultRx = options.runtime.rx(
-    Effect.fnUntraced(function*(get: Context) {
-      const store = (yield* KeyValueStore.KeyValueStore).forSchema(
-        options.schema
-      )
-      get.mount(setRx)
-      return Option.getOrElse(
-        yield* store.get(options.key),
-        options.defaultValue
-      )
-    })
+    Effect.flatMap(
+      KeyValueStore.KeyValueStore,
+      (store) => Effect.flatten(store.forSchema(options.schema).get(options.key))
+    )
   )
   return writable(
-    (get) => Result.getOrElse(resultRx.read(get), options.defaultValue),
+    (get) => {
+      get.mount(setRx)
+      return Result.getOrElse(get(resultRx), options.defaultValue)
+    },
     (ctx, value: A) => {
       ctx.set(setRx, value as any)
       ctx.setSelf(value)
