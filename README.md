@@ -85,12 +85,14 @@ You can see all the ways to work with `Result` here: https://tim-smart.github.io
 ```ts
 import { Rx, Result } from "@effect-rx/rx-react"
 
-const resultRx: Rx<Result<numer>> = Rx.make(Effect.succeed(0))
+const resultRx: Rx<Result<number>> = Rx.make(Effect.succeed(0))
 
 // You can also pass a function to get access to the `Rx.Context`
+//
+// `get.result` can be used in Effect's to get the value of an Rx<Result>.
 const resultWithContextRx: Rx<Result<number>> = Rx.make(
   Effect.fnUntraced(function* (get: Rx.Context) {
-    const count = yield* get(countRx)
+    const count = yield* get.result(countRx)
     return count + 1
   }),
 )
