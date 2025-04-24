@@ -1,51 +1,263 @@
-WIP.
+# @effect-rx/rx
 
-Effect Docs: https://www.effect.website<br>
-Module Docs: https://effect-ts.github.io/rx
+A reactive state management library for Effect.
 
-# Contributing Guidelines
+## Installation
 
-Thank you for considering contributing to our project! Here are some guidelines to help you get started:
+If you are using React:
 
-## Reporting Bugs
+```bash
+pnpm add @effect-rx/rx-react
+```
 
-If you have found a bug, please open an issue on our [issue tracker](https://github.com/Effect-TS/rx/issues) and provide as much detail as possible. This should include:
+## Creating a Counter with Rx
 
-- A clear and concise description of the problem
-- Steps to reproduce the problem
-- The expected behavior
-- The actual behavior
-- Any relevant error messages or logs
+Let's create a simple Counter component, which will increment a number when you click a button.
 
-## Suggesting Enhancements
+We will use `Rx.make` to create our Rx, which is a reactive state container.
 
-If you have an idea for an enhancement or a new feature, please open an issue on our [issue tracker](https://github.com/Effect-TS/rx/issues) and provide as much detail as possible. This should include:
+We can then use the `useRxValue` & `useRxSet` hooks to read and update the value
+of the Rx.
 
-- A clear and concise description of the enhancement or feature
-- Any potential benefits or use cases
-- Any potential drawbacks or trade-offs
+```tsx
+import { Rx, useRxValue, useRxSet } from "@effect-rx/rx-react"
 
-## Pull Requests
+const countRx = Rx.make(0).pipe(
+  // By default, the Rx will be reset when no longer used.
+  // This is useful for cleaning up resources when the component unmounts.
+  //
+  // If you want to keep the value, you can use `Rx.keepAlive`.
+  //
+  Rx.keepAlive,
+)
 
-We welcome contributions via pull requests! Here are some guidelines to help you get started:
+function App() {
+  return (
+    <div>
+      <Counter />
+      <br />
+      <CounterButton />
+    </div>
+  )
+}
 
-1. Fork the repository and clone it to your local machine.
-2. Create a new branch for your changes: `git checkout -b my-new-feature`
-3. Install dependencies: `pnpm install` (`pnpm@8.x`)
-4. Make your changes and add tests if applicable.
-5. Run the tests: `pnpm test`
-6. Commit your changes: `git commit -am 'Add some feature'`
-7. Push your changes to your fork: `git push origin my-new-feature`
-8. Open a pull request against our `main` branch.
+function Counter() {
+  const count = useRxValue(countRx)
+  return <h1>{count}</h1>
+}
 
-### Pull Request Guidelines
+function CounterButton() {
+  const setCount = useRxSet(countRx)
+  return (
+    <button onClick={() => setCount((count) => count + 1)}>Increment</button>
+  )
+}
+```
 
-- Please make sure your changes are consistent with the project's existing style and conventions.
-- Please write clear commit messages and include a summary of your changes in the pull request description.
-- Please make sure all tests pass and add new tests as necessary.
-- If your change requires documentation, please update the relevant documentation.
-- Please be patient! We will do our best to review your pull request as soon as possible.
+## Derived State
 
-## License
+You can create derived state from an Rx in a couple of ways.
 
-By contributing to this project, you agree that your contributions will be licensed under the project's [MIT License](./LICENSE).
+```ts
+import { Rx } from "@effect-rx/rx-react"
+
+const countRx = Rx.make(0)
+
+// You can use the `get` function to get the value of another Rx.
+//
+// The type of `get` is `Rx.Context`, which also has a bunch of other methods
+// on it to manage Rx's.
+//
+const doubleCountRx = Rx.make((get) => get(countRx) * 2)
+
+// You can also use the `Rx.map` function to create a derived Rx.
+const tripleCountRx = Rx.map(countRx, (count) => count * 3)
+```
+
+## Working with Effects
+
+You can also pass effects to the `Rx.make` function.
+
+When working with effectful Rx's, you will get back a `Result` type.
+
+You can see all the ways to work with `Result` here: https://tim-smart.github.io/effect-rx/rx/Result.ts.html
+
+```ts
+import { Rx, Result } from "@effect-rx/rx-react"
+
+const resultRx: Rx<Result<numer>> = Rx.make(Effect.succeed(0))
+
+// You can also pass a function to get access to the `Rx.Context`
+const resultWithContextRx: Rx<Result<number>> = Rx.make(
+  Effect.fnUntraced(function* (get: Rx.Context) {
+    const count = yield* get(countRx)
+    return count + 1
+  }),
+)
+```
+
+## Working with Effect Services / Layer's
+
+```ts
+import { Rx } from "@effect-rx/rx-react"
+import { Effect } from "effect"
+
+class Users extends Effect.Service<Users>()("app/Users", {
+  effect: Effect.gen(function* () {
+    const getAll = Effect.succeed([
+      { id: "1", name: "Alice" },
+      { id: "2", name: "Bob" },
+      { id: "3", name: "Charlie" },
+    ])
+    return { getAll } as const
+  }),
+}) {}
+
+// Create a RxRuntime from a Layer
+const runtimeRx: Rx.RxRuntime<Users, never> = Rx.runtime(Users.Default)
+
+// You can then use the RxRuntime to make Rx's that use the services from the Layer
+export const usersRx = runtimeRx.rx(
+  Effect.gen(function* () {
+    const users = yield* Users
+    return yield* users.getAll
+  }),
+)
+```
+
+## Working with Stream's
+
+```tsx
+import { Result, Rx, useRx } from "@effect-rx/rx-react"
+import { Cause, Schedule, Stream } from "effect"
+
+// This will be a simple Rx that emits a incrementing number every second.
+//
+// Rx.make will give back the latest value of a Stream as a Result
+export const countRx: Rx.Rx<Result.Result<number>> = Rx.make(
+  Stream.fromSchedule(Schedule.spaced(1000)),
+)
+
+// You can use Rx.pull to create a specialized Rx that will pull from a Stream
+// one chunk at a time.
+//
+// This is useful for infinite scrolling or paginated data.
+//
+// With a `RxRuntime`, you can use `runtimeRx.pull` to create a pull Rx.
+export const countPullRx: Rx.Writable<Rx.PullResult<number>, void> = Rx.pull(
+  Stream.make(1, 2, 3, 4, 5),
+)
+
+// Here is a component that uses countPullRx to display the numbers in a list.
+//
+// You can use `useRx` to both read the value of an Rx and gain access to the
+// setter function.
+//
+// Each time the setter function is called, it will pull a new chunk of data
+// from the Stream, and append it to the list.
+export function CountPullRxComponent() {
+  const [result, pull] = useRx(countPullRx)
+
+  return Result.match(result, {
+    onInitial: () => <div>Loading...</div>,
+    onFailure: (error) => <div>Error: {Cause.pretty(error.cause)}</div>,
+    onSuccess: (success) => (
+      <div>
+        <ul>
+          {success.value.items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <button onClick={() => pull()}>Load more</button>
+        {success.waiting ? <p>Loading more...</p> : <p>Loaded chunk</p>}
+      </div>
+    ),
+  })
+}
+```
+
+## Working with sets of Rx's
+
+```ts
+import { Rx } from "@effect-rx/rx-react"
+import { Effect } from "effect"
+
+class Users extends Effect.Service<Users>()("app/Users", {
+  effect: Effect.gen(function* () {
+    const findById = (id: string) => Effect.succeed({ id, name: "John Doe" })
+    return { findById } as const
+  }),
+}) {}
+
+// Create a RxRuntime from a Layer
+const runtimeRx: Rx.RxRuntime<Users, never> = Rx.runtime(Users.Default)
+
+// Rx's work by reference, so we need to use Rx.family to dynamically create a
+// set of Rx's from a key.
+//
+// Rx.family will ensure that we get a stable reference to the Rx for each key.
+//
+export const userRx = Rx.family((id: string) =>
+  runtimeRx.rx(
+    Effect.gen(function* () {
+      const users = yield* Users
+      return yield* users.findById(id)
+    }),
+  ),
+)
+```
+
+## Working with functions
+
+```ts
+import { Rx, useRxSet, useRxSetPromise } from "@effect-rx/rx-react"
+import { Effect, Exit } from "effect"
+
+// Create a simple Rx.fn that logs a number
+const logRx = Rx.fn(
+  Effect.fnUntraced(function* (arg: number) {
+    yield* Effect.log("got arg", arg)
+  }),
+)
+
+export function LogComponent() {
+  // To call the Rx.fn, we need to use the useRxSet hook
+  const logNumber = useRxSet(logRx)
+  return <button onClick={() => logNumber(42)}>Log 42</button>
+}
+
+// You can also use it with Rx.runtime
+class Users extends Effect.Service<Users>()("app/Users", {
+  succeed: {
+    create: (name: string) => Effect.succeed({ id: 1, name }),
+  } as const,
+}) {}
+
+const runtimeRx = Rx.runtime(Users.Default)
+
+// Here we are using runtimeRx.fn to create a function from the Users.create
+// method.
+export const createUserRx = runtimeRx.fn(
+  Effect.fnUntraced(function* (name: string) {
+    const users = yield* Users
+    return yield* users.create(name)
+  }),
+)
+
+export function CreateUserComponent() {
+  // If your function returns a Result, you can use the useRxSetPromise hook
+  const createUser = useRxSetPromise(createUserRx)
+  return (
+    <button
+      onClick={async () => {
+        const exit = await createUser("John")
+        if (Exit.isSuccess(exit)) {
+          console.log(exit.value)
+        }
+      }}
+    >
+      Log 42
+    </button>
+  )
+}
+```
