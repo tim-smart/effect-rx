@@ -139,15 +139,11 @@ export interface Context {
   readonly once: <A>(rx: Rx<A>) => A
   readonly addFinalizer: (f: () => void) => void
   readonly mount: <A>(rx: Rx<A>) => void
-  readonly refreshSync: <A>(rx: Rx<A> & Refreshable) => void
-  readonly refresh: <A>(rx: Rx<A> & Refreshable) => Effect.Effect<void>
-  readonly refreshSelfSync: () => void
-  readonly refreshSelf: Effect.Effect<void>
+  readonly refresh: <A>(rx: Rx<A> & Refreshable) => void
+  readonly refreshSelf: () => void
   readonly self: <A>() => Option.Option<A>
-  readonly setSelfSync: <A>(a: A) => void
-  readonly setSelf: <A>(a: A) => Effect.Effect<void>
-  readonly setSync: <R, W>(rx: Writable<R, W>, value: W) => void
-  readonly set: <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<void>
+  readonly setSelf: <A>(a: A) => void
+  readonly set: <R, W>(rx: Writable<R, W>, value: W) => void
   readonly some: <A>(rx: Rx<Option.Option<A>>) => Effect.Effect<A>
   readonly someOnce: <A>(rx: Rx<Option.Option<A>>) => Effect.Effect<A>
   readonly stream: <A>(rx: Rx<A>, options?: {
@@ -467,7 +463,7 @@ function makeEffect<A, E>(
     effect,
     function(exit) {
       syncResult = Result.fromExitWithPrevious(exit, previous)
-      ctx.setSelfSync(syncResult)
+      ctx.setSelf(syncResult)
     },
     uninterruptible
   )
@@ -627,14 +623,14 @@ function makeStream<A, E>(
       return Channel.suspend(() => {
         const last = Chunk.last(input)
         if (last._tag === "Some") {
-          ctx.setSelfSync(Result.success(last.value, true))
+          ctx.setSelf(Result.success(last.value, true))
         }
         return writer
       })
     },
     onFailure(cause: Cause.Cause<E>) {
       return Channel.sync(() => {
-        ctx.setSelfSync(Result.failureWithPrevious(cause, previous))
+        ctx.setSelf(Result.failureWithPrevious(cause, previous))
       })
     },
     onDone(_done: unknown) {
@@ -643,8 +639,8 @@ function makeStream<A, E>(
           ctx.self<Result.Result<A, E | NoSuchElementException>>(),
           Option.flatMap(Result.value),
           Option.match({
-            onNone: () => ctx.setSelfSync(Result.failWithPrevious(new NoSuchElementException(), previous)),
-            onSome: (a) => ctx.setSelfSync(Result.success(a))
+            onNone: () => ctx.setSelf(Result.failWithPrevious(new NoSuchElementException(), previous)),
+            onSome: (a) => ctx.setSelf(Result.success(a))
           })
         )
       })
@@ -686,7 +682,10 @@ const readSubscribable = (
   if (Subscribable.TypeId in sub) {
     get.addFinalizer(
       sub.changes.pipe(
-        Stream.runForEach((value) => get.setSelf(value)),
+        Stream.runForEach((value) => {
+          get.setSelf(value)
+          return Effect.void
+        }),
         Effect.runCallback
       )
     )
@@ -990,14 +989,14 @@ const makeStreamPullEffect = <A, E>(
       })
       get.once(pullSignal)
       get.subscribe(pullSignal, () => {
-        get.setSelfSync(Result.waitingFrom(get.self<PullResult<A, E>>()))
+        get.setSelf(Result.waitingFrom(get.self<PullResult<A, E>>()))
         let cancel: (() => void) | undefined
         // eslint-disable-next-line prefer-const
         cancel = runCallback(pull, (exit) => {
           if (cancel) cancels.delete(cancel)
           const result = Result.fromExitWithPrevious(exit, get.self())
           const pending = cancels.size > 0
-          get.setSelfSync(pending ? Result.waiting(result) : result)
+          get.setSelf(pending ? Result.waiting(result) : result)
         })
         if (cancel) cancels.add(cancel)
       })
@@ -1258,7 +1257,7 @@ export const debounce: {
       let value = get.once(self)
       function update() {
         timeout = undefined
-        get.setSelfSync(value)
+        get.setSelf(value)
       }
       get.addFinalizer(function() {
         if (timeout) clearTimeout(timeout)
@@ -1335,7 +1334,7 @@ export const searchParam = (name: string): Writable<string> =>
         const searchParams = new URLSearchParams(window.location.search)
         const newValue = searchParams.get(name) || ""
         if (newValue !== Option.getOrUndefined(get.self())) {
-          get.setSelfSync(newValue)
+          get.setSelf(newValue)
         }
       }
       window.addEventListener("popstate", handleUpdate)

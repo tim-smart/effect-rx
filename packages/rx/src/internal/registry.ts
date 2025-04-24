@@ -531,38 +531,18 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
     return this.node.valueOption() as any
   },
 
-  refreshSync<A>(this: Lifetime<any>, rx: Rx.Rx<A> & Rx.Refreshable): void {
+  refresh<A>(this: Lifetime<any>, rx: Rx.Rx<A> & Rx.Refreshable): void {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
     this.node.registry.refresh(rx)
   },
 
-  refresh<A>(this: Lifetime<any>, rx: Rx.Rx<A> & Rx.Refreshable) {
-    return Effect.suspend(() => {
-      if (this.disposed) {
-        return Effect.die(disposedError(this.node.rx))
-      }
-      this.node.registry.refresh(rx)
-      return Effect.void
-    })
-  },
-
-  refreshSelfSync(this: Lifetime<any>): void {
+  refreshSelf(this: Lifetime<any>): void {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
     this.node.invalidate()
-  },
-
-  get refreshSelf() {
-    return Effect.suspend(() => {
-      if ((this as Lifetime<any>).disposed) {
-        return Effect.die(disposedError((this as Lifetime<any>).node.rx))
-      }
-      ;(this as Lifetime<any>).node.invalidate()
-      return Effect.void
-    })
   },
 
   mount<A>(this: Lifetime<any>, rx: Rx.Rx<A>): void {
@@ -581,38 +561,18 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
     this.addFinalizer(this.node.registry.subscribe(rx, f, options))
   },
 
-  setSelfSync<A>(this: Lifetime<any>, a: A): void {
+  setSelf<A>(this: Lifetime<any>, a: A): void {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
     this.node.setValue(a as any)
   },
 
-  setSelf<A>(this: Lifetime<any>, value: A) {
-    return Effect.suspend(() => {
-      if (this.disposed) {
-        return Effect.die(disposedError(this.node.rx))
-      }
-      this.node.setValue(value)
-      return Effect.void
-    })
-  },
-
-  setSync<R, W>(this: Lifetime<any>, rx: Rx.Writable<R, W>, value: W): void {
+  set<R, W>(this: Lifetime<any>, rx: Rx.Writable<R, W>, value: W): void {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
     this.node.registry.set(rx, value)
-  },
-
-  set<R, W>(this: Lifetime<any>, rx: Rx.Writable<R, W>, value: W) {
-    return Effect.suspend(() => {
-      if (this.disposed) {
-        return Effect.die(disposedError(this.node.rx))
-      }
-      this.node.registry.set(rx, value)
-      return Effect.void
-    })
   },
 
   stream<A>(this: Lifetime<any>, rx: Rx.Rx<A>, options?: {

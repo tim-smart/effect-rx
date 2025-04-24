@@ -412,7 +412,7 @@ Added in v1.0.0
 ```ts
 export declare const pull: <A, E>(
   create: ((get: Context) => Stream.Stream<A, E, RxRegistry>) | Stream.Stream<A, E, RxRegistry>,
-  options?: { readonly disableAccumulation?: boolean; readonly initialValue?: ReadonlyArray<A> }
+  options?: { readonly disableAccumulation?: boolean }
 ) => Writable<PullResult<A, E>, void>
 ```
 
@@ -491,15 +491,11 @@ export interface Context {
   readonly once: <A>(rx: Rx<A>) => A
   readonly addFinalizer: (f: () => void) => void
   readonly mount: <A>(rx: Rx<A>) => void
-  readonly refreshSync: <A>(rx: Rx<A> & Refreshable) => void
-  readonly refresh: <A>(rx: Rx<A> & Refreshable) => Effect.Effect<void>
-  readonly refreshSelfSync: () => void
-  readonly refreshSelf: Effect.Effect<void>
+  readonly refresh: <A>(rx: Rx<A> & Refreshable) => void
+  readonly refreshSelf: () => void
   readonly self: <A>() => Option.Option<A>
-  readonly setSelfSync: <A>(a: A) => void
-  readonly setSelf: <A>(a: A) => Effect.Effect<void>
-  readonly setSync: <R, W>(rx: Writable<R, W>, value: W) => void
-  readonly set: <R, W>(rx: Writable<R, W>, value: W) => Effect.Effect<void>
+  readonly setSelf: <A>(a: A) => void
+  readonly set: <R, W>(rx: Writable<R, W>, value: W) => void
   readonly some: <A>(rx: Rx<Option.Option<A>>) => Effect.Effect<A>
   readonly someOnce: <A>(rx: Rx<Option.Option<A>>) => Effect.Effect<A>
   readonly stream: <A>(
