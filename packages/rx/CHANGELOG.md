@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.36.0
+
+### Minor Changes
+
+- [`5f1b434`](https://github.com/tim-smart/effect-rx/commit/5f1b434e3ea668b4e1bf23832ed9043a6faec5ed) Thanks [@tim-smart](https://github.com/tim-smart)! - remove effectful api's from Rx.Context
+
 ## 0.35.2
 
 ### Patch Changes
