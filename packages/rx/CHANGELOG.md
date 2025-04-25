@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.36.1
+
+### Patch Changes
+
+- [`010dbcc`](https://github.com/tim-smart/effect-rx/commit/010dbcc7465f4c7228ff7be7a6b27ed93514676b) Thanks [@tim-smart](https://github.com/tim-smart)! - add RuntimeFactory.addGlobalLayer
+
 ## 0.36.0
 
 ### Minor Changes
@@ -360,7 +366,7 @@
   using the Rx.runtime api.
 
   ```ts
-  const runtimeRx = Rx.runtime(MyLayer);
+  const runtimeRx = Rx.runtime(MyLayer)
   ```
 
   It also exposes a .layer rx, which can be used to inject test layers:
@@ -368,7 +374,7 @@
   ```ts
   const registry = Registry.make({
     initialValues: [Rx.initialValue(runtimeRx.layer, MyTestLayer)],
-  });
+  })
 
   // .. inject registry into react context etc
   ```
