@@ -848,6 +848,36 @@ describe("Rx", () => {
     assert.deepStrictEqual(r.get(rx), Result.success(1, true))
     unmount()
   })
+
+  it("setLazy(true)", async () => {
+    const count = Rx.make(0).pipe(Rx.keepAlive)
+    let rebuilds = 0
+    const double = Rx.make((get) => {
+      rebuilds++
+      return get(count) * 2
+    }).pipe(Rx.keepAlive)
+    const r = Registry.make()
+    assert.strictEqual(r.get(double), 0)
+    r.set(count, 1)
+    assert.strictEqual(rebuilds, 1)
+    assert.strictEqual(r.get(double), 2)
+    assert.strictEqual(rebuilds, 2)
+  })
+
+  it("setLazy(false)", async () => {
+    const count = Rx.make(0).pipe(Rx.keepAlive)
+    let rebuilds = 0
+    const double = Rx.make((get) => {
+      rebuilds++
+      return get(count) * 2
+    }).pipe(Rx.setLazy(false), Rx.keepAlive)
+    const r = Registry.make()
+    assert.strictEqual(r.get(double), 0)
+    r.set(count, 1)
+    assert.strictEqual(rebuilds, 2)
+    assert.strictEqual(r.get(double), 2)
+    assert.strictEqual(rebuilds, 2)
+  })
 })
 
 interface BuildCounter {

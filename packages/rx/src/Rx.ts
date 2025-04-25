@@ -54,6 +54,7 @@ export type TypeId = typeof TypeId
 export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
+  readonly lazy: boolean
   readonly read: (get: Context) => A
   readonly refresh?: (f: <A>(rx: Rx<A>) => void) => void
   readonly label?: readonly [name: string, stack: string]
@@ -180,6 +181,7 @@ const RxProto = {
     return {
       _id: "Rx",
       keepAlive: this.keepAlive,
+      lazy: this.lazy,
       label: this.label
     }
   },
@@ -296,6 +298,7 @@ export const readable = <A>(
 ): Rx<A> => {
   const rx = Object.create(RxProto)
   rx.keepAlive = false
+  rx.lazy = true
   rx.read = read
   rx.refresh = refresh
   return rx
@@ -312,6 +315,7 @@ export const writable = <R, W>(
 ): Writable<R, W> => {
   const rx = Object.create(WritableProto)
   rx.keepAlive = false
+  rx.lazy = true
   rx.read = read
   rx.write = write
   rx.refresh = refresh
@@ -558,6 +562,7 @@ export const context: (options?: {
   ): RxRuntime<R, E> {
     const rx = Object.create(RxRuntimeProto)
     rx.keepAlive = false
+    rx.lazy = true
     rx.refresh = undefined
 
     const layerRx = keepAlive(
@@ -1124,6 +1129,19 @@ export const keepAlive = <A extends Rx<any>>(self: A): A =>
     ...self,
     keepAlive: true
   })
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const setLazy: {
+  (lazy: boolean): <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, lazy: boolean): A
+} = dual(2, <A extends Rx<any>>(self: A, lazy: boolean) =>
+  Object.assign(Object.create(Object.getPrototypeOf(self)), {
+    ...self,
+    lazy
+  }))
 
 /**
  * @since 1.0.0

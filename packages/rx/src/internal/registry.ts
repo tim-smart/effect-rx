@@ -53,10 +53,10 @@ class RegistryImpl implements Registry.Registry {
     }
   }
 
-  private readonly nodes = new Map<Rx.Rx<any>, Node<any>>()
-  private readonly timeoutBuckets = new Map<number, readonly [nodes: Set<Node<any>>, handle: number]>()
-  private readonly nodeTimeoutBucket = new Map<Node<any>, number>()
-  private disposed = false
+  readonly nodes = new Map<Rx.Rx<any>, Node<any>>()
+  readonly timeoutBuckets = new Map<number, readonly [nodes: Set<Node<any>>, handle: number]>()
+  readonly nodeTimeoutBucket = new Map<Node<any>, number>()
+  disposed = false
 
   get<A>(rx: Rx.Rx<A>): A {
     return this.ensureNode(rx).value()
@@ -352,6 +352,8 @@ class Node<A> {
 
     if (batchState.phase === BatchPhase.collect) {
       batchState.stale.push(this)
+      this.invalidateChildren()
+    } else if (this.rx.lazy && this.listeners.length === 0) {
       this.invalidateChildren()
     } else {
       this.value()
