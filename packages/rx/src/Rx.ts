@@ -541,6 +541,7 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
 export interface RuntimeFactory {
   <R, E>(create: Layer.Layer<R, E, RxRegistry> | ((get: Context) => Layer.Layer<R, E, RxRegistry>)): RxRuntime<R, E>
   readonly memoMap: Layer.MemoMap
+  readonly addGlobalLayer: <A, E>(layer: Layer.Layer<A, E, RxRegistry>) => void
 }
 
 /**
@@ -551,6 +552,7 @@ export const context: (options?: {
   readonly memoMap?: Layer.MemoMap | undefined
 }) => RuntimeFactory = (options) => {
   const memoMap = options?.memoMap ?? Effect.runSync(Layer.makeMemoMap)
+  let globalLayer: Layer.Layer<any, any, RxRegistry> | undefined
   function factory<E, R>(
     create: Layer.Layer<R, E, RxRegistry> | ((get: Context) => Layer.Layer<R, E, RxRegistry>)
   ): RxRuntime<R, E> {
@@ -558,7 +560,11 @@ export const context: (options?: {
     rx.keepAlive = false
     rx.refresh = undefined
 
-    const layerRx = keepAlive(typeof create === "function" ? readable(create) : readable(() => create))
+    const layerRx = keepAlive(
+      typeof create === "function"
+        ? readable((get) => globalLayer ? Layer.provideMerge(create(get), globalLayer) : create(get))
+        : readable(() => globalLayer ? Layer.provideMerge(create, globalLayer) : create)
+    )
     rx.layer = layerRx
 
     rx.read = function read(get: Context) {
@@ -573,6 +579,13 @@ export const context: (options?: {
     return rx
   }
   factory.memoMap = memoMap
+  factory.addGlobalLayer = (layer: Layer.Layer<any, any, RxRegistry>) => {
+    if (globalLayer === undefined) {
+      globalLayer = layer
+    } else {
+      globalLayer = Layer.merge(globalLayer, layer)
+    }
+  }
   return factory
 }
 

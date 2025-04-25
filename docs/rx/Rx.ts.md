@@ -598,6 +598,7 @@ Added in v1.0.0
 export interface RuntimeFactory {
   <R, E>(create: Layer.Layer<R, E, RxRegistry> | ((get: Context) => Layer.Layer<R, E, RxRegistry>)): RxRuntime<R, E>
   readonly memoMap: Layer.MemoMap
+  readonly addGlobalLayer: <A, E>(layer: Layer.Layer<A, E, RxRegistry>) => void
 }
 ```
 
