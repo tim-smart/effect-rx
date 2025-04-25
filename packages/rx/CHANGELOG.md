@@ -1,5 +1,15 @@
 # @effect-rx/rx
 
+## 0.37.0
+
+### Minor Changes
+
+- [`d252615`](https://github.com/tim-smart/effect-rx/commit/d252615fa68ce0692aa09217e3ddd43fb4f328e8) Thanks [@tim-smart](https://github.com/tim-smart)! - Rx's are now lazy by default
+
+  They will not recalculate their value after invalidation until they are explicitly read again.
+
+  To disable this behaviour, you can use `Rx.setLazy(false)`.
+
 ## 0.36.1
 
 ### Patch Changes
