@@ -353,8 +353,8 @@ class Node<A> {
     if (batchState.phase === BatchPhase.collect) {
       batchState.stale.push(this)
       this.invalidateChildren()
-    } else if (this.rx.lazy && this.listeners.length === 0) {
-      this.invalidateChildren()
+    } else if (this.rx.lazy && this.listeners.length === 0 && this.children.length === 0) {
+      return
     } else {
       this.value()
     }
