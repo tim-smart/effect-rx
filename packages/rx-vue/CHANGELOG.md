@@ -1,5 +1,20 @@
 # @effect-rx/rx-vue
 
+## 0.12.0
+
+### Minor Changes
+
+- [`d252615`](https://github.com/tim-smart/effect-rx/commit/d252615fa68ce0692aa09217e3ddd43fb4f328e8) Thanks [@tim-smart](https://github.com/tim-smart)! - Rx's are now lazy by default
+
+  They will not recalculate their value after invalidation until they are explicitly read again.
+
+  To disable this behaviour, you can use `Rx.setLazy(false)`.
+
+### Patch Changes
+
+- Updated dependencies [[`d252615`](https://github.com/tim-smart/effect-rx/commit/d252615fa68ce0692aa09217e3ddd43fb4f328e8)]:
+  - @effect-rx/rx@0.37.0
+
 ## 0.11.24
 
 ### Patch Changes
