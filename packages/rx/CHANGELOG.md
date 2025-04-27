@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.37.2
+
+### Patch Changes
+
+- [`5b6d36f`](https://github.com/tim-smart/effect-rx/commit/5b6d36f390654723bc9b1c262334ee4be71a97e7) Thanks [@tim-smart](https://github.com/tim-smart)! - improve lazy algorithm
+
 ## 0.37.1
 
 ### Patch Changes
