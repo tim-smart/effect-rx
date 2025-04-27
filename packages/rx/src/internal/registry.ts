@@ -257,6 +257,7 @@ class Node<A> {
   previousParents: Array<Node<any>> | undefined
   children: Array<Node<any>> = []
   listeners: Array<() => void> = []
+  skipInvalidation = false
 
   get canBeRemoved(): boolean {
     return !this.rx.keepAlive && this.listeners.length === 0 && this.children.length === 0 &&
@@ -312,7 +313,11 @@ class Node<A> {
     }
 
     this._value = value
-    this.invalidateChildren()
+    if (this.skipInvalidation) {
+      this.skipInvalidation = false
+    } else {
+      this.invalidateChildren()
+    }
 
     if (batchState.phase !== BatchPhase.collect) {
       this.notify()
@@ -353,8 +358,9 @@ class Node<A> {
     if (batchState.phase === BatchPhase.collect) {
       batchState.stale.push(this)
       this.invalidateChildren()
-    } else if (this.rx.lazy && this.listeners.length === 0 && this.children.length === 0) {
-      return
+    } else if (this.rx.lazy && this.listeners.length === 0 && !childrenAreActive(this.children)) {
+      this.invalidateChildren()
+      this.skipInvalidation = true
     } else {
       this.value()
     }
@@ -424,6 +430,23 @@ class Node<A> {
       }
     }
   }
+}
+
+function childrenAreActive(children: Array<Node<any>>): boolean {
+  if (children.length === 0) {
+    return false
+  }
+  for (let i = 0, len = children.length; i < len; i++) {
+    if (children[i].listeners.length > 0) {
+      return true
+    }
+  }
+  for (let i = 0, len = children.length; i < len; i++) {
+    if (childrenAreActive(children[i].children)) {
+      return true
+    }
+  }
+  return false
 }
 
 interface Lifetime<A> extends Rx.Context {
