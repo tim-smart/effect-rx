@@ -98,6 +98,25 @@ const resultWithContextRx: Rx<Result<number>> = Rx.make(
 )
 ```
 
+## Working with scoped Effects
+
+All Rx's that use effects are provided with a `Scope`, so you can add finalizers
+that will be run when the Rx is no longer used.
+
+```ts
+import { Rx } from "@effect-rx/rx-react"
+import { Effect } from "effect"
+
+export const resultRx = Rx.make(
+  Effect.gen(function* () {
+    // Add a finalizer to the `Scope` for this Rx
+    // It will run when the Rx is rebuilt or no longer needed
+    yield* Effect.addFinalizer(() => Effect.log("finalizer"))
+    return "hello"
+  }),
+)
+```
+
 ## Working with Effect Services / Layer's
 
 ```ts
@@ -262,4 +281,26 @@ export function CreateUserComponent() {
     </button>
   )
 }
+```
+
+## Wrapping an event listener
+
+```ts
+import { Rx } from "@effect-rx/rx-react"
+
+// This is a simple Rx that will emit the current scroll position of the
+// window.
+export const scrollYRx: Rx.Rx<number> = Rx.make((get) => {
+  // The handler will use `get.setSelf` to update the value of itself
+  const onScroll = () => {
+    get.setSelf(window.scrollY)
+  }
+  // We need to use `get.addFinalizer` to remove the event listener when the
+  // Rx is no longer used.
+  window.addEventListener("scroll", onScroll)
+  get.addFinalizer(() => window.removeEventListener("scroll", onScroll))
+
+  // Return the current scroll position
+  return window.scrollY
+})
 ```
