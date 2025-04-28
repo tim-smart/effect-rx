@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.37.3
+
+### Patch Changes
+
+- [`bc766c2`](https://github.com/tim-smart/effect-rx/commit/bc766c29b5fb9a4bb80f24e26c607d67f53ec643) Thanks [@tim-smart](https://github.com/tim-smart)! - add schema support to Rx.searchParam
+
 ## 0.37.2
 
 ### Patch Changes
