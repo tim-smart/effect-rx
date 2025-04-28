@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.37.4
+
+### Patch Changes
+
+- [`6cd91d8`](https://github.com/tim-smart/effect-rx/commit/6cd91d81e2c7738e4c12537368e661f2bc0bfb6b) Thanks [@tim-smart](https://github.com/tim-smart)! - use Layer.provideMerge in addGlobalLayer
+
 ## 0.37.3
 
 ### Patch Changes
