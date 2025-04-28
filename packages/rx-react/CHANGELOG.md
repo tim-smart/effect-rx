@@ -1,5 +1,16 @@
 # @effect-rx/rx-react
 
+## 0.33.0
+
+### Minor Changes
+
+- [`78a7fc4`](https://github.com/tim-smart/effect-rx/commit/78a7fc4b8cb084740e58b2cdcb8164a7f5544ccd) Thanks [@tim-smart](https://github.com/tim-smart)! - fix FnContext type
+
+### Patch Changes
+
+- Updated dependencies [[`78a7fc4`](https://github.com/tim-smart/effect-rx/commit/78a7fc4b8cb084740e58b2cdcb8164a7f5544ccd)]:
+  - @effect-rx/rx@0.38.1
+
 ## 0.32.5
 
 ### Patch Changes
