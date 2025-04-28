@@ -304,3 +304,37 @@ export const scrollYRx: Rx.Rx<number> = Rx.make((get) => {
   return window.scrollY
 })
 ```
+
+## Integration with search params
+
+```ts
+import { Rx } from "@effect-rx/rx-react"
+import { Option, Schema } from "effect"
+
+// Create an Rx that reads and writes to the URL search parameters
+export const simpleParamRx: Rx.Writable<string> = Rx.searchParam("simple")
+
+// You can also use a schema to further parse the value
+export const numberParamRx: Rx.Writable<Option.Option<number>> = Rx.searchParam(
+  "number",
+  { schema: Schema.NumberFromString },
+)
+```
+
+## Integration with local storage
+
+```ts
+import { Rx } from "@effect-rx/rx-react"
+import { BrowserKeyValueStore } from "@effect/platform-browser"
+import { Schema } from "effect"
+
+// Create an Rx that reads and writes to localStorage.
+//
+// It uses Schema to define the type of the value stored.
+export const flagRx = Rx.kvs({
+  runtime: Rx.runtime(BrowserKeyValueStore.layerLocalStorage),
+  key: "flag",
+  schema: Schema.Boolean,
+  defaultValue: () => false,
+})
+```

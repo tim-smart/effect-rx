@@ -24,7 +24,7 @@ import * as MutableHashMap from "effect/MutableHashMap"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
 import * as Runtime from "effect/Runtime"
-import type * as Schema from "effect/Schema"
+import * as Schema from "effect/Schema"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
 import * as Subscribable from "effect/Subscribable"
@@ -1354,17 +1354,27 @@ export const kvs = <A>(options: {
 // -----------------------------------------------------------------------------
 
 /**
+ * Create an Rx that reads and writes a URL search parameter.
+ *
+ * Note: If you pass a schema, it has to be synchronous and have no context.
+ *
  * @since 1.0.0
  * @category URL search params
  */
-export const searchParam = (name: string): Writable<string> =>
-  writable(
+export const searchParam = <A = never, I extends string = never>(name: string, options?: {
+  readonly schema?: Schema.Schema<A, I>
+}): Writable<[A] extends [never] ? string : Option.Option<A>> => {
+  const decode = options?.schema && Schema.decodeEither(options.schema)
+  const encode = options?.schema && Schema.encodeEither(options.schema)
+  return writable(
     (get) => {
       const handleUpdate = () => {
         if (searchParamState.updating) return
         const searchParams = new URLSearchParams(window.location.search)
         const newValue = searchParams.get(name) || ""
-        if (newValue !== Option.getOrUndefined(get.self())) {
+        if (decode) {
+          get.setSelf(Either.getRight(decode(newValue as I)))
+        } else if (newValue !== Option.getOrUndefined(get.self())) {
           get.setSelf(newValue)
         }
       }
@@ -1374,10 +1384,17 @@ export const searchParam = (name: string): Writable<string> =>
         window.removeEventListener("popstate", handleUpdate)
         window.removeEventListener("pushstate", handleUpdate)
       })
-      return new URLSearchParams(window.location.search).get(name) || ""
+      const value = new URLSearchParams(window.location.search).get(name) || ""
+      return decode ? Either.getRight(decode(value as I)) : value as any
     },
-    (ctx, value: string) => {
-      searchParamState.updates.set(name, value)
+    (ctx, value: any) => {
+      if (encode) {
+        const encoded = Option.flatMap(value, (v) => Either.getRight(encode(v as A)))
+        searchParamState.updates.set(name, Option.getOrElse(encoded, () => ""))
+        value = Option.zipRight(encoded, value)
+      } else {
+        searchParamState.updates.set(name, value)
+      }
       ctx.setSelf(value)
       if (searchParamState.timeout) {
         clearTimeout(searchParamState.timeout)
@@ -1385,6 +1402,7 @@ export const searchParam = (name: string): Writable<string> =>
       searchParamState.timeout = setTimeout(updateSearchParams, 500)
     }
   )
+}
 
 const searchParamState = {
   timeout: undefined as number | undefined,
@@ -1397,7 +1415,7 @@ function updateSearchParams() {
   searchParamState.updating = true
   const searchParams = new URLSearchParams(window.location.search)
   for (const [key, value] of searchParamState.updates.entries()) {
-    if (value) {
+    if (value.length > 0) {
       searchParams.set(key, value)
     } else {
       searchParams.delete(key)
