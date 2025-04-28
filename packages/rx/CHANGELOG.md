@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.38.0
+
+### Minor Changes
+
+- [`ed64139`](https://github.com/tim-smart/effect-rx/commit/ed64139804b94f5d88cd2ec908934e4cfca9e476) Thanks [@tim-smart](https://github.com/tim-smart)! - add Rx.FnContext, for reducing footguns with Rx.fn
+
 ## 0.37.4
 
 ### Patch Changes
