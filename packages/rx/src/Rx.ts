@@ -808,7 +808,9 @@ export const subscribable: {
  * @since 1.0.0
  * @category models
  */
-export interface FnContext extends Omit<Context, "resultOnce" | "once" | "someOnce" | "refreshSelf"> {}
+export interface FnContext extends Omit<Context, "get" | "once" | "resultOnce" | "someOnce" | "refreshSelf"> {
+  <A>(rx: Rx<A>): A
+}
 
 /**
  * @since 1.0.0
