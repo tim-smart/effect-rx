@@ -806,23 +806,30 @@ export const subscribable: {
 
 /**
  * @since 1.0.0
+ * @category models
+ */
+export interface FnContext extends Omit<Context, "resultOnce" | "once" | "someOnce" | "refreshSelf"> {}
+
+/**
+ * @since 1.0.0
  * @category constructors
  */
 export const fnSync: {
   <Arg, A>(
-    f: (arg: Arg, get: Context) => A
+    f: (arg: Arg, get: FnContext) => A
   ): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
   <Arg, A>(
-    f: (arg: Arg, get: Context) => A,
+    f: (arg: Arg, get: FnContext) => A,
     options: { readonly initialValue: A }
   ): Writable<A, RxResultFn.ArgToVoid<Arg>>
-} = <Arg, A>(f: (arg: Arg, get: Context) => A, options?: {
+} = <Arg, A>(f: (arg: Arg, get: FnContext) => A, options?: {
   readonly initialValue?: A
 }): Writable<Option.Option<A> | A, RxResultFn.ArgToVoid<Arg>> => {
   const argRx = state<[number, Arg]>([0, undefined as any])
   const hasInitialValue = options?.initialValue !== undefined
   return writable(function(get) {
-    const [counter, arg] = get(argRx)
+    ;(get as any).isFn = true
+    const [counter, arg] = get.get(argRx)
     if (counter === 0) {
       return hasInitialValue ? options.initialValue : Option.none()
     }
@@ -894,7 +901,8 @@ function makeResultFn<Arg, E, A>(
     : Result.initial<A, E>()
 
   function read(get: Context, runtime?: Runtime.Runtime<any>): Result.Result<A, E | NoSuchElementException> {
-    const [counter, arg] = get(argRx)
+    ;(get as any).isFn = true
+    const [counter, arg] = get.get(argRx)
     if (counter === 0) {
       return initialValue
     }

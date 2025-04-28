@@ -450,6 +450,7 @@ function childrenAreActive(children: Array<Node<any>>): boolean {
 }
 
 interface Lifetime<A> extends Rx.Context {
+  isFn: boolean
   readonly node: Node<A>
   finalizers: Array<() => void> | undefined
   disposed: boolean
@@ -458,7 +459,7 @@ interface Lifetime<A> extends Rx.Context {
 
 const disposedError = (rx: Rx.Rx<any>): Error => new Error(`Cannot use context of disposed Rx: ${rx}`)
 
-const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
+const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed" | "isFn"> = {
   get registry(): RegistryImpl {
     return (this as Lifetime<any>).node.registry
   },
@@ -483,6 +484,8 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
   result<A, E>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<A, E>>): Effect.Effect<A, E> {
     if (this.disposed) {
       throw disposedError(this.node.rx)
+    } else if (this.isFn) {
+      return this.resultOnce(rx)
     }
     const result = this.get(rx)
     switch (result._tag) {
@@ -519,6 +522,8 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed"> = {
   some<A>(this: Lifetime<any>, rx: Rx.Rx<Option.Option<A>>): Effect.Effect<A> {
     if (this.disposed) {
       throw disposedError(this.node.rx)
+    } else if (this.isFn) {
+      return this.someOnce(rx)
     }
     const result = this.get(rx)
     return result._tag === "None" ? Effect.never : Effect.succeed(result.value)
@@ -659,12 +664,15 @@ const makeLifetime = <A>(node: Node<A>): Lifetime<A> => {
   function get<A>(rx: Rx.Rx<A>): A {
     if (get.disposed) {
       throw disposedError(rx)
+    } else if (get.isFn) {
+      return node.registry.get(rx)
     }
     const parent = node.registry.ensureNode(rx)
     node.addParent(parent)
     return parent.value()
   }
   Object.setPrototypeOf(get, LifetimeProto)
+  get.isFn = false
   get.disposed = false
   get.finalizers = undefined
   get.node = node
