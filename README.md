@@ -146,6 +146,19 @@ export const usersRx = runtimeRx.rx(
 )
 ```
 
+## Adding global Layers to RxRuntime's
+
+This is useful for setting up Tracer's, Logger's, ConfigProvider's, etc.
+
+```ts
+import { Rx } from "@effect-rx/rx-react"
+import { ConfigProvider, Layer } from "effect"
+
+Rx.runtime.addGlobalLayer(
+  Layer.setConfigProvider(ConfigProvider.fromJson(import.meta.env)),
+)
+```
+
 ## Working with Stream's
 
 ```tsx

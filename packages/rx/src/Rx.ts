@@ -588,7 +588,7 @@ export const context: (options?: {
     if (globalLayer === undefined) {
       globalLayer = layer
     } else {
-      globalLayer = Layer.merge(globalLayer, layer)
+      globalLayer = Layer.provideMerge(globalLayer, layer)
     }
   }
   return factory
