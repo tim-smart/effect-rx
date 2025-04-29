@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.38.2
+
+### Patch Changes
+
+- [`ed998a6`](https://github.com/tim-smart/effect-rx/commit/ed998a6c1fb1855ec04c3d72ca2588ca39c3b017) Thanks [@tim-smart](https://github.com/tim-smart)! - fix Rx.fn types
+
 ## 0.38.1
 
 ### Patch Changes
