@@ -15,8 +15,11 @@ Added in v1.0.0
 - [Conversions](#conversions)
   - [get](#get)
   - [getResult](#getresult)
+  - [modify](#modify)
+  - [set](#set)
   - [toStream](#tostream)
   - [toStreamResult](#tostreamresult)
+  - [update](#update)
 - [KeyValueStore](#keyvaluestore)
   - [kvs](#kvs)
 - [URL search params](#url-search-params)
@@ -105,6 +108,32 @@ export declare const getResult: <A, E>(self: Rx<Result.Result<A, E>>) => Effect.
 
 Added in v1.0.0
 
+## modify
+
+**Signature**
+
+```ts
+export declare const modify: {
+  <R, W, A>(f: (_: R) => [returnValue: A, nextValue: W]): (self: Writable<R, W>) => Effect.Effect<A, never, RxRegistry>
+  <R, W, A>(self: Writable<R, W>, f: (_: R) => [returnValue: A, nextValue: W]): Effect.Effect<A, never, RxRegistry>
+}
+```
+
+Added in v1.0.0
+
+## set
+
+**Signature**
+
+```ts
+export declare const set: {
+  <W>(value: W): <R>(self: Writable<R, W>) => Effect.Effect<void, never, RxRegistry>
+  <R, W>(self: Writable<R, W>, value: W): Effect.Effect<void, never, RxRegistry>
+}
+```
+
+Added in v1.0.0
+
 ## toStream
 
 **Signature**
@@ -121,6 +150,19 @@ Added in v1.0.0
 
 ```ts
 export declare const toStreamResult: <A, E>(self: Rx<Result.Result<A, E>>) => Stream.Stream<A, E, RxRegistry>
+```
+
+Added in v1.0.0
+
+## update
+
+**Signature**
+
+```ts
+export declare const update: {
+  <R, W>(f: (_: R) => W): (self: Writable<R, W>) => Effect.Effect<void, never, RxRegistry>
+  <R, W>(self: Writable<R, W>, f: (_: R) => W): Effect.Effect<void, never, RxRegistry>
+}
 ```
 
 Added in v1.0.0
