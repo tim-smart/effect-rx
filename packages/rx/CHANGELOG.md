@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.38.4
+
+### Patch Changes
+
+- [`85301c8`](https://github.com/tim-smart/effect-rx/commit/85301c84bc4c5519e5eaafbfbb20057fc19f73b4) Thanks [@tim-smart](https://github.com/tim-smart)! - improve Effect.fn inference for RxRuntime.rx
+
 ## 0.38.3
 
 ### Patch Changes
