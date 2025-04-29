@@ -210,7 +210,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const fail: <A, E>(error: E, previousData?: Option.Option<A>, waiting?: boolean) => Failure<A, E>
+export declare const fail: <E, A = never>(error: E, previousData?: Option.Option<A>, waiting?: boolean) => Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -234,7 +234,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const failure: <A, E>(
+export declare const failure: <E, A = never>(
   cause: Cause.Cause<E>,
   previousValue?: Option.Option<A>,
   waiting?: boolean
@@ -285,7 +285,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const initial: <A, E>(waiting?: boolean) => Initial<A, E>
+export declare const initial: <A = never, E = never>(waiting?: boolean) => Initial<A, E>
 ```
 
 Added in v1.0.0
@@ -308,7 +308,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const success: <A, E>(value: A, waiting?: boolean) => Success<A, E>
+export declare const success: <A, E = never>(value: A, waiting?: boolean) => Success<A, E>
 ```
 
 Added in v1.0.0

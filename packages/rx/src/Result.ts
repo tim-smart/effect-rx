@@ -126,7 +126,7 @@ export const isNotInitial = <A, E>(result: Result<A, E>): result is Success<A, E
  * @since 1.0.0
  * @category constructors
  */
-export const initial = <A, E>(waiting = false): Initial<A, E> => {
+export const initial = <A = never, E = never>(waiting = false): Initial<A, E> => {
   const result = Object.create(ResultProto)
   result._tag = "Initial"
   result.waiting = waiting
@@ -152,7 +152,7 @@ export const isSuccess = <A, E>(result: Result<A, E>): result is Success<A, E> =
  * @since 1.0.0
  * @category constructors
  */
-export const success = <A, E>(value: A, waiting = false): Success<A, E> => {
+export const success = <A, E = never>(value: A, waiting = false): Success<A, E> => {
   const result = Object.create(ResultProto)
   result._tag = "Success"
   result.value = value
@@ -187,7 +187,7 @@ export const isInterrupted = <A, E>(result: Result<A, E>): result is Failure<A, 
  * @since 1.0.0
  * @category constructors
  */
-export const failure = <A, E>(
+export const failure = <E, A = never>(
   cause: Cause.Cause<E>,
   previousValue: Option.Option<A> = Option.none(),
   waiting = false
@@ -214,7 +214,7 @@ export const failureWithPrevious = <A, E>(
  * @since 1.0.0
  * @category constructors
  */
-export const fail = <A, E>(error: E, previousData?: Option.Option<A>, waiting?: boolean): Failure<A, E> =>
+export const fail = <E, A = never>(error: E, previousData?: Option.Option<A>, waiting?: boolean): Failure<A, E> =>
   failure(Cause.fail(error), previousData, waiting)
 
 /**
