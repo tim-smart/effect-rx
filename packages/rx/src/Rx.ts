@@ -208,16 +208,10 @@ const RxRuntimeProto = {
   },
 
   fn(this: RxRuntime<any, any>, arg: any, options?: { readonly initialValue?: unknown }) {
-    const [read, write, argRx] = makeResultFn(arg, options)
-    return writable((get) => {
-      get.get(argRx)
-      const previous = get.self<Result.Result<any, any>>()
-      const runtimeResult = get.get(this)
-      if (runtimeResult._tag !== "Success") {
-        return Result.replacePrevious(runtimeResult, previous)
-      }
-      return read(get, runtimeResult.value)
-    }, write)
+    if (arguments.length === 0) {
+      return (arg: any, options?: { readonly initialValue?: unknown }) => makeFnRuntime(this, arg, options)
+    }
+    return makeFnRuntime(this, arg, options)
   },
 
   pull(this: RxRuntime<any, any>, arg: any, options?: {
@@ -275,6 +269,19 @@ const RxRuntimeProto = {
       return readSubscribable(get, sub as any, runtimeResult.value)
     })
   }
+}
+
+const makeFnRuntime = (self: RxRuntime<any, any>, arg: any, options?: { readonly initialValue?: unknown }) => {
+  const [read, write, argRx] = makeResultFn(arg, options)
+  return writable((get) => {
+    get.get(argRx)
+    const previous = get.self<Result.Result<any, any>>()
+    const runtimeResult = get.get(self)
+    if (runtimeResult._tag !== "Success") {
+      return Result.replacePrevious(runtimeResult, previous)
+    }
+    return read(get, runtimeResult.value)
+  }, write)
 }
 
 const WritableProto = {
@@ -335,16 +342,16 @@ function constSetSelf<A>(ctx: WriteContext<A>, value: A) {
  * @category constructors
  */
 export const make: {
-  <A, E>(effect: Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
-    readonly initialValue?: A
-  }): Rx<Result.Result<A, E>>
   <A, E>(create: (get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
     readonly initialValue?: A
   }): Rx<Result.Result<A, E>>
-  <A, E>(stream: Stream.Stream<A, E, RxRegistry>, options?: {
+  <A, E>(effect: Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
     readonly initialValue?: A
   }): Rx<Result.Result<A, E>>
   <A, E>(create: (get: Context) => Stream.Stream<A, E, RxRegistry>, options?: {
+    readonly initialValue?: A
+  }): Rx<Result.Result<A, E>>
+  <A, E>(stream: Stream.Stream<A, E, RxRegistry>, options?: {
     readonly initialValue?: A
   }): Rx<Result.Result<A, E>>
   <A>(create: (get: Context) => A): Rx<A>
@@ -509,6 +516,14 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
   }
 
   readonly fn: {
+    <Arg>(): {
+      <E, A>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry | R>, options?: {
+        readonly initialValue?: A
+      }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
+      <E, A>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry | R>, options?: {
+        readonly initialValue?: A
+      }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER | NoSuchElementException>
+    }
     <Arg, E, A>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry | R>, options?: {
       readonly initialValue?: A
     }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
@@ -817,6 +832,15 @@ export interface FnContext extends Omit<Context, "get" | "once" | "resultOnce" |
  * @category constructors
  */
 export const fnSync: {
+  <Arg>(): {
+    <A>(
+      f: (arg: Arg, get: FnContext) => A
+    ): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
+    <A>(
+      f: (arg: Arg, get: FnContext) => A,
+      options: { readonly initialValue: A }
+    ): Writable<A, RxResultFn.ArgToVoid<Arg>>
+  }
   <Arg, A>(
     f: (arg: Arg, get: FnContext) => A
   ): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
@@ -824,7 +848,14 @@ export const fnSync: {
     f: (arg: Arg, get: FnContext) => A,
     options: { readonly initialValue: A }
   ): Writable<A, RxResultFn.ArgToVoid<Arg>>
-} = <Arg, A>(f: (arg: Arg, get: FnContext) => A, options?: {
+} = function(...args: ReadonlyArray<any>) {
+  if (args.length === 0) {
+    return makeFnSync
+  }
+  return makeFnSync(...args as [any, any]) as any
+}
+
+const makeFnSync = <Arg, A>(f: (arg: Arg, get: FnContext) => A, options?: {
   readonly initialValue?: A
 }): Writable<Option.Option<A> | A, RxResultFn.ArgToVoid<Arg>> => {
   const argRx = state<[number, Arg]>([0, undefined as any])
@@ -877,13 +908,26 @@ export type Reset = typeof Reset
  * @category constructors
  */
 export const fn: {
+  <Arg>(): <E, A>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
+    readonly initialValue?: A
+  }) => RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
   <Arg, E, A>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
     readonly initialValue?: A
   }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
+  <Arg>(): <E, A>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry>, options?: {
+    readonly initialValue?: A
+  }) => RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
   <Arg, E, A>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry>, options?: {
     readonly initialValue?: A
   }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
-} = <Arg, E, A>(
+} = function(...args: ReadonlyArray<any>) {
+  if (args.length === 0) {
+    return makeFn
+  }
+  return makeFn(...args as [any, any]) as any
+}
+
+const makeFn = <Arg, E, A>(
   f: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry> | Effect.Effect<A, E, Scope.Scope | RxRegistry>,
   options?: {
     readonly initialValue?: A

@@ -92,7 +92,7 @@ describe("Rx", () => {
   })
 
   it("runtime multiple", async () => {
-    const buildCount = buildCounterRuntime.fn((_: void) => Effect.flatMap(BuildCounter, (_) => _.get))
+    const buildCount = buildCounterRuntime.fn<void>()((_) => Effect.flatMap(BuildCounter, (_) => _.get))
     const count = counterRuntime.rx(Effect.flatMap(Counter, (_) => _.get))
     const timesTwo = multiplierRuntime.rx((get) =>
       Effect.gen(function*() {
