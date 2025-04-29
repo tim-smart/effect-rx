@@ -501,16 +501,16 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
   readonly layer: Rx<Layer.Layer<R, ER>>
 
   readonly rx: {
-    <A, E>(effect: Effect.Effect<A, E, Scope.Scope | R>, options?: {
-      readonly initialValue?: A
-    }): Rx<Result.Result<A, E | ER>>
     <A, E>(create: (get: Context) => Effect.Effect<A, E, Scope.Scope | R | RxRegistry>, options?: {
       readonly initialValue?: A
     }): Rx<Result.Result<A, E | ER>>
-    <A, E>(stream: Stream.Stream<A, E, RxRegistry | R>, options?: {
+    <A, E>(effect: Effect.Effect<A, E, Scope.Scope | R>, options?: {
       readonly initialValue?: A
     }): Rx<Result.Result<A, E | ER>>
     <A, E>(create: (get: Context) => Stream.Stream<A, E, RxRegistry | R>, options?: {
+      readonly initialValue?: A
+    }): Rx<Result.Result<A, E | ER>>
+    <A, E>(stream: Stream.Stream<A, E, RxRegistry | R>, options?: {
       readonly initialValue?: A
     }): Rx<Result.Result<A, E | ER>>
   }

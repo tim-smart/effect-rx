@@ -31,6 +31,7 @@ Added in v1.0.0
   - [mapResult](#mapresult)
   - [refreshable](#refreshable)
   - [setIdleTTL](#setidlettl)
+  - [setLazy](#setlazy)
   - [transform](#transform)
   - [withFallback](#withfallback)
   - [withLabel](#withlabel)
@@ -51,6 +52,7 @@ Added in v1.0.0
   - [defaultMemoMap](#defaultmemomap)
   - [runtime](#runtime)
 - [models](#models)
+  - [FnContext (interface)](#fncontext-interface)
   - [PullResult (type alias)](#pullresult-type-alias)
   - [Refreshable (interface)](#refreshable-interface)
   - [RuntimeFactory (interface)](#runtimefactory-interface)
@@ -144,10 +146,17 @@ Added in v1.0.0
 
 ## searchParam
 
+Create an Rx that reads and writes a URL search parameter.
+
+Note: If you pass a schema, it has to be synchronous and have no context.
+
 **Signature**
 
 ```ts
-export declare const searchParam: (name: string) => Writable<string>
+export declare const searchParam: <A = never, I extends string = never>(
+  name: string,
+  options?: { readonly schema?: Schema.Schema<A, I> }
+) => Writable<[A] extends [never] ? string : Option.Option<A>>
 ```
 
 Added in v1.0.0
@@ -267,6 +276,19 @@ export declare const setIdleTTL: {
 
 Added in v1.0.0
 
+## setLazy
+
+**Signature**
+
+```ts
+export declare const setLazy: {
+  (lazy: boolean): <A extends Rx<any>>(self: A) => A
+  <A extends Rx<any>>(self: A, lazy: boolean): A
+}
+```
+
+Added in v1.0.0
+
 ## transform
 
 **Signature**
@@ -350,12 +372,20 @@ Added in v1.0.0
 
 ```ts
 export declare const fn: {
+  <Arg>(): <E, A>(
+    fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry>,
+    options?: { readonly initialValue?: A }
+  ) => RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
   <Arg, E, A>(
-    fn: (arg: Arg, get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry>,
+    fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry>,
     options?: { readonly initialValue?: A }
   ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
+  <Arg>(): <E, A>(
+    fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry>,
+    options?: { readonly initialValue?: A }
+  ) => RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
   <Arg, E, A>(
-    fn: (arg: Arg, get: Context) => Stream.Stream<A, E, RxRegistry>,
+    fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry>,
     options?: { readonly initialValue?: A }
   ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
 }
@@ -369,9 +399,16 @@ Added in v1.0.0
 
 ```ts
 export declare const fnSync: {
-  <Arg, A>(f: (arg: Arg, get: Context) => A): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
+  <Arg>(): {
+    <A>(f: (arg: Arg, get: FnContext) => A): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
+    <A>(
+      f: (arg: Arg, get: FnContext) => A,
+      options: { readonly initialValue: A }
+    ): Writable<A, RxResultFn.ArgToVoid<Arg>>
+  }
+  <Arg, A>(f: (arg: Arg, get: FnContext) => A): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
   <Arg, A>(
-    f: (arg: Arg, get: Context) => A,
+    f: (arg: Arg, get: FnContext) => A,
     options: { readonly initialValue: A }
   ): Writable<A, RxResultFn.ArgToVoid<Arg>>
 }
@@ -386,18 +423,18 @@ Added in v1.0.0
 ```ts
 export declare const make: {
   <A, E>(
+    create: (get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry>,
+    options?: { readonly initialValue?: A }
+  ): Rx<Result.Result<A, E>>
+  <A, E>(
     effect: Effect.Effect<A, E, Scope.Scope | RxRegistry>,
     options?: { readonly initialValue?: A }
   ): Rx<Result.Result<A, E>>
   <A, E>(
-    create: (get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry>,
-    options?: { readonly initialValue?: A }
-  ): Rx<Result.Result<A, E>>
-  <A, E>(stream: Stream.Stream<A, E, RxRegistry>, options?: { readonly initialValue?: A }): Rx<Result.Result<A, E>>
-  <A, E>(
     create: (get: Context) => Stream.Stream<A, E, RxRegistry>,
     options?: { readonly initialValue?: A }
   ): Rx<Result.Result<A, E>>
+  <A, E>(stream: Stream.Stream<A, E, RxRegistry>, options?: { readonly initialValue?: A }): Rx<Result.Result<A, E>>
   <A>(create: (get: Context) => A): Rx<A>
   <A>(initialValue: A): Writable<A>
 }
@@ -562,6 +599,18 @@ Added in v1.0.0
 
 # models
 
+## FnContext (interface)
+
+**Signature**
+
+```ts
+export interface FnContext extends Omit<Context, "get" | "once" | "resultOnce" | "someOnce" | "refreshSelf"> {
+  <A>(rx: Rx<A>): A
+}
+```
+
+Added in v1.0.0
+
 ## PullResult (type alias)
 
 **Signature**
@@ -612,6 +661,7 @@ Added in v1.0.0
 export interface Rx<A> extends Pipeable, Inspectable.Inspectable {
   readonly [TypeId]: TypeId
   readonly keepAlive: boolean
+  readonly lazy: boolean
   readonly read: (get: Context) => A
   readonly refresh?: (f: <A>(rx: Rx<A>) => void) => void
   readonly label?: readonly [name: string, stack: string]
@@ -685,19 +735,13 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
 
   readonly rx: {
     <A, E>(
-      effect: Effect.Effect<A, E, Scope.Scope | R>,
-      options?: {
-        readonly initialValue?: A
-      }
-    ): Rx<Result.Result<A, E | ER>>
-    <A, E>(
       create: (get: Context) => Effect.Effect<A, E, Scope.Scope | R | RxRegistry>,
       options?: {
         readonly initialValue?: A
       }
     ): Rx<Result.Result<A, E | ER>>
     <A, E>(
-      stream: Stream.Stream<A, E, RxRegistry | R>,
+      effect: Effect.Effect<A, E, Scope.Scope | R>,
       options?: {
         readonly initialValue?: A
       }
@@ -708,17 +752,37 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
         readonly initialValue?: A
       }
     ): Rx<Result.Result<A, E | ER>>
+    <A, E>(
+      stream: Stream.Stream<A, E, RxRegistry | R>,
+      options?: {
+        readonly initialValue?: A
+      }
+    ): Rx<Result.Result<A, E | ER>>
   }
 
   readonly fn: {
+    <Arg>(): {
+      <E, A>(
+        fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry | R>,
+        options?: {
+          readonly initialValue?: A
+        }
+      ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
+      <E, A>(
+        fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry | R>,
+        options?: {
+          readonly initialValue?: A
+        }
+      ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER | NoSuchElementException>
+    }
     <Arg, E, A>(
-      fn: (arg: Arg, get: Context) => Effect.Effect<A, E, Scope.Scope | RxRegistry | R>,
+      fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry | R>,
       options?: {
         readonly initialValue?: A
       }
     ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
     <Arg, E, A>(
-      fn: (arg: Arg, get: Context) => Stream.Stream<A, E, RxRegistry | R>,
+      fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry | R>,
       options?: {
         readonly initialValue?: A
       }
