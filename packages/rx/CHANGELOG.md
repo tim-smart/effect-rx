@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.38.6
+
+### Patch Changes
+
+- [`16cf6eb`](https://github.com/tim-smart/effect-rx/commit/16cf6ebbedb02bca6087605d89c2db0c5d1b5bab) Thanks [@tim-smart](https://github.com/tim-smart)! - add defaults to Result generics
+
 ## 0.38.5
 
 ### Patch Changes
