@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.38.3
+
+### Patch Changes
+
+- [`7b326ab`](https://github.com/tim-smart/effect-rx/commit/7b326ab7aa5a2d394412a375453a3eeba1cf7314) Thanks [@tim-smart](https://github.com/tim-smart)! - improve interop with Effect.fn
+
 ## 0.38.2
 
 ### Patch Changes
