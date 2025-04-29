@@ -1527,6 +1527,51 @@ export const get = <A>(self: Rx<A>): Effect.Effect<A, never, RxRegistry> =>
  * @since 1.0.0
  * @category Conversions
  */
+export const modify: {
+  <R, W, A>(f: (_: R) => [returnValue: A, nextValue: W]): (self: Writable<R, W>) => Effect.Effect<A, never, RxRegistry>
+  <R, W, A>(self: Writable<R, W>, f: (_: R) => [returnValue: A, nextValue: W]): Effect.Effect<A, never, RxRegistry>
+} = dual(
+  2,
+  <R, W, A>(self: Writable<R, W>, f: (_: R) => [returnValue: A, nextValue: W]): Effect.Effect<A, never, RxRegistry> =>
+    Effect.map(RxRegistry, (registry) => {
+      const [returnValue, nextValue] = f(registry.get(self))
+      registry.set(self, nextValue)
+      return returnValue
+    })
+)
+
+/**
+ * @since 1.0.0
+ * @category Conversions
+ */
+export const set: {
+  <W>(value: W): <R>(self: Writable<R, W>) => Effect.Effect<void, never, RxRegistry>
+  <R, W>(self: Writable<R, W>, value: W): Effect.Effect<void, never, RxRegistry>
+} = dual(
+  2,
+  <R, W>(self: Writable<R, W>, value: W): Effect.Effect<void, never, RxRegistry> =>
+    Effect.map(RxRegistry, (registry) => {
+      registry.set(self, value)
+    })
+)
+
+/**
+ * @since 1.0.0
+ * @category Conversions
+ */
+export const update: {
+  <R, W>(f: (_: R) => W): (self: Writable<R, W>) => Effect.Effect<void, never, RxRegistry>
+  <R, W>(self: Writable<R, W>, f: (_: R) => W): Effect.Effect<void, never, RxRegistry>
+} = dual(
+  2,
+  <R, W>(self: Writable<R, W>, f: (_: R) => W): Effect.Effect<void, never, RxRegistry> =>
+    modify(self, (value) => [void 0, f(value)])
+)
+
+/**
+ * @since 1.0.0
+ * @category Conversions
+ */
 export const getResult = <A, E>(
   self: Rx<Result.Result<A, E>>
 ): Effect.Effect<A, E, RxRegistry> =>
