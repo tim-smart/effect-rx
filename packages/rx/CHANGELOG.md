@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.38.5
+
+### Patch Changes
+
+- [`eb7a80b`](https://github.com/tim-smart/effect-rx/commit/eb7a80bcf453d3c62c2bb2d95bf7ad2b4dd20219) Thanks [@tim-smart](https://github.com/tim-smart)! - add Effect mutation apis
+
 ## 0.38.4
 
 ### Patch Changes
