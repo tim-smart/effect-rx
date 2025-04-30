@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.38.7
+
+### Patch Changes
+
+- [`06d514d`](https://github.com/tim-smart/effect-rx/commit/06d514dea00b4fed6d270f5d0177014940900f35) Thanks [@tim-smart](https://github.com/tim-smart)! - ensure notify is sent during batch commit
+
 ## 0.38.6
 
 ### Patch Changes
