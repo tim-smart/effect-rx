@@ -319,7 +319,9 @@ class Node<A> {
       this.invalidateChildren()
     }
 
-    if (batchState.phase !== BatchPhase.collect) {
+    if (batchState.phase === BatchPhase.collect) {
+      batchState.notify.add(this)
+    } else {
       this.notify()
     }
   }
@@ -381,6 +383,10 @@ class Node<A> {
   notify(): void {
     for (let i = 0; i < this.listeners.length; i++) {
       this.listeners[i]()
+    }
+
+    if (batchState.phase === BatchPhase.commit) {
+      batchState.notify.delete(this)
     }
   }
 
@@ -713,7 +719,8 @@ export const enum BatchPhase {
 export const batchState = globalValue("@effect-rx/rx/Registry/batchState", () => ({
   phase: BatchPhase.disabled,
   depth: 0,
-  stale: [] as Array<Node<any>>
+  stale: [] as Array<Node<any>>,
+  notify: new Set<Node<any>>()
 }))
 
 /** @internal */
@@ -727,6 +734,10 @@ export function batch(f: () => void): void {
       for (let i = 0; i < batchState.stale.length; i++) {
         batchRebuildNode(batchState.stale[i])
       }
+      for (const node of batchState.notify) {
+        node.notify()
+      }
+      batchState.notify.clear()
     }
   } finally {
     batchState.depth--
