@@ -360,6 +360,7 @@ class Node<A> {
     if (batchState.phase === BatchPhase.collect) {
       batchState.stale.push(this)
       this.invalidateChildren()
+      this.skipInvalidation = true
     } else if (this.rx.lazy && this.listeners.length === 0 && !childrenAreActive(this.children)) {
       this.invalidateChildren()
       this.skipInvalidation = true
