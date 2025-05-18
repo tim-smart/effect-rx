@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.39.1
+
+### Patch Changes
+
+- [`51fca44`](https://github.com/tim-smart/effect-rx/commit/51fca44439739e6a7cbadbb0a1a6d3e079e23ad1) Thanks [@tim-smart](https://github.com/tim-smart)! - fix invalidation during Rx.batch
+
 ## 0.39.0
 
 ### Minor Changes
