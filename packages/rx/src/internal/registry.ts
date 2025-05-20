@@ -66,6 +66,18 @@ class RegistryImpl implements Registry.Registry {
     rx.write(this.ensureNode(rx).writeContext, value)
   }
 
+  modify<R, W, A>(rx: Rx.Writable<R, W>, f: (_: R) => [returnValue: A, nextValue: W]): A {
+    const node = this.ensureNode(rx)
+    const result = f(node.value())
+    rx.write(node.writeContext, result[1])
+    return result[0]
+  }
+
+  update<R, W>(rx: Rx.Writable<R, W>, f: (_: R) => W): void {
+    const node = this.ensureNode(rx)
+    rx.write(node.writeContext, f(node.value()))
+  }
+
   refresh = <A>(rx: Rx.Rx<A>): void => {
     if (rx.refresh !== undefined) {
       rx.refresh(this.refresh)

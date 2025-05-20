@@ -598,7 +598,7 @@ export interface Context {
       readonly immediate?: boolean
     }
   ) => void
-  readonly registry: Registry
+  readonly registry: Registry.Registry
 }
 ```
 

@@ -12,6 +12,12 @@ Added in v1.0.0
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [Conversions](#conversions)
+  - [getResult](#getresult)
+  - [toStream](#tostream)
+  - [toStreamResult](#tostreamresult)
+- [Layers](#layers)
+  - [layer](#layer)
 - [Tags](#tags)
   - [RxRegistry (class)](#rxregistry-class)
 - [constructors](#constructors)
@@ -23,6 +29,64 @@ Added in v1.0.0
   - [TypeId (type alias)](#typeid-type-alias)
 
 ---
+
+# Conversions
+
+## getResult
+
+**Signature**
+
+```ts
+export declare const getResult: {
+  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Effect.Effect<A, E>
+  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Effect.Effect<A, E>
+}
+```
+
+Added in v1.0.0
+
+## toStream
+
+**Signature**
+
+```ts
+export declare const toStream: {
+  <A>(rx: Rx.Rx<A>): (self: Registry) => Stream.Stream<A>
+  <A>(self: Registry, rx: Rx.Rx<A>): Stream.Stream<A>
+}
+```
+
+Added in v1.0.0
+
+## toStreamResult
+
+**Signature**
+
+```ts
+export declare const toStreamResult: {
+  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Stream.Stream<A, E>
+  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E>
+}
+```
+
+Added in v1.0.0
+
+# Layers
+
+## layer
+
+**Signature**
+
+```ts
+export declare const layer: (options?: {
+  readonly initialValues?: Iterable<readonly [Rx.Rx<any>, any]> | undefined
+  readonly scheduleTask?: ((f: () => void) => void) | undefined
+  readonly timeoutResolution?: number | undefined
+  readonly defaultIdleTTL?: number | undefined
+}) => Layer.Layer<RxRegistry>
+```
+
+Added in v1.0.0
 
 # Tags
 
@@ -70,6 +134,8 @@ export interface Registry {
   readonly mount: <A>(rx: Rx.Rx<A>) => () => void
   readonly refresh: <A>(rx: Rx.Rx<A> & Rx.Refreshable) => void
   readonly set: <R, W>(rx: Rx.Writable<R, W>, value: W) => void
+  readonly modify: <R, W, A>(rx: Rx.Writable<R, W>, f: (_: R) => [returnValue: A, nextValue: W]) => A
+  readonly update: <R, W>(rx: Rx.Writable<R, W>, f: (_: R) => W) => void
   readonly subscribe: <A>(
     rx: Rx.Rx<A>,
     f: (_: A) => void,
@@ -91,7 +157,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const TypeId: typeof TypeId
+export declare const TypeId: typeof Registry.TypeId
 ```
 
 Added in v1.0.0

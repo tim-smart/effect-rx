@@ -19,7 +19,6 @@ import { constVoid, dual, pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
-import * as Mailbox from "effect/Mailbox"
 import * as MutableHashMap from "effect/MutableHashMap"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
@@ -31,7 +30,7 @@ import * as Subscribable from "effect/Subscribable"
 import * as SubscriptionRef from "effect/SubscriptionRef"
 import * as internalRegistry from "./internal/registry.js"
 import { runCallbackSync } from "./internal/runtime.js"
-import type { Registry } from "./Registry.js"
+import * as Registry from "./Registry.js"
 import { RxRegistry } from "./Registry.js"
 import * as Result from "./Result.js"
 
@@ -158,7 +157,7 @@ export interface Context {
   readonly subscribe: <A>(rx: Rx<A>, f: (_: A) => void, options?: {
     readonly immediate?: boolean
   }) => void
-  readonly registry: Registry
+  readonly registry: Registry.Registry
 }
 
 /**
@@ -1489,39 +1488,21 @@ function updateSearchParams() {
  * @since 1.0.0
  * @category Conversions
  */
-export const toStream: <A>(self: Rx<A>) => Stream.Stream<
-  A,
-  never,
-  RxRegistry
-> = Effect.fnUntraced(function*<A>(self: Rx<A>) {
-  const context = yield* Effect.context<RxRegistry | Scope.Scope>()
-  const registry = EffectContext.get(context, RxRegistry)
-  const scope = EffectContext.get(context, Scope.Scope)
-  const mailbox = yield* Mailbox.make<A>()
-  yield* Scope.addFinalizer(scope, mailbox.shutdown)
-  const cancel = registry.subscribe(self, (value) => mailbox.unsafeOffer(value))
-  yield* Scope.addFinalizer(scope, Effect.sync(cancel))
-  return Mailbox.toStream(mailbox)
-}, Stream.unwrapScoped)
+export const toStream = <A>(self: Rx<A>): Stream.Stream<A, never, RxRegistry> =>
+  Stream.unwrap(Effect.map(RxRegistry, Registry.toStream(self)))
 
 /**
  * @since 1.0.0
  * @category Conversions
  */
 export const toStreamResult = <A, E>(self: Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry> =>
-  toStream(self).pipe(
-    Stream.filter(Result.isNotInitial),
-    Stream.mapEffect((result) =>
-      result._tag === "Success" ? Effect.succeed(result.value) : Effect.failCause(result.cause)
-    )
-  )
+  Stream.unwrap(Effect.map(RxRegistry, Registry.toStreamResult(self)))
 
 /**
  * @since 1.0.0
  * @category Conversions
  */
-export const get = <A>(self: Rx<A>): Effect.Effect<A, never, RxRegistry> =>
-  Effect.map(RxRegistry, (registry) => registry.get(self))
+export const get = <A>(self: Rx<A>): Effect.Effect<A, never, RxRegistry> => Effect.map(RxRegistry, (_) => _.get(self))
 
 /**
  * @since 1.0.0
@@ -1533,11 +1514,7 @@ export const modify: {
 } = dual(
   2,
   <R, W, A>(self: Writable<R, W>, f: (_: R) => [returnValue: A, nextValue: W]): Effect.Effect<A, never, RxRegistry> =>
-    Effect.map(RxRegistry, (registry) => {
-      const [returnValue, nextValue] = f(registry.get(self))
-      registry.set(self, nextValue)
-      return returnValue
-    })
+    Effect.map(RxRegistry, (_) => _.modify(self, f))
 )
 
 /**
@@ -1550,9 +1527,7 @@ export const set: {
 } = dual(
   2,
   <R, W>(self: Writable<R, W>, value: W): Effect.Effect<void, never, RxRegistry> =>
-    Effect.map(RxRegistry, (registry) => {
-      registry.set(self, value)
-    })
+    Effect.map(RxRegistry, (_) => _.set(self, value))
 )
 
 /**
@@ -1565,7 +1540,7 @@ export const update: {
 } = dual(
   2,
   <R, W>(self: Writable<R, W>, f: (_: R) => W): Effect.Effect<void, never, RxRegistry> =>
-    modify(self, (value) => [void 0, f(value)])
+    Effect.map(RxRegistry, (_) => _.update(self, f))
 )
 
 /**
@@ -1574,18 +1549,4 @@ export const update: {
  */
 export const getResult = <A, E>(
   self: Rx<Result.Result<A, E>>
-): Effect.Effect<A, E, RxRegistry> =>
-  Effect.flatMap(RxRegistry, (registry) =>
-    Effect.async((resume) => {
-      const result = registry.get(self)
-      if (result._tag !== "Initial") {
-        return resume(Result.toExit(result) as any)
-      }
-      const cancel = registry.subscribe(self, (value) => {
-        if (value._tag !== "Initial") {
-          resume(Result.toExit(value) as any)
-          cancel()
-        }
-      })
-      return Effect.sync(cancel)
-    }))
+): Effect.Effect<A, E, RxRegistry> => Effect.flatMap(RxRegistry, Registry.getResult(self))
