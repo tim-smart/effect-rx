@@ -18,6 +18,7 @@ Added in v1.0.0
   - [toStreamResult](#tostreamresult)
 - [Layers](#layers)
   - [layer](#layer)
+  - [layerOptions](#layeroptions)
 - [Tags](#tags)
   - [RxRegistry (class)](#rxregistry-class)
 - [constructors](#constructors)
@@ -78,7 +79,17 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const layer: (options?: {
+export declare const layer: Layer.Layer<Registry.RxRegistry, never, never>
+```
+
+Added in v1.0.0
+
+## layerOptions
+
+**Signature**
+
+```ts
+export declare const layerOptions: (options?: {
   readonly initialValues?: Iterable<readonly [Rx.Rx<any>, any]> | undefined
   readonly scheduleTask?: ((f: () => void) => void) | undefined
   readonly timeoutResolution?: number | undefined

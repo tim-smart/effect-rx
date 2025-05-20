@@ -71,7 +71,7 @@ export class RxRegistry extends Context.Tag("@effect/rx/Registry/CurrentRegistry
  * @since 1.0.0
  * @category Layers
  */
-export const layer = (options?: {
+export const layerOptions = (options?: {
   readonly initialValues?: Iterable<readonly [Rx.Rx<any>, any]> | undefined
   readonly scheduleTask?: ((f: () => void) => void) | undefined
   readonly timeoutResolution?: number | undefined
@@ -90,6 +90,12 @@ export const layer = (options?: {
       return registry
     })
   )
+
+/**
+ * @since 1.0.0
+ * @category Layers
+ */
+export const layer: Layer.Layer<Registry.RxRegistry> = layerOptions()
 
 // -----------------------------------------------------------------------------
 // conversions
