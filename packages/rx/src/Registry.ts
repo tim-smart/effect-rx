@@ -10,8 +10,8 @@ import * as Mailbox from "effect/Mailbox"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
 import type { Registry } from "./index.js"
-import { Result } from "./index.js"
 import * as internal from "./internal/registry.js"
+import * as Result from "./Result.js"
 import type * as Rx from "./Rx.js"
 
 /**
