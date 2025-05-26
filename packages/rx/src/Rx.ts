@@ -255,18 +255,23 @@ const RxRuntimeProto = {
   },
 
   subscribable(this: RxRuntime<any, any>, arg: any) {
-    return readable((get) => {
-      const previous = get.self<Result.Result<any, any>>()
-      const runtimeResult = get(this)
-      if (runtimeResult._tag !== "Success") {
-        return Result.replacePrevious(runtimeResult, previous)
+    return makeSubscribable(
+      readable((get) => {
+        const previous = get.self<Result.Result<any, any>>()
+        const runtimeResult = get(this)
+        if (runtimeResult._tag !== "Success") {
+          return Result.replacePrevious(runtimeResult, previous)
+        }
+        const value = typeof arg === "function" ? arg(get) : arg
+        return Subscribable.isSubscribable(value) ?
+          value as Subscribable.Subscribable<any, any>
+          : makeEffect(get, value, Result.initial(true), runtimeResult.value)
+      }),
+      (get, ref) => {
+        const runtime = Result.getOrThrow(get(this))
+        return readSubscribable(get, ref, runtime)
       }
-      const value = typeof arg === "function" ? arg(get) : arg
-      const sub = Subscribable.isSubscribable(value)
-        ? value
-        : makeEffect(get, value as any, Result.initial(true), runtimeResult.value)
-      return readSubscribable(get, sub as any, runtimeResult.value)
-    })
+    )
   }
 }
 
@@ -469,14 +474,16 @@ function makeEffect<A, E>(
     runtimeFlags: runtime.runtimeFlags
   })
   let syncResult: Result.Result<A, E> | undefined
+  let isAsync = false
   const cancel = runCallbackSync(scopedRuntime)(
     effect,
     function(exit) {
       syncResult = Result.fromExitWithPrevious(exit, previous)
-      ctx.setSelf(syncResult)
+      if (isAsync) ctx.setSelf(syncResult)
     },
     uninterruptible
   )
+  isAsync = true
   if (cancel !== undefined) {
     ctx.addFinalizer(cancel)
   }
@@ -718,10 +725,10 @@ const readSubscribable = (
           get.setSelf(value)
           return Effect.void
         }),
-        Effect.runCallback
+        Runtime.runCallback(runtime)
       )
     )
-    return Effect.runSync(sub.get)
+    return Runtime.runSync(runtime)(sub.get)
   } else if (sub._tag !== "Success") {
     return sub
   }
@@ -806,12 +813,31 @@ export const subscribable: {
     | Effect.Effect<Subscribable.Subscribable<any, any>, any, Scope.Scope | RxRegistry>
     | ((get: Context) => Effect.Effect<Subscribable.Subscribable<any, any>, any, Scope.Scope | RxRegistry>)
 ) =>
+  makeSubscribable(
+    readable((get) => {
+      const value = typeof ref === "function" ? ref(get) : ref
+      return Subscribable.isSubscribable(value)
+        ? value
+        : makeEffect(get, value, Result.initial(true))
+    }),
+    readSubscribable
+  )
+
+const makeSubscribable = (
+  subRx: Rx<Subscribable.Subscribable<any, any> | Result.Result<Subscribable.Subscribable<any, any>, any>>,
+  read: (
+    get: Context,
+    sub: Subscribable.Subscribable<any, any> | Result.Success<Subscribable.Subscribable<any, any>, any>
+  ) => any
+) =>
   readable((get) => {
-    const value = typeof ref === "function" ? ref(get) : ref
-    const sub = Subscribable.isSubscribable(value)
-      ? value
-      : makeEffect(get, value, Result.initial(true))
-    return readSubscribable(get, sub)
+    const sub = get(subRx)
+    if (Subscribable.isSubscribable(sub)) {
+      return read(get, sub)
+    } else if (Result.isSuccess(sub)) {
+      return read(get, sub)
+    }
+    return sub
   })
 
 // -----------------------------------------------------------------------------

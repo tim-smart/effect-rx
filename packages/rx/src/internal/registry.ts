@@ -331,10 +331,12 @@ class Node<A> {
       this.invalidateChildren()
     }
 
-    if (batchState.phase === BatchPhase.collect) {
-      batchState.notify.add(this)
-    } else {
-      this.notify()
+    if (this.listeners.length > 0) {
+      if (batchState.phase === BatchPhase.collect) {
+        batchState.notify.add(this)
+      } else {
+        this.notify()
+      }
     }
   }
 
