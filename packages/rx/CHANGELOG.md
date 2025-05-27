@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.39.3
+
+### Patch Changes
+
+- [`2385f50`](https://github.com/tim-smart/effect-rx/commit/2385f502b02021ed43d6acb8ab23d9b7d8c665f2) Thanks [@tim-smart](https://github.com/tim-smart)! - ensure Rx.subscribable works with effectful access
+
 ## 0.39.2
 
 ### Patch Changes
