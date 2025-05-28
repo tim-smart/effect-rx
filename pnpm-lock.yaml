@@ -105,11 +105,11 @@ importers:
   packages/rx:
     devDependencies:
       '@effect/platform':
-        specifier: ^0.83.0
-        version: 0.83.0(effect@3.15.5)
+        specifier: ^0.84.0
+        version: 0.84.0(effect@3.16.0)
       effect:
-        specifier: ^3.15.5
-        version: 3.15.5
+        specifier: ^3.16.0
+        version: 3.16.0
     publishDirectory: dist
 
   packages/rx-react:
@@ -125,8 +125,8 @@ importers:
         specifier: ^0.26.0
         version: 0.26.0
       effect:
-        specifier: ^3.15.5
-        version: 3.15.5
+        specifier: ^3.16.0
+        version: 3.16.0
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -142,8 +142,8 @@ importers:
         version: link:../rx/dist
     devDependencies:
       effect:
-        specifier: ^3.15.5
-        version: 3.15.5
+        specifier: ^3.16.0
+        version: 3.16.0
       vue:
         specifier: ^3.5.15
         version: 3.5.15(typescript@5.8.3)
@@ -370,10 +370,10 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
 
-  '@effect/platform@0.83.0':
-    resolution: {integrity: sha512-Y2mjzupdLvGDccfJQ2UCzQDusYy1xbdQkfjk9hhZmkiUHnrpcCgNoN6uC4UywuwQWX38ZsoMV82wmRI7zeq1vg==}
+  '@effect/platform@0.84.0':
+    resolution: {integrity: sha512-VRnbRqieFQtUYpGORXKc6Z/BGMbpjZpnofo+6ED1NMaIG6kCuHKKHE7QM579NBOgZp9YjVc/+4cSjL2ExTyn2g==}
     peerDependencies:
-      effect: ^3.15.5
+      effect: ^3.16.0
 
   '@emnapi/core@1.4.3':
     resolution: {integrity: sha512-4m62DuCE07lw01soJwPiBGC0nAww0Q+RY70VZ+n49yDIO13yyinhbWCeNnaob0lakDtWQzSdtNWzJeOJt2ma+g==}
@@ -1742,8 +1742,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
-  effect@3.15.5:
-    resolution: {integrity: sha512-9IA4xu9niyDIuWkS/whroDj3u2nbccw+9fQ9sKCzaEtuwTV5SSoNvp8XOozeSF/0Nwnh+mx2+ShYYgSueOTmMw==}
+  effect@3.16.0:
+    resolution: {integrity: sha512-97h566lOGsB50e7Iv4R2ZZBg5IXVUgdGgINv7gbrBIM4BOYfTGuIR3xPzhs93A0Jk+ZhfjeWj5wmZJ65a2aQCA==}
 
   electron-to-chromium@1.5.158:
     resolution: {integrity: sha512-9vcp2xHhkvraY6AHw2WMi+GDSLPX42qe2xjYaVoZqFRJiOcilVQFq9mZmpuHEQpzlgGDelKlV7ZiGcmMsc8WxQ==}
@@ -3987,9 +3987,9 @@ snapshots:
       repeat-string: 1.6.1
       strip-color: 0.1.0
 
-  '@effect/platform@0.83.0(effect@3.15.5)':
+  '@effect/platform@0.84.0(effect@3.16.0)':
     dependencies:
-      effect: 3.15.5
+      effect: 3.16.0
       find-my-way-ts: 0.1.5
       msgpackr: 1.11.4
       multipasta: 0.2.5
@@ -5266,7 +5266,7 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  effect@3.15.5:
+  effect@3.16.0:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
