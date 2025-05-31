@@ -134,8 +134,12 @@ export interface Writable<R, W = R> extends Rx<R> {
 export interface Context {
   <A>(rx: Rx<A>): A
   readonly get: <A>(rx: Rx<A>) => A
-  readonly result: <A, E>(rx: Rx<Result.Result<A, E>>) => Effect.Effect<A, E>
-  readonly resultOnce: <A, E>(rx: Rx<Result.Result<A, E>>) => Effect.Effect<A, E>
+  readonly result: <A, E>(rx: Rx<Result.Result<A, E>>, options?: {
+    readonly suspendOnWaiting?: boolean | undefined
+  }) => Effect.Effect<A, E>
+  readonly resultOnce: <A, E>(rx: Rx<Result.Result<A, E>>, options?: {
+    readonly suspendOnWaiting?: boolean | undefined
+  }) => Effect.Effect<A, E>
   readonly once: <A>(rx: Rx<A>) => A
   readonly addFinalizer: (f: () => void) => void
   readonly mount: <A>(rx: Rx<A>) => void

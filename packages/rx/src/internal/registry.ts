@@ -502,13 +502,18 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed" | "i
     return parent.value()
   },
 
-  result<A, E>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<A, E>>): Effect.Effect<A, E> {
+  result<A, E>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<A, E>>, options?: {
+    readonly suspendOnWaiting?: boolean | undefined
+  }): Effect.Effect<A, E> {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     } else if (this.isFn) {
       return this.resultOnce(rx)
     }
     const result = this.get(rx)
+    if (options?.suspendOnWaiting && result.waiting) {
+      return Effect.never
+    }
     switch (result._tag) {
       case "Initial": {
         return Effect.never
@@ -522,17 +527,19 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed" | "i
     }
   },
 
-  resultOnce<A, E>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<A, E>>): Effect.Effect<A, E> {
+  resultOnce<A, E>(this: Lifetime<any>, rx: Rx.Rx<Result.Result<A, E>>, options?: {
+    readonly suspendOnWaiting?: boolean | undefined
+  }): Effect.Effect<A, E> {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }
     return Effect.async<A, E>((resume) => {
       const result = this.once(rx)
-      if (result._tag !== "Initial") {
+      if (result._tag !== "Initial" && !(options?.suspendOnWaiting && result.waiting)) {
         return resume(Result.toExit(result) as any)
       }
       const cancel = this.node.registry.subscribe(rx, (result) => {
-        if (result._tag === "Initial") return
+        if (result._tag === "Initial" || (options?.suspendOnWaiting && result.waiting)) return
         cancel()
         resume(Result.toExit(result) as any)
       }, { immediate: false })
