@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.41.1
+
+### Patch Changes
+
+- [`1dc0956`](https://github.com/tim-smart/effect-rx/commit/1dc0956d5f80a8ce2274e7dc9d684b21510d4581) Thanks [@tim-smart](https://github.com/tim-smart)! - add suspendOnWaiting option to get.result helpers
+
 ## 0.41.0
 
 ### Minor Changes
