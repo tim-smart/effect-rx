@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.41.2
+
+### Patch Changes
+
+- [`0e0cd17`](https://github.com/tim-smart/effect-rx/commit/0e0cd173f58466a084a8555e8d8cb04a7804ba54) Thanks [@tim-smart](https://github.com/tim-smart)! - consider a non-lazy child as active
+
 ## 0.41.1
 
 ### Patch Changes
