@@ -458,7 +458,8 @@ function childrenAreActive(children: Array<Node<any>>): boolean {
     return false
   }
   for (let i = 0, len = children.length; i < len; i++) {
-    if (children[i].listeners.length > 0) {
+    const child = children[i]
+    if (!child.rx.lazy || child.listeners.length > 0) {
       return true
     }
   }
