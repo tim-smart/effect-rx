@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.41.4
+
+### Patch Changes
+
+- [`24d257b`](https://github.com/tim-smart/effect-rx/commit/24d257b0de839a23bec053603b2f024dd362ba70) Thanks [@tim-smart](https://github.com/tim-smart)! - commit batch after recalculation
+
 ## 0.41.3
 
 ### Patch Changes
