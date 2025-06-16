@@ -312,7 +312,9 @@ class Node<A> {
       this.state = NodeState.valid
       this._value = value
 
-      if (batchState.phase !== BatchPhase.collect) {
+      if (batchState.phase === BatchPhase.collect) {
+        batchState.notify.add(this)
+      } else {
         this.notify()
       }
 
@@ -751,10 +753,10 @@ export function batch(f: () => void): void {
   try {
     f()
     if (batchState.depth === 1) {
-      batchState.phase = BatchPhase.commit
       for (let i = 0; i < batchState.stale.length; i++) {
         batchRebuildNode(batchState.stale[i])
       }
+      batchState.phase = BatchPhase.commit
       for (const node of batchState.notify) {
         node.notify()
       }
