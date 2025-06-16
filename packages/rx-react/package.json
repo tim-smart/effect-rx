@@ -23,9 +23,9 @@
   "license": "MIT",
   "sideEffects": [],
   "devDependencies": {
-    "@types/react": "^19.1.6",
+    "@types/react": "^19.1.8",
     "@types/scheduler": "^0.26.0",
-    "effect": "^3.16.0",
+    "effect": "^3.16.7",
     "react": "^19.1.0",
     "scheduler": "^0.26.0"
   },
