@@ -878,6 +878,38 @@ describe("Rx", () => {
     assert.strictEqual(r.get(double), 2)
     assert.strictEqual(rebuilds, 2)
   })
+
+  it("derived derived with with effect result", async () => {
+    const r = Registry.make()
+    const state = Rx.fn(Effect.succeed<number>)
+    let count = 0
+    const derived = Rx.readable((get) => {
+      count++
+      return get(state).pipe(Result.getOrElse(() => -1)) % 3
+    })
+    let count2 = 0
+    const derived2 = Rx.readable((get) => {
+      count2++
+      return get(derived) + 10
+    })
+    const cancel = r.mount(derived2)
+
+    expect(r.get(derived)).toEqual(-1)
+    expect(count).toEqual(1)
+    expect(r.get(derived2)).toEqual(9)
+    expect(count2).toEqual(1)
+    r.set(state, 2)
+    expect(r.get(derived)).toEqual(2)
+    expect(count).toEqual(2)
+    expect(r.get(derived2)).toEqual(12)
+    expect(count2).toEqual(2)
+    r.set(state, 5)
+    expect(r.get(derived)).toEqual(2)
+    expect(count).toEqual(3)
+    expect(r.get(derived2)).toEqual(12)
+    expect(count2).toEqual(2)
+    cancel()
+  })
 })
 
 interface BuildCounter {
