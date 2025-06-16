@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.41.3
+
+### Patch Changes
+
+- [`ce6f7ea`](https://github.com/tim-smart/effect-rx/commit/ce6f7ea70642dee85aecf14b84a67887b95f6f30) Thanks [@tim-smart](https://github.com/tim-smart)! - remove eager invalidation during Rx.batch
+
 ## 0.41.2
 
 ### Patch Changes
