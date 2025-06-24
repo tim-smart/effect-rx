@@ -24,11 +24,11 @@
   "license": "MIT",
   "sideEffects": [],
   "devDependencies": {
-    "@effect/platform": "^0.85.0",
-    "effect": "^3.16.7"
+    "@effect/platform": "^0.87.0",
+    "effect": "^3.16.9"
   },
   "peerDependencies": {
-    "@effect/platform": "^0.85.0",
-    "effect": "^3.16.7"
+    "@effect/platform": "^0.87.0",
+    "effect": "^3.16.9"
   }
 }
