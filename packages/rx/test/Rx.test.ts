@@ -911,7 +911,7 @@ describe("Rx", () => {
     cancel()
   })
 
-  test.only(`toStream`, async () => {
+  test(`toStream`, async () => {
     vitest.useFakeTimers()
     const r = Registry.make()
     const rx = Rx.make(() => {

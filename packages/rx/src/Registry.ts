@@ -106,8 +106,8 @@ export const layer: Layer.Layer<Registry.RxRegistry> = layerOptions()
  * @category Conversions
  */
 export const toStream: {
-  <A>(rx: Rx.Rx<A>): (self: Registry) => Effect.Effect<Stream.Stream<A>, never, Scope.Scope>
-  <A>(self: Registry, rx: Rx.Rx<A>): Effect.Effect<Stream.Stream<A>, never, Scope.Scope>
+  <A>(rx: Rx.Rx<A>): (self: Registry) => Stream.Stream<A, never, Scope.Scope>
+  <A>(self: Registry, rx: Rx.Rx<A>): Stream.Stream<A, never, Scope.Scope>
 } = dual(
   2,
   <A>(self: Registry, rx: Rx.Rx<A>) =>
@@ -127,7 +127,9 @@ export const toStream: {
         Effect.uninterruptible,
         Effect.map((mailbox) => Mailbox.toStream(mailbox))
       )
-    })
+    }).pipe(
+      Stream.unwrap,
+    )
 )
 
 /**
@@ -135,21 +137,16 @@ export const toStream: {
  * @category Conversions
  */
 export const toStreamResult: {
-  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Effect.Effect<Stream.Stream<A, E>, never, Scope.Scope>
-  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>):  Effect.Effect<Stream.Stream<A, E>, never, Scope.Scope>
+  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Stream.Stream<A, E, RxRegistry | Scope.Scope>
+  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry | Scope.Scope>
 } = dual(
   2,
-  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>):  Effect.Effect<Stream.Stream<A, E, RxRegistry>, never, Scope.Scope> =>
+  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry | Scope.Scope> =>
     toStream(self, rx).pipe(
-      Effect.map((stream) => 
-        stream.pipe(
-          Stream.filter(Result.isNotInitial),
-          Stream.mapEffect((result) =>
-            result._tag === "Success" ? Effect.succeed(result.value) : Effect.failCause(result.cause)
-          )
-        )
+      Stream.filter(Result.isNotInitial),
+      Stream.mapEffect((result) =>
+        result._tag === "Success" ? Effect.succeed(result.value) : Effect.failCause(result.cause)
       )
-      
     )
 )
 
