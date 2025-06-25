@@ -1,14 +1,14 @@
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
-import { Cause, Either, FiberRef, Subscribable, SubscriptionRef } from "effect"
+import { Cause, Chunk, Either, FiberRef, Subscribable, SubscriptionRef } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Hash from "effect/Hash"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Stream from "effect/Stream"
-import { afterEach, assert, beforeEach, describe, expect, it, vi, vitest } from "vitest"
+import { afterEach, assert, beforeEach, describe, expect, it, test, vi, vitest } from "vitest"
 
 describe("Rx", () => {
   beforeEach(() => {
@@ -908,6 +908,38 @@ describe("Rx", () => {
     expect(count).toEqual(3)
     expect(r.get(derived2)).toEqual(12)
     expect(count2).toEqual(2)
+    cancel()
+  })
+
+  test.only(`toStream`, async () => {
+    vitest.useFakeTimers()
+    const r = Registry.make()
+    const rx = Rx.make(() => {
+      return Effect.succeed(1).pipe(
+        Effect.delay(50)
+      )
+    })
+    const eff = Rx.toStream(rx).pipe(
+      Stream.take(1),
+      Stream.runCollect,
+      Effect.scoped,
+      Effect.provideService(Registry.RxRegistry, r),
+      Effect.map(Chunk.toArray)
+    )
+
+    const result = Effect.runPromise(eff)
+
+
+    const cancel = r.mount(rx)
+
+    await vitest.advanceTimersByTimeAsync(50)
+
+    await expect(result).resolves.toMatchObject(
+      [
+        Result.success(1)
+      ]
+    )
+
     cancel()
   })
 })
