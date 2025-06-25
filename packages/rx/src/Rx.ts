@@ -1518,14 +1518,14 @@ function updateSearchParams() {
  * @since 1.0.0
  * @category Conversions
  */
-export const toStream = <A>(self: Rx<A>): Stream.Stream<A, never, RxRegistry | Scope.Scope> =>
+export const toStream = <A>(self: Rx<A>): Stream.Stream<A, never, RxRegistry> =>
   Stream.unwrap(Effect.map(RxRegistry, Registry.toStream(self)))
 
 /**
  * @since 1.0.0
  * @category Conversions
  */
-export const toStreamResult = <A, E>(self: Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry | Scope.Scope> =>
+export const toStreamResult = <A, E>(self: Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry> =>
   Stream.unwrap(Effect.map(RxRegistry, Registry.toStreamResult(self)))
 
 /**
