@@ -8,7 +8,7 @@ import * as Hash from "effect/Hash"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Stream from "effect/Stream"
-import { afterEach, assert, beforeEach, describe, expect, it, vi, vitest } from "vitest"
+import { afterEach, assert, beforeEach, describe, expect, it, test, vitest } from "vitest"
 
 describe("Rx", () => {
   beforeEach(() => {
@@ -532,7 +532,7 @@ describe("Rx", () => {
     const hashKeep = Hash.hash(countKeep(1))
 
     if (global.gc) {
-      vi.useRealTimers()
+      vitest.useRealTimers()
       await new Promise((resolve) => setTimeout(resolve, 0))
       global.gc()
       assert.notEqual(hash, Hash.hash(count(1)))
@@ -909,6 +909,17 @@ describe("Rx", () => {
     expect(r.get(derived2)).toEqual(12)
     expect(count2).toEqual(2)
     cancel()
+  })
+
+  test(`toStreamResult`, async () => {
+    const r = Registry.make()
+    const rx = Rx.make(Effect.succeed(1))
+    const eff = Rx.toStreamResult(rx).pipe(
+      Stream.runHead,
+      Effect.provideService(Registry.RxRegistry, r)
+    )
+    const result = await Effect.runPromise(eff)
+    expect(Option.getOrThrow(result)).toEqual(1)
   })
 })
 

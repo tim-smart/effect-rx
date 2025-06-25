@@ -111,23 +111,27 @@ export const toStream: {
 } = dual(
   2,
   <A>(self: Registry, rx: Rx.Rx<A>) =>
-    Effect.contextWithEffect((context: Context.Context<Scope.Scope>) => {
-      const scope = Context.get(context, Scope.Scope)
-      return Mailbox.make<A>().pipe(
-        Effect.tap((mailbox) => {
-          const cancel = self.subscribe(rx, (value) => mailbox.unsafeOffer(value))
-          return Scope.addFinalizer(
-            scope,
-            Effect.suspend(() => {
-              cancel()
-              return mailbox.shutdown
+    Stream.unwrapScoped(
+      Effect.contextWithEffect((context: Context.Context<Scope.Scope>) => {
+        const scope = Context.get(context, Scope.Scope)
+        return Mailbox.make<A>().pipe(
+          Effect.tap((mailbox) => {
+            const cancel = self.subscribe(rx, (value) => mailbox.unsafeOffer(value), {
+              immediate: true
             })
-          )
-        }),
-        Effect.uninterruptible,
-        Effect.map((mailbox) => Mailbox.toStream(mailbox))
-      )
-    })
+            return Scope.addFinalizer(
+              scope,
+              Effect.suspend(() => {
+                cancel()
+                return mailbox.shutdown
+              })
+            )
+          }),
+          Effect.uninterruptible,
+          Effect.map((mailbox) => Mailbox.toStream(mailbox))
+        )
+      })
+    )
 )
 
 /**
@@ -135,8 +139,8 @@ export const toStream: {
  * @category Conversions
  */
 export const toStreamResult: {
-  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Stream.Stream<A, E>
-  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E>
+  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Stream.Stream<A, E, RxRegistry>
+  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry>
 } = dual(
   2,
   <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry> =>
