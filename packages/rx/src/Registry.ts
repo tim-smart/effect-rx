@@ -116,7 +116,9 @@ export const toStream: {
         const scope = Context.get(context, Scope.Scope)
         return Mailbox.make<A>().pipe(
           Effect.tap((mailbox) => {
-            const cancel = self.subscribe(rx, (value) => mailbox.unsafeOffer(value))
+            const cancel = self.subscribe(rx, (value) => mailbox.unsafeOffer(value), {
+              immediate: true
+            })
             return Scope.addFinalizer(
               scope,
               Effect.suspend(() => {
