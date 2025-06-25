@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.43.1
+
+### Patch Changes
+
+- [#224](https://github.com/tim-smart/effect-rx/pull/224) [`1c156cb`](https://github.com/tim-smart/effect-rx/commit/1c156cb593742a6f06e73627023816c1f2b4e307) Thanks [@AMar4enko](https://github.com/AMar4enko)! - ensure Registry.toStream returns a stream
+
 ## 0.43.0
 
 ### Minor Changes
