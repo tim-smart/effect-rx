@@ -1,5 +1,5 @@
 ---
-"@effect-rx/rx": minor
+"@effect-rx/rx": patch
 ---
 
 Add `Rx.refresh`
