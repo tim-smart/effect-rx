@@ -1580,3 +1580,10 @@ export const update: {
 export const getResult = <A, E>(
   self: Rx<Result.Result<A, E>>
 ): Effect.Effect<A, E, RxRegistry> => Effect.flatMap(RxRegistry, Registry.getResult(self))
+
+/**
+ * @since 1.0.0
+ * @category Conversions
+ */
+export const refresh = <A>(self: Rx<A> & Refreshable): Effect.Effect<void, never, RxRegistry> =>
+  Effect.map(RxRegistry, (_) => _.refresh(self))
