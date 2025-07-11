@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.43.2
+
+### Patch Changes
+
+- [#227](https://github.com/tim-smart/effect-rx/pull/227) [`56e4442`](https://github.com/tim-smart/effect-rx/commit/56e4442f7005c32008053f4645c02a726c0fc8b2) Thanks [@ethanniser](https://github.com/ethanniser)! - Add `Rx.refresh`
+
 ## 0.43.1
 
 ### Patch Changes
