@@ -90,26 +90,6 @@ export declare namespace Rx {
  * @since 1.0.0
  * @category type ids
  */
-export const RefreshableTypeId = Symbol.for("@effect-rx/rx/Rx/Refreshable")
-
-/**
- * @since 1.0.0
- * @category type ids
- */
-export type RefreshableTypeId = typeof RefreshableTypeId
-
-/**
- * @since 1.0.0
- * @category models
- */
-export interface Refreshable {
-  readonly [RefreshableTypeId]: RefreshableTypeId
-}
-
-/**
- * @since 1.0.0
- * @category type ids
- */
 export const WritableTypeId = Symbol.for("@effect-rx/rx/Rx/Writable")
 
 /**
@@ -143,7 +123,7 @@ export interface Context {
   readonly once: <A>(rx: Rx<A>) => A
   readonly addFinalizer: (f: () => void) => void
   readonly mount: <A>(rx: Rx<A>) => void
-  readonly refresh: <A>(rx: Rx<A> & Refreshable) => void
+  readonly refresh: <A>(rx: Rx<A>) => void
   readonly refreshSelf: () => void
   readonly self: <A>() => Option.Option<A>
   readonly setSelf: <A>(a: A) => void
@@ -1230,18 +1210,6 @@ export const setLazy: {
  * @since 1.0.0
  * @category combinators
  */
-export const refreshable = <T extends Rx<any>>(
-  self: T
-): T & Refreshable =>
-  Object.assign(Object.create(Object.getPrototypeOf(self)), {
-    ...self,
-    [RefreshableTypeId]: RefreshableTypeId
-  })
-
-/**
- * @since 1.0.0
- * @category combinators
- */
 export const withLabel: {
   (name: string): <A extends Rx<any>>(self: A) => A
   <A extends Rx<any>>(self: A, name: string): A
@@ -1391,6 +1359,47 @@ export const debounce: {
  * @category batching
  */
 export const batch: (f: () => void) => void = internalRegistry.batch
+
+// -----------------------------------------------------------------------------
+// Focus
+// -----------------------------------------------------------------------------
+
+/**
+ * @since 1.0.0
+ * @category Focus
+ */
+export const windowFocusSignal: Rx<number> = readable((get) => {
+  let count = 0
+  function update() {
+    if (document.visibilityState === "visible") {
+      get.setSelf(++count)
+    }
+  }
+  window.addEventListener("visibilitychange", update)
+  get.addFinalizer(() => {
+    window.removeEventListener("visibilitychange", update)
+  })
+  return count
+})
+
+/**
+ * @since 1.0.0
+ * @category Focus
+ */
+export const makeRefreshOnSignal = <_>(signal: Rx<_>) => <A extends Rx<any>>(self: A): A =>
+  transform(self, (get) => {
+    get.subscribe(signal, (_) => get.refresh(self))
+    get.subscribe(self, (value) => get.setSelf(value))
+    return get.once(self)
+  }) as any
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const refreshOnWindowFocus: <A extends Rx<any>>(self: A) => A = makeRefreshOnSignal(
+  windowFocusSignal
+)
 
 // -----------------------------------------------------------------------------
 // KeyValueStore
@@ -1585,5 +1594,5 @@ export const getResult = <A, E>(
  * @since 1.0.0
  * @category Conversions
  */
-export const refresh = <A>(self: Rx<A> & Refreshable): Effect.Effect<void, never, RxRegistry> =>
+export const refresh = <A>(self: Rx<A>): Effect.Effect<void, never, RxRegistry> =>
   Effect.map(RxRegistry, (_) => _.refresh(self))

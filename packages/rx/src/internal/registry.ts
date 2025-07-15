@@ -590,7 +590,7 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed" | "i
     return this.node.valueOption() as any
   },
 
-  refresh<A>(this: Lifetime<any>, rx: Rx.Rx<A> & Rx.Refreshable): void {
+  refresh<A>(this: Lifetime<any>, rx: Rx.Rx<A>): void {
     if (this.disposed) {
       throw disposedError(this.node.rx)
     }

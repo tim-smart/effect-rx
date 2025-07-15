@@ -218,7 +218,7 @@ export const useRxSetPromise = <E, A, W>(
  * @since 1.0.0
  * @category hooks
  */
-export const useRxRefresh = <A>(rx: Rx.Rx<A> & Rx.Refreshable): () => void => {
+export const useRxRefresh = <A>(rx: Rx.Rx<A>): () => void => {
   const registry = React.useContext(RegistryContext)
   mountRx(registry, rx)
   return React.useCallback(() => {
