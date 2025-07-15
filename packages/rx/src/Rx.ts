@@ -1242,6 +1242,25 @@ export const refreshable = <T extends Rx<any>>(
  * @since 1.0.0
  * @category combinators
  */
+export const refreshOnWindowFocus = <A>(self: Rx<A> & Refreshable): Rx<A> & Refreshable => {
+  return make((get) => {
+    function update() {
+      if (document.visibilityState === "visible") {
+        get.refresh(self)
+      }
+    }
+    window.addEventListener("visibilitychange", update)
+    get.addFinalizer(() => {
+      window.removeEventListener("visibilitychange", update)
+    })
+    return get(self)
+  }).pipe(refreshable)
+}
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
 export const withLabel: {
   (name: string): <A extends Rx<any>>(self: A) => A
   <A extends Rx<any>>(self: A, name: string): A
