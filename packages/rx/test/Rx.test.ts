@@ -215,8 +215,7 @@ describe("Rx", () => {
       return Effect.succeed(1)
     }).pipe(
       Rx.mapResult((_) => _ + 10),
-      Rx.mapResult((_) => _ + 100),
-      Rx.refreshable
+      Rx.mapResult((_) => _ + 100)
     )
     const r = Registry.make()
     let result = r.get(count)
@@ -386,7 +385,7 @@ describe("Rx", () => {
       Stream.range(0, 1, 1).pipe(
         Stream.tap(() => Effect.sleep(50))
       )
-    ).pipe(Rx.refreshable)
+    )
     const r = Registry.make()
     const unmount = r.mount(count)
 
@@ -443,7 +442,7 @@ describe("Rx", () => {
         Stream.unwrap,
         Stream.tap(() => Effect.sleep(50))
       )
-    ).pipe(Rx.refreshable)
+    )
     const r = Registry.make()
     const unmount = r.mount(count)
 
@@ -497,7 +496,7 @@ describe("Rx", () => {
       Stream.range(1, 2, 1).pipe(
         Stream.tap(() => Effect.sleep(50))
       )
-    ).pipe(Rx.refreshable)
+    )
     const r = Registry.make()
     const unmount = r.mount(count)
 
@@ -920,6 +919,26 @@ describe("Rx", () => {
     )
     const result = await Effect.runPromise(eff)
     expect(Option.getOrThrow(result)).toEqual(1)
+  })
+
+  test(`refreshOnSignal`, async () => {
+    const r = Registry.make()
+    let rebuilds = 0
+    const signal = Rx.make(0)
+    const refreshOnSignal = Rx.makeRefreshOnSignal(signal)
+    const rx = Rx.make(() => {
+      rebuilds++
+      return 123
+    }).pipe(refreshOnSignal)
+    r.mount(rx)
+
+    assert.strictEqual(r.get(rx), 123)
+    assert.strictEqual(rebuilds, 1)
+    r.get(rx)
+    assert.strictEqual(rebuilds, 1)
+
+    r.set(signal, 1)
+    assert.strictEqual(rebuilds, 2)
   })
 })
 
