@@ -1,7 +1,8 @@
+import * as Hydration from "@effect-rx/rx/Hydration"
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
-import { Cause, Either, FiberRef, Subscribable, SubscriptionRef } from "effect"
+import { Cause, Either, FiberRef, Schema, Struct, Subscribable, SubscriptionRef } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Hash from "effect/Hash"
@@ -939,6 +940,94 @@ describe("Rx", () => {
 
     r.set(signal, 1)
     assert.strictEqual(rebuilds, 2)
+  })
+
+  it("dehydrate", async () => {
+    const r = Registry.make()
+    const notSerializable = Rx.make(0)
+    r.mount(notSerializable)
+
+    const basicSerializable = Rx.make(0).pipe(Rx.serializable(Schema.Number), Rx.withLabel("basicSerializable"))
+    r.mount(basicSerializable)
+
+    const errored = Rx.make(Effect.fail("error")).pipe(Rx.serializable(Schema.String), Rx.withLabel("errored"))
+    r.mount(errored)
+
+    const success = Rx.make(Effect.succeed(123)).pipe(Rx.serializable(Schema.Number), Rx.withLabel("success"))
+    r.mount(success)
+
+    const pending = Rx.make(Effect.never).pipe(Rx.serializable(Schema.Number), Rx.withLabel("pending"))
+    r.mount(pending)
+
+    const state = Hydration.dehydrate(r)
+    expect(state.rxs.map((r) => Struct.omit(r, "dehydratedAt"))).toMatchInlineSnapshot(`
+      [
+        {
+          "rxKey": "basicSerializable",
+          "state": 0,
+        },
+        {
+          "rxKey": "errored",
+          "state": {
+            "_tag": "Failure",
+            "cause": {
+              "_id": "Cause",
+              "_tag": "Fail",
+              "failure": "error",
+            },
+            "previousValue": {
+              "_id": "Option",
+              "_tag": "None",
+            },
+            "waiting": false,
+          },
+        },
+        {
+          "rxKey": "success",
+          "state": {
+            "_tag": "Success",
+            "value": 123,
+            "waiting": false,
+          },
+        },
+        {
+          "rxKey": "pending",
+          "state": {
+            "_tag": "Initial",
+            "waiting": true,
+          },
+        },
+      ]
+    `)
+  })
+
+  it("hydrate", async () => {
+    const r = Registry.make()
+    const notSerializable = Rx.make(0)
+    r.mount(notSerializable)
+
+    const basicSerializable = Rx.make(0).pipe(Rx.serializable(Schema.Number), Rx.withLabel("basicSerializable"))
+    r.mount(basicSerializable)
+
+    const errored = Rx.make(Effect.fail("error")).pipe(Rx.serializable(Schema.String), Rx.withLabel("errored"))
+    r.mount(errored)
+
+    const success = Rx.make(Effect.succeed(123)).pipe(Rx.serializable(Schema.Number), Rx.withLabel("success"))
+    r.mount(success)
+
+    const pending = Rx.make(Effect.never).pipe(Rx.serializable(Schema.Number), Rx.withLabel("pending"))
+    r.mount(pending)
+
+    const state = Hydration.dehydrate(r)
+
+    const r2 = Registry.make()
+    Hydration.hydrate(r2, state)
+
+    expect(r2.get(notSerializable)).toEqual(0)
+    expect(r2.get(basicSerializable)).toEqual(0)
+    expect(r2.get(errored)).toEqual(Result.failure(Cause.fail("error")))
+    expect(r2.get(success)).toEqual(Result.success(123))
+    expect(r2.get(pending)).toEqual(Result.initial(true))
   })
 })
 

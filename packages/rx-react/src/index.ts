@@ -1,3 +1,5 @@
+"use client"
+import * as Hydration from "@effect-rx/rx/Hydration"
 /**
  * @since 1.0.0
  */
@@ -11,27 +13,6 @@ import type * as Exit from "effect/Exit"
 import { globalValue } from "effect/GlobalValue"
 import * as React from "react"
 import * as Scheduler from "scheduler"
-
-/**
- * @since 1.0.0
- * @category modules
- */
-export * as Registry from "@effect-rx/rx/Registry"
-/**
- * @since 1.0.0
- * @category modules
- */
-export * as Result from "@effect-rx/rx/Result"
-/**
- * @since 1.0.0
- * @category modules
- */
-export * as Rx from "@effect-rx/rx/Rx"
-/**
- * @since 1.0.0
- * @category modules
- */
-export * as RxRef from "@effect-rx/rx/RxRef"
 
 /**
  * @since 1.0.0
@@ -350,3 +331,28 @@ export const useRxRefProp = <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K)
  */
 export const useRxRefPropValue = <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K): A[K] =>
   useRxRef(useRxRefProp(ref, prop))
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export interface HydrationBoundaryProps {
+  readonly state: Hydration.DehydratedState
+  readonly children?: React.ReactNode
+}
+
+/**
+ * @since 1.0.0
+ * @category components
+ */
+
+export const HydrationBoundary: React.FC<{
+  state: Hydration.DehydratedState
+  children?: React.ReactNode
+}> = ({ children, state }) => {
+  const registry = React.useContext(RegistryContext)
+  React.useEffect(() => {
+    Hydration.hydrate(registry, state)
+  }, [registry, state])
+  return React.createElement(React.Fragment, {}, children)
+}

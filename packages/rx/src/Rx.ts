@@ -1596,3 +1596,49 @@ export const getResult = <A, E>(
  */
 export const refresh = <A>(self: Rx<A>): Effect.Effect<void, never, RxRegistry> =>
   Effect.map(RxRegistry, (_) => _.refresh(self))
+
+/**
+ * @since 1.0.0
+ * @category type ids
+ */
+export const SerializableTypeId = Symbol.for("@effect-rx/rx/Rx/Serializable")
+
+/**
+ * @since 1.0.0
+ * @category type ids
+ */
+export type SerializableTypeId = typeof SerializableTypeId
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export interface Serializable {
+  readonly [SerializableTypeId]: SerializableTypeId
+}
+
+export const isSerializable = (self: Rx<any>): self is Rx<any> & Serializable => {
+  return SerializableTypeId in self && self[SerializableTypeId] === SerializableTypeId
+}
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const serializable: {
+  <A, I>(schema: Schema.Schema<A, I>): <R extends Rx<any>>(self: R) => R & Serializable
+  <R extends Rx<any>, A, I>(self: R, schema: Schema.Schema<A, I>): R & Serializable
+} = dual<
+  <A, I>(schema: Schema.Schema<A, I>) => <R extends Rx<any>>(self: R) => R & Serializable,
+  <R extends Rx<any>, A, I>(self: R, schema: Schema.Schema<A, I>) => R & Serializable
+>(2, (self, schema) => {
+  const encode = Schema.encodeSync(schema)
+  const decode = Schema.decodeSync(schema)
+
+  return Object.assign(Object.create(Object.getPrototypeOf(self)), {
+    ...self,
+    [SerializableTypeId]: SerializableTypeId,
+    serialize: (value: any) => encode(value),
+    deserialize: (value: any) => decode(value)
+  })
+})

@@ -3,9 +3,17 @@
   "version": "0.44.0",
   "description": "Reactive toolkit for Effect",
   "type": "module",
-  "publishConfig": {
-    "access": "public",
-    "directory": "dist"
+  "exports": {
+    ".": {
+      "import": "./build/esm/index.js",
+      "require": "./build/cjs/index.js",
+      "types": "./build/dts/index.d.ts"
+    },
+    "./*": {
+      "import": "./build/esm/*.js",
+      "require": "./build/cjs/*.js",
+      "types": "./build/dts/*.d.ts"
+    }
   },
   "repository": {
     "type": "git",
@@ -13,6 +21,7 @@
   },
   "homepage": "https://github.com/effect-ts/rx",
   "scripts": {
+    "build:watch": "tsc -b tsconfig.build.json --watch",
     "build": "pnpm build-prepare && pnpm build-esm && pnpm build-cjs && pnpm build-annotate && build-utils pack-v2",
     "build-prepare": "build-utils prepare-v2",
     "build-esm": "tsc -b tsconfig.build.json",

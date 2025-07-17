@@ -6,6 +6,7 @@ import { globalValue } from "effect/GlobalValue"
 import * as Option from "effect/Option"
 import * as Queue from "effect/Queue"
 import * as Stream from "effect/Stream"
+import * as Hydration from "../Hydration.js"
 import type * as Registry from "../Registry.js"
 import * as Result from "../Result.js"
 import type * as Rx from "../Rx.js"
@@ -53,7 +54,7 @@ class RegistryImpl implements Registry.Registry {
     }
   }
 
-  readonly nodes = new Map<Rx.Rx<any>, Node<any>>()
+  readonly nodes = new Map<string, Node<any>>()
   readonly timeoutBuckets = new Map<number, readonly [nodes: Set<Node<any>>, handle: number]>()
   readonly nodeTimeoutBucket = new Map<Node<any>, number>()
   disposed = false
@@ -111,10 +112,11 @@ class RegistryImpl implements Registry.Registry {
   }
 
   ensureNode<A>(rx: Rx.Rx<A>): Node<A> {
-    let node = this.nodes.get(rx)
+    const rxKey = Hydration.getRxKey(rx)
+    let node = this.nodes.get(rxKey)
     if (node === undefined) {
       node = this.createNode(rx)
-      this.nodes.set(rx, node)
+      this.nodes.set(rxKey, node)
     } else if (this.rxHasTTL(rx)) {
       this.removeNodeTimeout(node)
     }
@@ -138,7 +140,8 @@ class RegistryImpl implements Registry.Registry {
 
   scheduleRxRemoval(rx: Rx.Rx<any>): void {
     this.scheduleTask(() => {
-      const node = this.nodes.get(rx)
+      const rxKey = Hydration.getRxKey(rx)
+      const node = this.nodes.get(rxKey)
       if (node !== undefined && node.canBeRemoved) {
         this.removeNode(node)
       }
@@ -157,7 +160,8 @@ class RegistryImpl implements Registry.Registry {
     if (this.rxHasTTL(node.rx)) {
       this.setNodeTimeout(node)
     } else {
-      this.nodes.delete(node.rx)
+      const rxKey = Hydration.getRxKey(node.rx)
+      this.nodes.delete(rxKey)
       node.remove()
     }
   }
@@ -171,7 +175,8 @@ class RegistryImpl implements Registry.Registry {
     if (this.#currentSweepTTL !== null) {
       idleTTL -= this.#currentSweepTTL
       if (idleTTL <= 0) {
-        this.nodes.delete(node.rx)
+        const rxKey = Hydration.getRxKey(node.rx)
+        this.nodes.delete(rxKey)
         node.remove()
         return
       }
@@ -218,7 +223,8 @@ class RegistryImpl implements Registry.Registry {
         return
       }
       this.nodeTimeoutBucket.delete(node)
-      this.nodes.delete(node.rx)
+      const rxKey = Hydration.getRxKey(node.rx)
+      this.nodes.delete(rxKey)
       this.#currentSweepTTL = node.rx.idleTTL ?? this.defaultIdleTTL!
       node.remove()
       this.#currentSweepTTL = null
@@ -237,6 +243,45 @@ class RegistryImpl implements Registry.Registry {
   dispose(): void {
     this.disposed = true
     this.reset()
+  }
+
+  dehydrate(options?: {
+    readonly shouldDehydrateRx?: (rx: Rx.Rx<any>) => boolean
+  }): Hydration.DehydratedState {
+    const shouldDehydrateRx = options?.shouldDehydrateRx ?? Hydration.defaultShouldDehydrateRx
+    const rxs: Array<Hydration.DehydratedRx> = []
+
+    const now = Date.now()
+    this.nodes.forEach((node, rxKey) => {
+      const rx = node.rx
+      if (shouldDehydrateRx(rx) && node.value !== undefined) {
+        const state = node.value()
+        // todo: be smarted about what states we dehydrate
+        // todo: use schema to serialize the state
+        rxs.push({
+          rxKey,
+          state: JSON.parse(JSON.stringify(state)),
+          dehydratedAt: now
+        })
+      }
+    })
+
+    return { rxs }
+  }
+
+  hydrate(dehydratedState: Hydration.DehydratedState, options?: {
+    readonly shouldHydrateRx?: (rx: Rx.Rx<any>, dehydratedRx: any) => boolean
+  }): void {
+    // todo: improve
+    const shouldHydrateRx = options?.shouldHydrateRx ?? (() => true)
+
+    // todo: use schema to deserialize the state
+    for (const dehydratedRx of dehydratedState.rxs) {
+      const node = this.nodes.get(dehydratedRx.rxKey)
+      if (node && shouldHydrateRx(node.rx, dehydratedRx)) {
+        node.setValue(dehydratedRx.state)
+      }
+    }
   }
 }
 
