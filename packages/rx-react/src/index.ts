@@ -303,12 +303,12 @@ export const useRxSuspense = <A, E>(
 export const useRxSuspenseSuccess = <A, E>(
   rx: Rx.Rx<Result.Result<A, E>>,
   options?: { readonly suspendOnWaiting?: boolean }
-): Result.Success<A, E> => {
+): A => {
   const result = useRxSuspense(rx, options)
   if (result._tag === "Failure") {
     throw Cause.squash(result.cause)
   }
-  return result
+  return result.value
 }
 
 /**
