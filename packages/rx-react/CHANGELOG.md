@@ -1,5 +1,13 @@
 # @effect-rx/rx-react
 
+## 0.39.1
+
+### Patch Changes
+
+- [#236](https://github.com/tim-smart/effect-rx/pull/236) [`9e93127`](https://github.com/tim-smart/effect-rx/commit/9e9312789b7fee5d8284ac4508b8c54dad0a3128) Thanks [@ethanniser](https://github.com/ethanniser)! - fix typo in result export
+
+- [#236](https://github.com/tim-smart/effect-rx/pull/236) [`9e93127`](https://github.com/tim-smart/effect-rx/commit/9e9312789b7fee5d8284ac4508b8c54dad0a3128) Thanks [@ethanniser](https://github.com/ethanniser)! - fix hydration export
+
 ## 0.39.0
 
 ### Minor Changes
