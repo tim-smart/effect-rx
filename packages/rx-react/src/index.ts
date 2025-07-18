@@ -18,7 +18,7 @@ export * as Registry from "@effect-rx/rx/Registry"
  * @since 1.0.0
  * @category re-exports
  */
-export * as Result from "@effect-rx/rx/Registry"
+export * as Result from "@effect-rx/rx/Result"
 
 /**
  * @since 1.0.0
