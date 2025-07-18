@@ -1,7 +1,7 @@
-"use client"
 /**
  * @since 1.0.0
  */
+"use client"
 import type * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"

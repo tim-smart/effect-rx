@@ -1,6 +1,6 @@
 ---
 title: Result.ts
-nav_order: 3
+nav_order: 4
 parent: "@effect-rx/rx"
 ---
 
@@ -12,6 +12,13 @@ Added in v1.0.0
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [Guards](#guards)
+  - [isResult](#isresult)
+- [Schemas](#schemas)
+  - [Encoded (type alias)](#encoded-type-alias)
+  - [PartialEncoded (type alias)](#partialencoded-type-alias)
+  - [Schema](#schema)
+  - [schemaFromSelf](#schemafromself)
 - [accessors](#accessors)
   - [cause](#cause)
   - [getOrElse](#getorelse)
@@ -56,6 +63,103 @@ Added in v1.0.0
   - [TypeId (type alias)](#typeid-type-alias)
 
 ---
+
+# Guards
+
+## isResult
+
+**Signature**
+
+```ts
+export declare const isResult: (u: unknown) => u is Result<unknown, unknown>
+```
+
+Added in v1.0.0
+
+# Schemas
+
+## Encoded (type alias)
+
+**Signature**
+
+```ts
+export type Encoded<A, E> =
+  | {
+      readonly _tag: "Initial"
+      readonly waiting: boolean
+    }
+  | {
+      readonly _tag: "Success"
+      readonly waiting: boolean
+      readonly value: A
+    }
+  | {
+      readonly _tag: "Failure"
+      readonly waiting: boolean
+      readonly previousValue: Schema_.OptionEncoded<A>
+      readonly cause: Schema_.CauseEncoded<E, unknown>
+    }
+```
+
+Added in v1.0.0
+
+## PartialEncoded (type alias)
+
+**Signature**
+
+```ts
+export type PartialEncoded<A, E> =
+  | {
+      readonly _tag: "Initial"
+      readonly waiting: boolean
+    }
+  | {
+      readonly _tag: "Success"
+      readonly waiting: boolean
+      readonly value: A
+    }
+  | {
+      readonly _tag: "Failure"
+      readonly waiting: boolean
+      readonly previousValue: Option.Option<A>
+      readonly cause: Cause.Cause<E>
+    }
+```
+
+Added in v1.0.0
+
+## Schema
+
+**Signature**
+
+```ts
+export declare const Schema: <
+  Success extends Schema_.Schema.All = typeof Schema_.Never,
+  Error extends Schema_.Schema.All = typeof Schema_.Never
+>(options: {
+  readonly success?: Success | undefined
+  readonly error?: Error | undefined
+}) => Schema_.transform<
+  Schema_.Schema<
+    PartialEncoded<Success["Type"], Error["Type"]>,
+    Encoded<Success["Encoded"], Error["Encoded"]>,
+    Success["Context"] | Error["Context"]
+  >,
+  Schema_.Schema<Result<Success["Type"], Error["Type"]>>
+>
+```
+
+Added in v1.0.0
+
+## schemaFromSelf
+
+**Signature**
+
+```ts
+export declare const schemaFromSelf: Schema_.Schema<Result<any, any>, Result<any, any>, never>
+```
+
+Added in v1.0.0
 
 # accessors
 

@@ -1,7 +1,7 @@
-"use client"
 /**
  * @since 1.0.0
  */
+"use client"
 import * as Hydration from "@effect-rx/rx/Hydration"
 import * as React from "react"
 import { RegistryContext } from "./RegistryContext.js"
