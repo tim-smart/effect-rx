@@ -6,7 +6,6 @@ import * as Hydration from "@effect-rx/rx/Hydration"
 import * as React from "react"
 import { RegistryContext } from "./RegistryContext.js"
 
-
 /**
  * @since 1.0.0
  * @category re-exports
