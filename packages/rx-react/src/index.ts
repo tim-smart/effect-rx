@@ -30,7 +30,7 @@ export * as RxRef from "@effect-rx/rx/RxRef"
  * @since 1.0.0
  * @category re-exports
  */
-export * as ReactHydration from "./ReactHydration.js"
+export * as Hydration from "@effect-rx/rx/Hydration"
 
 /**
  * @since 1.0.0
