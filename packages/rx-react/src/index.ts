@@ -1,9 +1,7 @@
 "use client"
-import * as Hydration from "@effect-rx/rx/Hydration"
 /**
  * @since 1.0.0
  */
-
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
@@ -12,24 +10,7 @@ import * as Cause from "effect/Cause"
 import type * as Exit from "effect/Exit"
 import { globalValue } from "effect/GlobalValue"
 import * as React from "react"
-import * as Scheduler from "scheduler"
-
-/**
- * @since 1.0.0
- * @category context
- */
-export function scheduleTask(f: () => void): void {
-  Scheduler.unstable_scheduleCallback(Scheduler.unstable_LowPriority, f)
-}
-
-/**
- * @since 1.0.0
- * @category context
- */
-export const RegistryContext = React.createContext<Registry.Registry>(Registry.make({
-  scheduleTask,
-  defaultIdleTTL: 400
-}))
+import { RegistryContext, scheduleTask } from "./RegistryContext.js"
 
 /**
  * @since 1.0.0
@@ -331,28 +312,3 @@ export const useRxRefProp = <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K)
  */
 export const useRxRefPropValue = <A, K extends keyof A>(ref: RxRef.RxRef<A>, prop: K): A[K] =>
   useRxRef(useRxRefProp(ref, prop))
-
-/**
- * @since 1.0.0
- * @category models
- */
-export interface HydrationBoundaryProps {
-  readonly state: Hydration.DehydratedState
-  readonly children?: React.ReactNode
-}
-
-/**
- * @since 1.0.0
- * @category components
- */
-
-export const HydrationBoundary: React.FC<{
-  state: Hydration.DehydratedState
-  children?: React.ReactNode
-}> = ({ children, state }) => {
-  const registry = React.useContext(RegistryContext)
-  React.useEffect(() => {
-    Hydration.hydrate(registry, state)
-  }, [registry, state])
-  return React.createElement(React.Fragment, {}, children)
-}

@@ -6,7 +6,6 @@ import { globalValue } from "effect/GlobalValue"
 import * as Option from "effect/Option"
 import * as Queue from "effect/Queue"
 import * as Stream from "effect/Stream"
-import * as Hydration from "../Hydration.js"
 import type * as Registry from "../Registry.js"
 import * as Result from "../Result.js"
 import type * as Rx from "../Rx.js"
@@ -31,6 +30,10 @@ export const make = (options?: {
     options?.defaultIdleTTL
   )
 
+const SerializableTypeId: Rx.SerializableTypeId = Symbol.for("@effect-rx/rx/Rx/Serializable") as Rx.SerializableTypeId
+const rxKey = <A>(rx: Rx.Rx<A>): Rx.Rx<A> | string =>
+  SerializableTypeId in rx ? (rx as Rx.Serializable)[SerializableTypeId].key : rx
+
 class RegistryImpl implements Registry.Registry {
   readonly [TypeId]: Registry.TypeId
   readonly timeoutResolution: number
@@ -54,10 +57,15 @@ class RegistryImpl implements Registry.Registry {
     }
   }
 
-  readonly nodes = new Map<string, Node<any>>()
+  readonly nodes = new Map<Rx.Rx<any> | string, Node<any>>()
+  readonly preloadedSerializable = new Map<string, unknown>()
   readonly timeoutBuckets = new Map<number, readonly [nodes: Set<Node<any>>, handle: number]>()
   readonly nodeTimeoutBucket = new Map<Node<any>, number>()
   disposed = false
+
+  getNodes() {
+    return this.nodes
+  }
 
   get<A>(rx: Rx.Rx<A>): A {
     return this.ensureNode(rx).value()
@@ -65,6 +73,10 @@ class RegistryImpl implements Registry.Registry {
 
   set<R, W>(rx: Rx.Writable<R, W>, value: W): void {
     rx.write(this.ensureNode(rx).writeContext, value)
+  }
+
+  setSerializable(key: string, encoded: unknown): void {
+    this.preloadedSerializable.set(key, encoded)
   }
 
   modify<R, W, A>(rx: Rx.Writable<R, W>, f: (_: R) => [returnValue: A, nextValue: W]): A {
@@ -112,13 +124,19 @@ class RegistryImpl implements Registry.Registry {
   }
 
   ensureNode<A>(rx: Rx.Rx<A>): Node<A> {
-    const rxKey = Hydration.getRxKey(rx)
-    let node = this.nodes.get(rxKey)
+    const key = rxKey(rx)
+    let node = this.nodes.get(key)
     if (node === undefined) {
       node = this.createNode(rx)
-      this.nodes.set(rxKey, node)
+      this.nodes.set(key, node)
     } else if (this.rxHasTTL(rx)) {
       this.removeNodeTimeout(node)
+    }
+    if (typeof key === "string" && this.preloadedSerializable.has(key)) {
+      const encoded = this.preloadedSerializable.get(key)
+      this.preloadedSerializable.delete(key)
+      const decoded = (rx as any as Rx.Serializable)[SerializableTypeId].decode(encoded)
+      node.setValue(decoded)
     }
     return node
   }
@@ -140,8 +158,7 @@ class RegistryImpl implements Registry.Registry {
 
   scheduleRxRemoval(rx: Rx.Rx<any>): void {
     this.scheduleTask(() => {
-      const rxKey = Hydration.getRxKey(rx)
-      const node = this.nodes.get(rxKey)
+      const node = this.nodes.get(rxKey(rx))
       if (node !== undefined && node.canBeRemoved) {
         this.removeNode(node)
       }
@@ -160,8 +177,7 @@ class RegistryImpl implements Registry.Registry {
     if (this.rxHasTTL(node.rx)) {
       this.setNodeTimeout(node)
     } else {
-      const rxKey = Hydration.getRxKey(node.rx)
-      this.nodes.delete(rxKey)
+      this.nodes.delete(rxKey(node.rx))
       node.remove()
     }
   }
@@ -175,8 +191,7 @@ class RegistryImpl implements Registry.Registry {
     if (this.#currentSweepTTL !== null) {
       idleTTL -= this.#currentSweepTTL
       if (idleTTL <= 0) {
-        const rxKey = Hydration.getRxKey(node.rx)
-        this.nodes.delete(rxKey)
+        this.nodes.delete(rxKey(node.rx))
         node.remove()
         return
       }
@@ -223,8 +238,7 @@ class RegistryImpl implements Registry.Registry {
         return
       }
       this.nodeTimeoutBucket.delete(node)
-      const rxKey = Hydration.getRxKey(node.rx)
-      this.nodes.delete(rxKey)
+      this.nodes.delete(rxKey(node.rx))
       this.#currentSweepTTL = node.rx.idleTTL ?? this.defaultIdleTTL!
       node.remove()
       this.#currentSweepTTL = null
@@ -244,45 +258,6 @@ class RegistryImpl implements Registry.Registry {
     this.disposed = true
     this.reset()
   }
-
-  dehydrate(options?: {
-    readonly shouldDehydrateRx?: (rx: Rx.Rx<any>) => boolean
-  }): Hydration.DehydratedState {
-    const shouldDehydrateRx = options?.shouldDehydrateRx ?? Hydration.defaultShouldDehydrateRx
-    const rxs: Array<Hydration.DehydratedRx> = []
-
-    const now = Date.now()
-    this.nodes.forEach((node, rxKey) => {
-      const rx = node.rx
-      if (shouldDehydrateRx(rx) && node.value !== undefined) {
-        const state = node.value()
-        // todo: be smarted about what states we dehydrate
-        // todo: use schema to serialize the state
-        rxs.push({
-          rxKey,
-          state: JSON.parse(JSON.stringify(state)),
-          dehydratedAt: now
-        })
-      }
-    })
-
-    return { rxs }
-  }
-
-  hydrate(dehydratedState: Hydration.DehydratedState, options?: {
-    readonly shouldHydrateRx?: (rx: Rx.Rx<any>, dehydratedRx: any) => boolean
-  }): void {
-    // todo: improve
-    const shouldHydrateRx = options?.shouldHydrateRx ?? (() => true)
-
-    // todo: use schema to deserialize the state
-    for (const dehydratedRx of dehydratedState.rxs) {
-      const node = this.nodes.get(dehydratedRx.rxKey)
-      if (node && shouldHydrateRx(node.rx, dehydratedRx)) {
-        node.setValue(dehydratedRx.state)
-      }
-    }
-  }
 }
 
 const enum NodeFlags {
@@ -301,7 +276,7 @@ const enum NodeState {
 class Node<A> {
   constructor(
     readonly registry: RegistryImpl,
-    readonly rx: Rx.Rx<A>
+    public rx: Rx.Rx<A>
   ) {
     this.writeContext = new WriteContextImpl(registry, this)
   }

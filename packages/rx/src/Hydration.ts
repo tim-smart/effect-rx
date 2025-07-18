@@ -1,42 +1,19 @@
 /**
  * @since 1.0.0
  */
+import * as Arr from "effect/Array"
+import { constTrue } from "effect/Function"
 import type * as Registry from "./Registry.js"
-import type * as Result from "./Result.js"
 import * as Rx from "./Rx.js"
 
 /**
  * @since 1.0.0
  * @category models
  */
-export interface DehydratedRx<A = unknown, E = unknown> {
-  readonly rxKey: string
-  readonly state: Result.Result<A, E>
+export interface DehydratedRx {
+  readonly key: string
+  readonly value: unknown
   readonly dehydratedAt: number
-}
-
-/**
- * @since 1.0.0
- * @category models
- */
-export interface DehydratedState {
-  readonly rxs: ReadonlyArray<DehydratedRx>
-}
-
-/**
- * @since 1.0.0
- * @category models
- */
-export interface DehydrateOptions {
-  readonly shouldDehydrateRx?: (rx: Rx.Rx<any>) => boolean
-}
-
-/**
- * @since 1.0.0
- * @category models
- */
-export interface HydrateOptions {
-  readonly shouldHydrateRx?: (rx: Rx.Rx<any>, dehydratedRx: DehydratedRx) => boolean
 }
 
 /**
@@ -45,9 +22,26 @@ export interface HydrateOptions {
  */
 export const dehydrate = (
   registry: Registry.Registry,
-  options?: DehydrateOptions
-): DehydratedState => {
-  return (registry as any).dehydrate(options)
+  options?: {
+    readonly shouldDehydrateRx?: ((rx: Rx.Rx<any> & Rx.Serializable) => boolean) | undefined
+  }
+): Array<DehydratedRx> => {
+  const shouldDehydrateRx = options?.shouldDehydrateRx ?? constTrue
+  const arr = Arr.empty<DehydratedRx>()
+  const now = Date.now()
+  registry.getNodes().forEach((node, key) => {
+    if (!Rx.isSerializable(node.rx)) return
+    const rx = node.rx
+    if (shouldDehydrateRx(rx)) {
+      const value = node.value()
+      arr.push({
+        key: key as string,
+        value: rx[Rx.SerializableTypeId].encode(value),
+        dehydratedAt: now
+      })
+    }
+  })
+  return arr
 }
 
 /**
@@ -56,43 +50,14 @@ export const dehydrate = (
  */
 export const hydrate = (
   registry: Registry.Registry,
-  dehydratedState: DehydratedState,
-  options?: HydrateOptions
-): void => {
-  return (registry as any).hydrate(dehydratedState, options)
-}
-
-/**
- * @since 1.0.0
- * @category utilities
- */
-export const getRxKey = (rx: Rx.Rx<any>): string => {
-  // Use the rx's label if available, otherwise use a hash of the rx object
-  if (rx.label) {
-    return rx.label[0]
+  dehydratedState: Iterable<DehydratedRx>,
+  options?: {
+    readonly shouldHydrateRx?: ((dehydratedRx: DehydratedRx) => boolean) | undefined
   }
-
-  throw new Error("to dehydrate an rx, it must have a label")
-}
-
-/**
- * @since 1.0.0
- * @category utilities
- */
-export const isDehydratedStateEmpty = (state: DehydratedState): boolean => {
-  return state.rxs.length === 0
-}
-
-/**
- * @since 1.0.0
- * @category utilities
- */
-export const createDehydratedState = (
-  rxs: ReadonlyArray<DehydratedRx> = []
-): DehydratedState => ({
-  rxs
-})
-
-export const defaultShouldDehydrateRx = (rx: Rx.Rx<any>): boolean => {
-  return Rx.isSerializable(rx)
+): void => {
+  const shouldHydrateRx = options?.shouldHydrateRx ?? constTrue
+  for (const drx of dehydratedState) {
+    if (!shouldHydrateRx(drx)) continue
+    registry.setSerializable(drx.key, drx.value)
+  }
 }
