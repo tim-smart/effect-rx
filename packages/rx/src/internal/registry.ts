@@ -276,7 +276,7 @@ const enum NodeState {
 class Node<A> {
   constructor(
     readonly registry: RegistryImpl,
-    public rx: Rx.Rx<A>
+    readonly rx: Rx.Rx<A>
   ) {
     this.writeContext = new WriteContextImpl(registry, this)
   }
