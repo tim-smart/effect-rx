@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.44.1
+
+### Patch Changes
+
+- [#231](https://github.com/tim-smart/effect-rx/pull/231) [`7105453`](https://github.com/tim-smart/effect-rx/commit/710545325be35b08d2bc437a183ad649b0989c0a) Thanks [@ethanniser](https://github.com/ethanniser)! - add Hydration module
+
 ## 0.44.0
 
 ### Minor Changes
