@@ -84,6 +84,12 @@ export declare namespace Rx {
    * @since 1.0.0
    */
   export type InferFailure<T extends Rx<any>> = T extends Rx<Result.Result<infer _, infer E>> ? E : never
+
+  /**
+   * @since 1.0.0
+   */
+  export type WithoutSerializable<T extends Rx<any>> = T extends Writable<infer R, infer W> ? Writable<R, W>
+    : Rx<Infer<T>>
 }
 
 /**
@@ -1328,8 +1334,8 @@ export const mapResult: {
  * @category combinators
  */
 export const debounce: {
-  (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => A
-  <A extends Rx<any>>(self: A, duration: Duration.DurationInput): A
+  (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A>
+  <A extends Rx<any>>(self: A, duration: Duration.DurationInput): Rx.WithoutSerializable<A>
 } = dual(
   2,
   <A>(self: Rx<A>, duration: Duration.DurationInput): Rx<A> => {
@@ -1386,7 +1392,7 @@ export const windowFocusSignal: Rx<number> = readable((get) => {
  * @since 1.0.0
  * @category Focus
  */
-export const makeRefreshOnSignal = <_>(signal: Rx<_>) => <A extends Rx<any>>(self: A): A =>
+export const makeRefreshOnSignal = <_>(signal: Rx<_>) => <A extends Rx<any>>(self: A): Rx.WithoutSerializable<A> =>
   transform(self, (get) => {
     get.subscribe(signal, (_) => get.refresh(self))
     get.subscribe(self, (value) => get.setSelf(value))
@@ -1397,7 +1403,7 @@ export const makeRefreshOnSignal = <_>(signal: Rx<_>) => <A extends Rx<any>>(sel
  * @since 1.0.0
  * @category combinators
  */
-export const refreshOnWindowFocus: <A extends Rx<any>>(self: A) => A = makeRefreshOnSignal(
+export const refreshOnWindowFocus: <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A> = makeRefreshOnSignal(
   windowFocusSignal
 )
 
@@ -1596,3 +1602,64 @@ export const getResult = <A, E>(
  */
 export const refresh = <A>(self: Rx<A>): Effect.Effect<void, never, RxRegistry> =>
   Effect.map(RxRegistry, (_) => _.refresh(self))
+
+// -----------------------------------------------------------------------------
+// Serializable
+// -----------------------------------------------------------------------------
+
+/**
+ * @since 1.0.0
+ * @category Serializable
+ */
+export const SerializableTypeId = Symbol.for("@effect-rx/rx/Rx/Serializable")
+
+/**
+ * @since 1.0.0
+ * @category Serializable
+ */
+export type SerializableTypeId = typeof SerializableTypeId
+
+/**
+ * @since 1.0.0
+ * @category Serializable
+ */
+export interface Serializable {
+  readonly [SerializableTypeId]: {
+    readonly key: string
+    readonly encode: (value: unknown) => unknown
+    readonly decode: (value: unknown) => unknown
+  }
+}
+
+/**
+ * @since 1.0.0
+ * @category Serializable
+ */
+export const isSerializable = (self: Rx<any>): self is Rx<any> & Serializable => SerializableTypeId in self
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const serializable: {
+  <R extends Rx<any>, I>(options: {
+    readonly key: string
+    readonly schema: Schema.Schema<Rx.Infer<R>, I>
+  }): (self: R) => R & Serializable
+  <R extends Rx<any>, I>(self: R, options: {
+    readonly key: string
+    readonly schema: Schema.Schema<Rx.Infer<R>, I>
+  }): R & Serializable
+} = dual(2, <R extends Rx<any>, A, I>(self: R, options: {
+  readonly key: string
+  readonly schema: Schema.Schema<A, I>
+}): R & Serializable =>
+  Object.assign(Object.create(Object.getPrototypeOf(self)), {
+    ...self,
+    label: self.label ?? [options.key, new Error().stack?.split("\n")[5] ?? ""],
+    [SerializableTypeId]: {
+      key: options.key,
+      encode: Schema.encodeSync(options.schema),
+      decode: Schema.decodeSync(options.schema)
+    }
+  }))

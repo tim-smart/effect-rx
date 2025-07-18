@@ -32,10 +32,12 @@ export type TypeId = typeof TypeId
  */
 export interface Registry {
   readonly [TypeId]: TypeId
+  readonly getNodes: () => ReadonlyMap<Rx.Rx<any> | string, Node<any>>
   readonly get: <A>(rx: Rx.Rx<A>) => A
   readonly mount: <A>(rx: Rx.Rx<A>) => () => void
   readonly refresh: <A>(rx: Rx.Rx<A>) => void
   readonly set: <R, W>(rx: Rx.Writable<R, W>, value: W) => void
+  readonly setSerializable: (key: string, encoded: unknown) => void
   readonly modify: <R, W, A>(rx: Rx.Writable<R, W>, f: (_: R) => [returnValue: A, nextValue: W]) => A
   readonly update: <R, W>(rx: Rx.Writable<R, W>, f: (_: R) => W) => void
   readonly subscribe: <A>(rx: Rx.Rx<A>, f: (_: A) => void, options?: {
@@ -43,6 +45,15 @@ export interface Registry {
   }) => () => void
   readonly reset: () => void
   readonly dispose: () => void
+}
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+interface Node<A> {
+  readonly rx: Rx.Rx<A>
+  readonly value: () => A
 }
 
 /**
@@ -139,11 +150,11 @@ export const toStream: {
  * @category Conversions
  */
 export const toStreamResult: {
-  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Stream.Stream<A, E, RxRegistry>
-  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry>
+  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Stream.Stream<A, E>
+  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E>
 } = dual(
   2,
-  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry> =>
+  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E> =>
     toStream(self, rx).pipe(
       Stream.filter(Result.isNotInitial),
       Stream.mapEffect((result) =>

@@ -8,6 +8,8 @@ import type { LazyArg } from "effect/Function"
 import { dual, identity } from "effect/Function"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
+import { hasProperty } from "effect/Predicate"
+import * as Schema_ from "effect/Schema"
 
 /**
  * @since 1.0.0
@@ -26,6 +28,12 @@ export type TypeId = typeof TypeId
  * @category models
  */
 export type Result<A, E = never> = Initial<A, E> | Success<A, E> | Failure<A, E>
+
+/**
+ * @since 1.0.0
+ * @category Guards
+ */
+export const isResult = (u: unknown): u is Result<unknown, unknown> => hasProperty(u, TypeId)
 
 /**
  * @since 1.0.0
@@ -444,3 +452,105 @@ export const matchWithWaiting: {
       return options.onSuccess(self)
   }
 })
+
+/**
+ * @since 1.0.0
+ * @category Schemas
+ */
+export type PartialEncoded<A, E> = {
+  readonly _tag: "Initial"
+  readonly waiting: boolean
+} | {
+  readonly _tag: "Success"
+  readonly waiting: boolean
+  readonly value: A
+} | {
+  readonly _tag: "Failure"
+  readonly waiting: boolean
+  readonly previousValue: Option.Option<A>
+  readonly cause: Cause.Cause<E>
+}
+
+/**
+ * @since 1.0.0
+ * @category Schemas
+ */
+export type Encoded<A, E> = {
+  readonly _tag: "Initial"
+  readonly waiting: boolean
+} | {
+  readonly _tag: "Success"
+  readonly waiting: boolean
+  readonly value: A
+} | {
+  readonly _tag: "Failure"
+  readonly waiting: boolean
+  readonly previousValue: Schema_.OptionEncoded<A>
+  readonly cause: Schema_.CauseEncoded<E, unknown>
+}
+
+/**
+ * @since 1.0.0
+ * @category Schemas
+ */
+export const schemaFromSelf: Schema_.Schema<Result<any, any>> = Schema_.declare(isResult, {
+  identifier: "Result"
+})
+
+/**
+ * @since 1.0.0
+ * @category Schemas
+ */
+export const Schema = <
+  Success extends Schema_.Schema.All = typeof Schema_.Never,
+  Error extends Schema_.Schema.All = typeof Schema_.Never
+>(
+  options: {
+    readonly success?: Success | undefined
+    readonly error?: Error | undefined
+  }
+): Schema_.transform<
+  Schema_.Schema<
+    PartialEncoded<Success["Type"], Error["Type"]>,
+    Encoded<Success["Encoded"], Error["Encoded"]>,
+    Success["Context"] | Error["Context"]
+  >,
+  Schema_.Schema<Result<Success["Type"], Error["Type"]>>
+> => {
+  const success_: Success = options.success ?? Schema_.Never as any
+  const error: Error = options.error ?? Schema_.Never as any
+  return Schema_.transform(
+    Schema_.Union(
+      Schema_.TaggedStruct("Initial", {
+        waiting: Schema_.Boolean
+      }),
+      Schema_.TaggedStruct("Success", {
+        waiting: Schema_.Boolean,
+        value: success_
+      }),
+      Schema_.TaggedStruct("Failure", {
+        waiting: Schema_.Boolean,
+        previousValue: Schema_.Option(success_ as any),
+        cause: Schema_.Cause({
+          error,
+          defect: Schema_.Defect
+        })
+      })
+    ) as Schema_.Schema<
+      PartialEncoded<Success["Type"], Error["Type"]>,
+      Encoded<Success["Encoded"], Error["Encoded"]>,
+      Success["Context"] | Error["Context"]
+    >,
+    schemaFromSelf,
+    {
+      strict: false,
+      decode: (e) =>
+        e._tag === "Initial"
+          ? initial(e.waiting)
+          : e._tag === "Success"
+          ? success(e.value, e.waiting)
+          : failure(e.cause, e.previousValue, e.waiting),
+      encode: identity
+    }
+  ) as any
+}

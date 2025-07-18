@@ -1,6 +1,6 @@
 ---
 title: index.ts
-nav_order: 1
+nav_order: 2
 parent: "@effect-rx/rx"
 ---
 
@@ -13,6 +13,7 @@ Added in v1.0.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [exports](#exports)
+  - [From "./Hydration.js"](#from-hydrationjs)
   - [From "./Registry.js"](#from-registryjs)
   - [From "./Result.js"](#from-resultjs)
   - [From "./Rx.js"](#from-rxjs)
@@ -21,6 +22,18 @@ Added in v1.0.0
 ---
 
 # exports
+
+## From "./Hydration.js"
+
+Re-exports all named exports from the "./Hydration.js" module as `Hydration`.
+
+**Signature**
+
+```ts
+export * as Hydration from "./Hydration.js"
+```
+
+Added in v1.0.0
 
 ## From "./Registry.js"
 

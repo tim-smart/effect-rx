@@ -30,6 +30,10 @@ export const make = (options?: {
     options?.defaultIdleTTL
   )
 
+const SerializableTypeId: Rx.SerializableTypeId = Symbol.for("@effect-rx/rx/Rx/Serializable") as Rx.SerializableTypeId
+const rxKey = <A>(rx: Rx.Rx<A>): Rx.Rx<A> | string =>
+  SerializableTypeId in rx ? (rx as Rx.Serializable)[SerializableTypeId].key : rx
+
 class RegistryImpl implements Registry.Registry {
   readonly [TypeId]: Registry.TypeId
   readonly timeoutResolution: number
@@ -53,10 +57,15 @@ class RegistryImpl implements Registry.Registry {
     }
   }
 
-  readonly nodes = new Map<Rx.Rx<any>, Node<any>>()
+  readonly nodes = new Map<Rx.Rx<any> | string, Node<any>>()
+  readonly preloadedSerializable = new Map<string, unknown>()
   readonly timeoutBuckets = new Map<number, readonly [nodes: Set<Node<any>>, handle: number]>()
   readonly nodeTimeoutBucket = new Map<Node<any>, number>()
   disposed = false
+
+  getNodes() {
+    return this.nodes
+  }
 
   get<A>(rx: Rx.Rx<A>): A {
     return this.ensureNode(rx).value()
@@ -64,6 +73,10 @@ class RegistryImpl implements Registry.Registry {
 
   set<R, W>(rx: Rx.Writable<R, W>, value: W): void {
     rx.write(this.ensureNode(rx).writeContext, value)
+  }
+
+  setSerializable(key: string, encoded: unknown): void {
+    this.preloadedSerializable.set(key, encoded)
   }
 
   modify<R, W, A>(rx: Rx.Writable<R, W>, f: (_: R) => [returnValue: A, nextValue: W]): A {
@@ -111,12 +124,19 @@ class RegistryImpl implements Registry.Registry {
   }
 
   ensureNode<A>(rx: Rx.Rx<A>): Node<A> {
-    let node = this.nodes.get(rx)
+    const key = rxKey(rx)
+    let node = this.nodes.get(key)
     if (node === undefined) {
       node = this.createNode(rx)
-      this.nodes.set(rx, node)
+      this.nodes.set(key, node)
     } else if (this.rxHasTTL(rx)) {
       this.removeNodeTimeout(node)
+    }
+    if (typeof key === "string" && this.preloadedSerializable.has(key)) {
+      const encoded = this.preloadedSerializable.get(key)
+      this.preloadedSerializable.delete(key)
+      const decoded = (rx as any as Rx.Serializable)[SerializableTypeId].decode(encoded)
+      node.setValue(decoded)
     }
     return node
   }
@@ -138,7 +158,7 @@ class RegistryImpl implements Registry.Registry {
 
   scheduleRxRemoval(rx: Rx.Rx<any>): void {
     this.scheduleTask(() => {
-      const node = this.nodes.get(rx)
+      const node = this.nodes.get(rxKey(rx))
       if (node !== undefined && node.canBeRemoved) {
         this.removeNode(node)
       }
@@ -157,7 +177,7 @@ class RegistryImpl implements Registry.Registry {
     if (this.rxHasTTL(node.rx)) {
       this.setNodeTimeout(node)
     } else {
-      this.nodes.delete(node.rx)
+      this.nodes.delete(rxKey(node.rx))
       node.remove()
     }
   }
@@ -171,7 +191,7 @@ class RegistryImpl implements Registry.Registry {
     if (this.#currentSweepTTL !== null) {
       idleTTL -= this.#currentSweepTTL
       if (idleTTL <= 0) {
-        this.nodes.delete(node.rx)
+        this.nodes.delete(rxKey(node.rx))
         node.remove()
         return
       }
@@ -218,7 +238,7 @@ class RegistryImpl implements Registry.Registry {
         return
       }
       this.nodeTimeoutBucket.delete(node)
-      this.nodes.delete(node.rx)
+      this.nodes.delete(rxKey(node.rx))
       this.#currentSweepTTL = node.rx.idleTTL ?? this.defaultIdleTTL!
       node.remove()
       this.#currentSweepTTL = null

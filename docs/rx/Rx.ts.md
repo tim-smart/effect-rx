@@ -1,6 +1,6 @@
 ---
 title: Rx.ts
-nav_order: 4
+nav_order: 5
 parent: "@effect-rx/rx"
 ---
 
@@ -16,12 +16,21 @@ Added in v1.0.0
   - [get](#get)
   - [getResult](#getresult)
   - [modify](#modify)
+  - [refresh](#refresh)
   - [set](#set)
   - [toStream](#tostream)
   - [toStreamResult](#tostreamresult)
   - [update](#update)
+- [Focus](#focus)
+  - [makeRefreshOnSignal](#makerefreshonsignal)
+  - [windowFocusSignal](#windowfocussignal)
 - [KeyValueStore](#keyvaluestore)
   - [kvs](#kvs)
+- [Serializable](#serializable)
+  - [Serializable (interface)](#serializable-interface)
+  - [SerializableTypeId](#serializabletypeid)
+  - [SerializableTypeId (type alias)](#serializabletypeid-type-alias)
+  - [isSerializable](#isserializable)
 - [URL search params](#url-search-params)
   - [searchParam](#searchparam)
 - [batching](#batching)
@@ -32,7 +41,8 @@ Added in v1.0.0
   - [keepAlive](#keepalive)
   - [map](#map)
   - [mapResult](#mapresult)
-  - [refreshable](#refreshable)
+  - [refreshOnWindowFocus](#refreshonwindowfocus)
+  - [serializable](#serializable-1)
   - [setIdleTTL](#setidlettl)
   - [setLazy](#setlazy)
   - [transform](#transform)
@@ -57,7 +67,6 @@ Added in v1.0.0
 - [models](#models)
   - [FnContext (interface)](#fncontext-interface)
   - [PullResult (type alias)](#pullresult-type-alias)
-  - [Refreshable (interface)](#refreshable-interface)
   - [RuntimeFactory (interface)](#runtimefactory-interface)
   - [Rx (interface)](#rx-interface)
   - [Rx (namespace)](#rx-namespace)
@@ -65,6 +74,7 @@ Added in v1.0.0
     - [InferFailure (type alias)](#inferfailure-type-alias)
     - [InferPullSuccess (type alias)](#inferpullsuccess-type-alias)
     - [InferSuccess (type alias)](#infersuccess-type-alias)
+    - [WithoutSerializable (type alias)](#withoutserializable-type-alias)
   - [RxResultFn (interface)](#rxresultfn-interface)
   - [RxRuntime (interface)](#rxruntime-interface)
   - [Writable (interface)](#writable-interface)
@@ -74,8 +84,6 @@ Added in v1.0.0
   - [Reset](#reset)
   - [Reset (type alias)](#reset-type-alias)
 - [type ids](#type-ids)
-  - [RefreshableTypeId](#refreshabletypeid)
-  - [RefreshableTypeId (type alias)](#refreshabletypeid-type-alias)
   - [TypeId](#typeid)
   - [TypeId (type alias)](#typeid-type-alias)
   - [WritableTypeId](#writabletypeid)
@@ -117,6 +125,16 @@ export declare const modify: {
   <R, W, A>(f: (_: R) => [returnValue: A, nextValue: W]): (self: Writable<R, W>) => Effect.Effect<A, never, RxRegistry>
   <R, W, A>(self: Writable<R, W>, f: (_: R) => [returnValue: A, nextValue: W]): Effect.Effect<A, never, RxRegistry>
 }
+```
+
+Added in v1.0.0
+
+## refresh
+
+**Signature**
+
+```ts
+export declare const refresh: <A>(self: Rx<A>) => Effect.Effect<void, never, RxRegistry>
 ```
 
 Added in v1.0.0
@@ -167,6 +185,30 @@ export declare const update: {
 
 Added in v1.0.0
 
+# Focus
+
+## makeRefreshOnSignal
+
+**Signature**
+
+```ts
+export declare const makeRefreshOnSignal: <_>(
+  signal: Rx<_>
+) => <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A>
+```
+
+Added in v1.0.0
+
+## windowFocusSignal
+
+**Signature**
+
+```ts
+export declare const windowFocusSignal: Rx<number>
+```
+
+Added in v1.0.0
+
 # KeyValueStore
 
 ## kvs
@@ -180,6 +222,54 @@ export declare const kvs: <A>(options: {
   readonly schema: Schema.Schema<A, any>
   readonly defaultValue: LazyArg<A>
 }) => Writable<A>
+```
+
+Added in v1.0.0
+
+# Serializable
+
+## Serializable (interface)
+
+**Signature**
+
+```ts
+export interface Serializable {
+  readonly [SerializableTypeId]: {
+    readonly key: string
+    readonly encode: (value: unknown) => unknown
+    readonly decode: (value: unknown) => unknown
+  }
+}
+```
+
+Added in v1.0.0
+
+## SerializableTypeId
+
+**Signature**
+
+```ts
+export declare const SerializableTypeId: typeof SerializableTypeId
+```
+
+Added in v1.0.0
+
+## SerializableTypeId (type alias)
+
+**Signature**
+
+```ts
+export type SerializableTypeId = typeof SerializableTypeId
+```
+
+Added in v1.0.0
+
+## isSerializable
+
+**Signature**
+
+```ts
+export declare const isSerializable: (self: Rx<any>) => self is Rx<any> & Serializable
 ```
 
 Added in v1.0.0
@@ -223,8 +313,8 @@ Added in v1.0.0
 
 ```ts
 export declare const debounce: {
-  (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => A
-  <A extends Rx<any>>(self: A, duration: Duration.DurationInput): A
+  (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A>
+  <A extends Rx<any>>(self: A, duration: Duration.DurationInput): Rx.WithoutSerializable<A>
 }
 ```
 
@@ -295,12 +385,31 @@ export declare const mapResult: {
 
 Added in v1.0.0
 
-## refreshable
+## refreshOnWindowFocus
 
 **Signature**
 
 ```ts
-export declare const refreshable: <T extends Rx<any>>(self: T) => T & Refreshable
+export declare const refreshOnWindowFocus: <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A>
+```
+
+Added in v1.0.0
+
+## serializable
+
+**Signature**
+
+```ts
+export declare const serializable: {
+  <R extends Rx<any>, I>(options: {
+    readonly key: string
+    readonly schema: Schema.Schema<Rx.Infer<R>, I>
+  }): (self: R) => R & Serializable
+  <R extends Rx<any>, I>(
+    self: R,
+    options: { readonly key: string; readonly schema: Schema.Schema<Rx.Infer<R>, I> }
+  ): R & Serializable
+}
 ```
 
 Added in v1.0.0
@@ -580,7 +689,7 @@ export interface Context {
   readonly once: <A>(rx: Rx<A>) => A
   readonly addFinalizer: (f: () => void) => void
   readonly mount: <A>(rx: Rx<A>) => void
-  readonly refresh: <A>(rx: Rx<A> & Refreshable) => void
+  readonly refresh: <A>(rx: Rx<A>) => void
   readonly refreshSelf: () => void
   readonly self: <A>() => Option.Option<A>
   readonly setSelf: <A>(a: A) => void
@@ -679,18 +788,6 @@ export type PullResult<A, E = never> = Result.Result<
 
 Added in v1.0.0
 
-## Refreshable (interface)
-
-**Signature**
-
-```ts
-export interface Refreshable {
-  readonly [RefreshableTypeId]: RefreshableTypeId
-}
-```
-
-Added in v1.0.0
-
 ## RuntimeFactory (interface)
 
 **Signature**
@@ -763,6 +860,17 @@ Added in v1.0.0
 
 ```ts
 export type InferSuccess<T extends Rx<any>> = T extends Rx<Result.Result<infer A, infer _>> ? A : never
+```
+
+Added in v1.0.0
+
+### WithoutSerializable (type alias)
+
+**Signature**
+
+```ts
+export type WithoutSerializable<T extends Rx<any>> =
+  T extends Writable<infer R, infer W> ? Writable<R, W> : Rx<Infer<T>>
 ```
 
 Added in v1.0.0
@@ -913,26 +1021,6 @@ export type Reset = typeof Reset
 Added in v1.0.0
 
 # type ids
-
-## RefreshableTypeId
-
-**Signature**
-
-```ts
-export declare const RefreshableTypeId: typeof RefreshableTypeId
-```
-
-Added in v1.0.0
-
-## RefreshableTypeId (type alias)
-
-**Signature**
-
-```ts
-export type RefreshableTypeId = typeof RefreshableTypeId
-```
-
-Added in v1.0.0
 
 ## TypeId
 

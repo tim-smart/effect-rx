@@ -17,3 +17,8 @@ export * as Rx from "./Rx.js"
  * @since 1.0.0
  */
 export * as RxRef from "./RxRef.js"
+
+/**
+ * @since 1.0.0
+ */
+export * as Hydration from "./Hydration.js"

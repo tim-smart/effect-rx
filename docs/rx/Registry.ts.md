@@ -1,6 +1,6 @@
 ---
 title: Registry.ts
-nav_order: 2
+nav_order: 3
 parent: "@effect-rx/rx"
 ---
 
@@ -65,8 +65,8 @@ Added in v1.0.0
 
 ```ts
 export declare const toStreamResult: {
-  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Stream.Stream<A, E>
-  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E>
+  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Stream.Stream<A, E, RxRegistry>
+  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry>
 }
 ```
 
@@ -141,10 +141,12 @@ Added in v1.0.0
 ```ts
 export interface Registry {
   readonly [TypeId]: TypeId
+  readonly getNodes: () => ReadonlyMap<Rx.Rx<any> | string, Node<any>>
   readonly get: <A>(rx: Rx.Rx<A>) => A
   readonly mount: <A>(rx: Rx.Rx<A>) => () => void
-  readonly refresh: <A>(rx: Rx.Rx<A> & Rx.Refreshable) => void
+  readonly refresh: <A>(rx: Rx.Rx<A>) => void
   readonly set: <R, W>(rx: Rx.Writable<R, W>, value: W) => void
+  readonly setSerializable: (key: string, encoded: unknown) => void
   readonly modify: <R, W, A>(rx: Rx.Writable<R, W>, f: (_: R) => [returnValue: A, nextValue: W]) => A
   readonly update: <R, W>(rx: Rx.Writable<R, W>, f: (_: R) => W) => void
   readonly subscribe: <A>(
