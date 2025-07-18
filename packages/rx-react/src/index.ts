@@ -24,13 +24,13 @@ export * as Result from "@effect-rx/rx/Result"
  * @since 1.0.0
  * @category re-exports
  */
-export * as Hydration from "@effect-rx/rx/Hydration"
+export * as RxRef from "@effect-rx/rx/RxRef"
 
 /**
  * @since 1.0.0
  * @category re-exports
  */
-export * as RxRef from "@effect-rx/rx/RxRef"
+export * as ReactHydration from "./ReactHydration.js"
 
 /**
  * @since 1.0.0
