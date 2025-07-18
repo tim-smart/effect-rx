@@ -10,7 +10,6 @@ import { RegistryContext } from "./RegistryContext.js"
  * @since 1.0.0
  * @category components
  */
-
 export const HydrationBoundary: React.FC<{
   state: Iterable<Hydration.DehydratedRx>
   children?: React.ReactNode
