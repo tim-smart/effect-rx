@@ -1,16 +1,16 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": [
-    "test",
-  ],
+  "include": ["test"],
   "references": [
     {
       "path": "tsconfig.src.json"
-    },
+    }
   ],
   "compilerOptions": {
     "tsBuildInfoFile": ".tsbuildinfo/test.tsbuildinfo",
     "rootDir": "test",
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "types": ["@testing-library/jest-dom"]
   }
 }
