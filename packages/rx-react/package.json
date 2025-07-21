@@ -23,9 +23,13 @@
   "license": "MIT",
   "sideEffects": [],
   "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
     "@types/react": "^19.1.8",
     "@types/scheduler": "^0.26.0",
     "effect": "^3.16.16",
+    "jsdom": "^26.1.0",
     "react": "^19.1.0",
     "scheduler": "^0.26.0"
   },
