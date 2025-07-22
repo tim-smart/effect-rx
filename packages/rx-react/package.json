@@ -28,14 +28,14 @@
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.1.8",
     "@types/scheduler": "^0.26.0",
-    "effect": "^3.16.16",
+    "effect": "^3.17.0",
     "jsdom": "^26.1.0",
     "react": "^19.1.0",
     "react-error-boundary": "^6.0.0",
     "scheduler": "^0.26.0"
   },
   "peerDependencies": {
-    "effect": "^3.16",
+    "effect": "^3.17",
     "react": ">=18 <20",
     "scheduler": "*"
   },
