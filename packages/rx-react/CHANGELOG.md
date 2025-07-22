@@ -1,5 +1,18 @@
 # @effect-rx/rx-react
 
+## 0.40.0
+
+### Minor Changes
+
+- [`b349cd9`](https://github.com/tim-smart/effect-rx/commit/b349cd935983a44e15135c447cca54535b96f671) Thanks [@tim-smart](https://github.com/tim-smart)! - update effect
+
+### Patch Changes
+
+- [#239](https://github.com/tim-smart/effect-rx/pull/239) [`4ed8165`](https://github.com/tim-smart/effect-rx/commit/4ed81652e18753d47ca242047e3df821d07856ed) Thanks [@ethanniser](https://github.com/ethanniser)! - Update `HydrationBoundary`
+
+- Updated dependencies [[`b349cd9`](https://github.com/tim-smart/effect-rx/commit/b349cd935983a44e15135c447cca54535b96f671)]:
+  - @effect-rx/rx@0.46.0
+
 ## 0.39.1
 
 ### Patch Changes
