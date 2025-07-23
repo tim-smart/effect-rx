@@ -1032,7 +1032,7 @@ describe("Rx", () => {
     expect(r2.get(pending)).toEqual(Result.initial(true))
 
     resolve(123)
-    expect(state.find((r) => r.key === "pending")?.reactPromise).resolves.toEqual({
+    await expect(state.find((r) => r.key === "pending")?.reactPromise).resolves.toEqual({
       "_tag": "Success",
       "value": 123,
       "waiting": false
