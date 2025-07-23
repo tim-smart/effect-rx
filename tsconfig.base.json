@@ -12,7 +12,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "moduleResolution": "NodeNext",
-    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "ESNext.Promise"],
     "types": [],
     "isolatedModules": true,
     "sourceMap": true,

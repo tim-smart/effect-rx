@@ -96,8 +96,6 @@ export const hydrate = (
           // Fallback to setSerializable if node doesn't exist yet
           registry.setSerializable(drx.key, resolvedValue)
         }
-      }).catch(() => {
-        // If the promise rejects, ignore it since the original registry might be disposed
       })
     }
   }
