@@ -971,14 +971,18 @@ describe("Rx", () => {
     }))
     r.mount(success)
 
-    const pending = Rx.make(Effect.never).pipe(Rx.serializable({
+    const { promise, resolve } = Promise.withResolvers<number>()
+
+    const pending = Rx.make(Effect.promise(() => promise)).pipe(Rx.serializable({
       key: "pending",
-      schema: Result.Schema({})
+      schema: Result.Schema({
+        success: Schema.Number
+      })
     }))
     r.mount(pending)
 
     const state = Hydration.dehydrate(r)
-    expect(state.map((r) => Struct.omit(r, "dehydratedAt"))).toMatchInlineSnapshot(`
+    expect(state.map((r) => Struct.omit(r, "dehydratedAt", "reactPromise"))).toMatchInlineSnapshot(`
       [
         {
           "key": "basicSerializable",
@@ -1016,6 +1020,8 @@ describe("Rx", () => {
       ]
     `)
 
+    expect(state.find((r) => r.key === "pending")?.reactPromise).instanceOf(Promise)
+
     const r2 = Registry.make()
     Hydration.hydrate(r2, state)
 
@@ -1024,6 +1030,13 @@ describe("Rx", () => {
     expect(r2.get(errored)).toEqual(Result.failure(Cause.fail("error")))
     expect(r2.get(success)).toEqual(Result.success(123))
     expect(r2.get(pending)).toEqual(Result.initial(true))
+
+    resolve(123)
+    expect(state.find((r) => r.key === "pending")?.reactPromise).resolves.toEqual({
+      "_tag": "Success",
+      "value": 123,
+      "waiting": false
+    })
   })
 })
 
