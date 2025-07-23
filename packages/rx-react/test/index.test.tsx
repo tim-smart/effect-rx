@@ -266,6 +266,7 @@ describe("rx-react", () => {
     }
 
     render(
+      // provide a fresh registry each time to simulate hydration
       <RegistryContext.Provider value={Registry.make()}>
         <HydrationBoundary state={dehydratedState}>
           <TestComponent />
