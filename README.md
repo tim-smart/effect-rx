@@ -85,7 +85,7 @@ You can see all the ways to work with `Result` here: https://tim-smart.github.io
 ```ts
 import { Rx, Result } from "@effect-rx/rx-react"
 
-const resultRx: Rx<Result<number>> = Rx.make(Effect.succeed(0))
+const countRx: Rx<Result<number>> = Rx.make(Effect.succeed(0))
 
 // You can also pass a function to get access to the `Rx.Context`
 //
