@@ -982,7 +982,7 @@ describe("Rx", () => {
     r.mount(pending)
 
     const state = Hydration.dehydrate(r)
-    expect(state.map((r) => Struct.omit(r, "dehydratedAt", "reactPromise"))).toMatchInlineSnapshot(`
+    expect(state.map((r) => Struct.omit(r, "dehydratedAt", "resultPromise"))).toMatchInlineSnapshot(`
       [
         {
           "key": "basicSerializable",
@@ -1020,7 +1020,7 @@ describe("Rx", () => {
       ]
     `)
 
-    expect(state.find((r) => r.key === "pending")?.reactPromise).instanceOf(Promise)
+    expect(state.find((r) => r.key === "pending")?.resultPromise).instanceOf(Promise)
 
     const r2 = Registry.make()
     Hydration.hydrate(r2, state)
@@ -1032,7 +1032,7 @@ describe("Rx", () => {
     expect(r2.get(pending)).toEqual(Result.initial(true))
 
     resolve(123)
-    await expect(state.find((r) => r.key === "pending")?.reactPromise).resolves.toEqual({
+    await expect(state.find((r) => r.key === "pending")?.resultPromise).resolves.toEqual({
       "_tag": "Success",
       "value": 123,
       "waiting": false

@@ -15,7 +15,7 @@ export interface DehydratedRx {
   readonly key: string
   readonly value: unknown
   readonly dehydratedAt: number
-  readonly reactPromise?: Promise<unknown>
+  readonly resultPromise?: Promise<unknown>
 }
 
 /**
@@ -39,9 +39,9 @@ export const dehydrate = (
       const encodedValue = rx[Rx.SerializableTypeId].encode(value)
 
       // Create a promise that resolves when the rx moves out of Initial state
-      let reactPromise: Promise<unknown> | undefined
+      let resultPromise: Promise<unknown> | undefined
       if (Result.isResult(value) && Result.isInitial(value)) {
-        reactPromise = new Promise((resolve) => {
+        resultPromise = new Promise((resolve) => {
           const unsubscribe = registry.subscribe(rx, (newValue) => {
             if (Result.isResult(newValue) && !Result.isInitial(newValue)) {
               resolve(rx[Rx.SerializableTypeId].encode(newValue))
@@ -55,7 +55,7 @@ export const dehydrate = (
         key: key as string,
         value: encodedValue,
         dehydratedAt: now,
-        reactPromise
+        resultPromise
       })
     }
   })
@@ -78,10 +78,10 @@ export const hydrate = (
     if (!shouldHydrateRx(drx)) continue
     registry.setSerializable(drx.key, drx.value)
 
-    // If there's a reactPromise, it means this was in Initial state when dehydrated
+    // If there's a resultPromise, it means this was in Initial state when dehydrated
     // and we should wait for it to resolve to a non-Initial state, then update the registry
-    if (drx.reactPromise) {
-      drx.reactPromise.then((resolvedValue) => {
+    if (drx.resultPromise) {
+      drx.resultPromise.then((resolvedValue) => {
         // Try to update the existing node directly instead of using setSerializable
         const nodes = (registry as any).getNodes()
         const node = nodes.get(drx.key)
