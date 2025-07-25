@@ -5,7 +5,6 @@ import * as Rx from "@effect-rx/rx/Rx"
 import { Cause, Either, FiberRef, Schema, Struct, Subscribable, SubscriptionRef } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
-import { constTrue } from "effect/Function"
 import * as Hash from "effect/Hash"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
@@ -983,7 +982,7 @@ describe("Rx", () => {
     r.mount(pending)
 
     const state = Hydration.dehydrate(r, {
-      shouldDehydrateRx: constTrue
+      encodeInitialAs: "promise"
     })
     expect(state.map((r) => Struct.omit(r, "dehydratedAt", "resultPromise"))).toMatchInlineSnapshot(`
       [

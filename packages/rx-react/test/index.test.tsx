@@ -2,7 +2,6 @@ import * as Registry from "@effect-rx/rx/Registry"
 import * as Rx from "@effect-rx/rx/Rx"
 import { act, render, screen, waitFor } from "@testing-library/react"
 import { Effect, Schema } from "effect"
-import { constTrue } from "effect/Function"
 import { Suspense } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { beforeEach, describe, expect, test } from "vitest"
@@ -25,9 +24,7 @@ describe("rx-react", () => {
         return <div data-testid="value">{value}</div>
       }
 
-      render(
-        <TestComponent />
-      )
+      render(<TestComponent />)
 
       expect(screen.getByTestId("value")).toHaveTextContent("42")
     })
@@ -40,9 +37,7 @@ describe("rx-react", () => {
         return <div data-testid="value">{value}</div>
       }
 
-      render(
-        <TestComponent />
-      )
+      render(<TestComponent />)
 
       expect(screen.getByTestId("value")).toHaveTextContent("84")
     })
@@ -81,9 +76,7 @@ describe("rx-react", () => {
         return <div data-testid="value">{value}</div>
       }
 
-      render(
-        <TestComponent />
-      )
+      render(<TestComponent />)
 
       expect(screen.getByTestId("value")).toHaveTextContent("20")
     })
@@ -153,41 +146,41 @@ describe("rx-react", () => {
 
     const dehydratedState: Array<Hydration.DehydratedRx> = [
       {
-        "key": "basic",
-        "value": 1,
-        "dehydratedAt": Date.now()
+        key: "basic",
+        value: 1,
+        dehydratedAt: Date.now()
       },
       {
-        "key": "success",
-        "value": {
-          "_tag": "Success",
-          "value": 123,
-          "waiting": false
+        key: "success",
+        value: {
+          _tag: "Success",
+          value: 123,
+          waiting: false
         },
-        "dehydratedAt": Date.now()
+        dehydratedAt: Date.now()
       },
       {
-        "key": "errored",
-        "value": {
-          "_tag": "Failure",
-          "cause": {
-            "_tag": "Fail",
-            "error": "error"
+        key: "errored",
+        value: {
+          _tag: "Failure",
+          cause: {
+            _tag: "Fail",
+            error: "error"
           },
-          "previousValue": {
-            "_tag": "None"
+          previousValue: {
+            _tag: "None"
           },
-          "waiting": false
+          waiting: false
         },
-        "dehydratedAt": Date.now()
+        dehydratedAt: Date.now()
       },
       {
-        "key": "pending",
-        "value": {
-          "_tag": "Initial",
-          "waiting": true
+        key: "pending",
+        value: {
+          _tag: "Initial",
+          waiting: true
         },
-        "dehydratedAt": Date.now()
+        dehydratedAt: Date.now()
       }
     ]
 
@@ -242,17 +235,21 @@ describe("rx-react", () => {
     const latch = Effect.runSync(Effect.makeLatch())
     let start = 0
     let stop = 0
-    const rx = Rx.make(Effect.gen(function*() {
-      start = start + 1
-      yield* latch.await
-      stop = stop + 1
-      return 1
-    })).pipe(Rx.serializable({
-      key: "test",
-      schema: Result.Schema({
-        success: Schema.Number
+    const rx = Rx.make(
+      Effect.gen(function*() {
+        start = start + 1
+        yield* latch.await
+        stop = stop + 1
+        return 1
       })
-    }))
+    ).pipe(
+      Rx.serializable({
+        key: "test",
+        schema: Result.Schema({
+          success: Schema.Number
+        })
+      })
+    )
 
     registry.mount(rx)
 
@@ -260,7 +257,7 @@ describe("rx-react", () => {
     expect(stop).toBe(0)
 
     const dehydratedState = Hydration.dehydrate(registry, {
-      shouldDehydrateRx: constTrue
+      encodeInitialAs: "promise"
     })
 
     function TestComponent() {

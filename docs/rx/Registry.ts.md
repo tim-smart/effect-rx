@@ -65,8 +65,8 @@ Added in v1.0.0
 
 ```ts
 export declare const toStreamResult: {
-  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Stream.Stream<A, E, RxRegistry>
-  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E, RxRegistry>
+  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Stream.Stream<A, E>
+  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Stream.Stream<A, E>
 }
 ```
 

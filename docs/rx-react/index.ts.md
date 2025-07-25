@@ -21,7 +21,7 @@ Added in v1.0.0
 - [re-exports](#re-exports)
   - [From "@effect-rx/rx/Hydration"](#from-effect-rxrxhydration)
   - [From "@effect-rx/rx/Registry"](#from-effect-rxrxregistry)
-  - [From "@effect-rx/rx/Registry"](#from-effect-rxrxregistry-1)
+  - [From "@effect-rx/rx/Result"](#from-effect-rxrxresult)
   - [From "@effect-rx/rx/RxRef"](#from-effect-rxrxrxref)
 
 ---
@@ -94,14 +94,14 @@ export * as Registry from "@effect-rx/rx/Registry"
 
 Added in v1.0.0
 
-## From "@effect-rx/rx/Registry"
+## From "@effect-rx/rx/Result"
 
-Re-exports all named exports from the "@effect-rx/rx/Registry" module as `Result`.
+Re-exports all named exports from the "@effect-rx/rx/Result" module as `Result`.
 
 **Signature**
 
 ```ts
-export * as Result from "@effect-rx/rx/Registry"
+export * as Result from "@effect-rx/rx/Result"
 ```
 
 Added in v1.0.0

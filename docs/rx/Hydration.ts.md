@@ -30,7 +30,7 @@ Added in v1.0.0
 ```ts
 export declare const dehydrate: (
   registry: Registry.Registry,
-  options?: { readonly shouldDehydrateRx?: ((rx: Rx.Rx<any> & Rx.Serializable) => boolean) | undefined }
+  options?: { readonly encodeInitialAs?: "ignore" | "promise" | "value-only" }
 ) => Array<DehydratedRx>
 ```
 
@@ -43,11 +43,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const hydrate: (
-  registry: Registry.Registry,
-  dehydratedState: Iterable<DehydratedRx>,
-  options?: { readonly shouldHydrateRx?: ((dehydratedRx: DehydratedRx) => boolean) | undefined }
-) => void
+export declare const hydrate: (registry: Registry.Registry, dehydratedState: Iterable<DehydratedRx>) => void
 ```
 
 Added in v1.0.0
@@ -63,6 +59,7 @@ export interface DehydratedRx {
   readonly key: string
   readonly value: unknown
   readonly dehydratedAt: number
+  readonly resultPromise?: Promise<unknown> | undefined
 }
 ```
 
