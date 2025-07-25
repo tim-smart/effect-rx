@@ -1362,6 +1362,27 @@ export const debounce: {
 
 /**
  * @since 1.0.0
+ * @category combinators
+ */
+export const optimistic: {
+  <A, E>(rx: Rx<Result.Result<A, E>>): Writable<Result.Result<A, E>, A>
+  <A>(rx: Rx<A>): Writable<A>
+} = (rx: Rx<any>) => {
+  return writable(
+    (get) => get(rx),
+    (ctx, optimisticValue: any) => {
+      const underlyingValue = ctx.get(rx)
+      if (Result.isResult(underlyingValue)) {
+        ctx.setSelf(Result.success(optimisticValue, true))
+      } else {
+        ctx.setSelf(optimisticValue)
+      }
+    }
+  )
+}
+
+/**
+ * @since 1.0.0
  * @category batching
  */
 export const batch: (f: () => void) => void = internalRegistry.batch
@@ -1602,6 +1623,20 @@ export const getResult = <A, E>(
  */
 export const refresh = <A>(self: Rx<A>): Effect.Effect<void, never, RxRegistry> =>
   Effect.map(RxRegistry, (_) => _.refresh(self))
+
+/**
+ * @since 1.0.0
+ * @category conversions
+ */
+export const setOptimistic: {
+  <A, E>(rx: Writable<Result.Result<A, E>, A>, optimisticValue: A): Effect.Effect<void, never, RxRegistry>
+  <A, E>(rx: Writable<Result.Result<A, E>, A>): (optimisticValue: A) => Effect.Effect<void, never, RxRegistry>
+  <A>(rx: Writable<A, A>, optimisticValue: A): Effect.Effect<void, never, RxRegistry>
+  <A>(rx: Writable<A, A>): (optimisticValue: A) => Effect.Effect<void, never, RxRegistry>
+} = dual(
+  2,
+  (rx: Writable<any, any>, optimisticValue: any) => Effect.acquireRelease(set(rx, optimisticValue), () => refresh(rx))
+)
 
 // -----------------------------------------------------------------------------
 // Serializable
