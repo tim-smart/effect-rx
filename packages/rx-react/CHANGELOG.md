@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.40.1
+
+### Patch Changes
+
+- [#241](https://github.com/tim-smart/effect-rx/pull/241) [`342e47e`](https://github.com/tim-smart/effect-rx/commit/342e47e784e21002b576840244812c78a8bd44e1) Thanks [@ethanniser](https://github.com/ethanniser)! - add streaming hydration support
+
+- Updated dependencies [[`342e47e`](https://github.com/tim-smart/effect-rx/commit/342e47e784e21002b576840244812c78a8bd44e1)]:
+  - @effect-rx/rx@0.46.1
+
 ## 0.40.0
 
 ### Minor Changes
