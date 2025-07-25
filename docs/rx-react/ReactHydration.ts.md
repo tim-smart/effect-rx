@@ -14,6 +14,7 @@ Added in v1.0.0
 
 - [components](#components)
   - [HydrationBoundary](#hydrationboundary)
+  - [HydrationBoundaryProps (interface)](#hydrationboundaryprops-interface)
 
 ---
 
@@ -24,10 +25,20 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const HydrationBoundary: React.FC<{
-  state: Iterable<Hydration.DehydratedRx>
+export declare const HydrationBoundary: React.FC<HydrationBoundaryProps>
+```
+
+Added in v1.0.0
+
+## HydrationBoundaryProps (interface)
+
+**Signature**
+
+```ts
+export interface HydrationBoundaryProps {
+  state?: Iterable<Hydration.DehydratedRx>
   children?: React.ReactNode
-}>
+}
 ```
 
 Added in v1.0.0

@@ -5,8 +5,7 @@ import { Effect, Schema } from "effect"
 import { Suspense } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { beforeEach, describe, expect, test } from "vitest"
-import type { Hydration } from "../src/index.js"
-import { RegistryContext, Result, useRxSuspenseSuccess, useRxValue } from "../src/index.js"
+import { Hydration, RegistryContext, Result, useRxSuspenseSuccess, useRxValue } from "../src/index.js"
 import { HydrationBoundary } from "../src/ReactHydration.js"
 
 describe("rx-react", () => {
@@ -25,11 +24,7 @@ describe("rx-react", () => {
         return <div data-testid="value">{value}</div>
       }
 
-      render(
-        <RegistryContext.Provider value={registry}>
-          <TestComponent />
-        </RegistryContext.Provider>
-      )
+      render(<TestComponent />)
 
       expect(screen.getByTestId("value")).toHaveTextContent("42")
     })
@@ -42,11 +37,7 @@ describe("rx-react", () => {
         return <div data-testid="value">{value}</div>
       }
 
-      render(
-        <RegistryContext.Provider value={registry}>
-          <TestComponent />
-        </RegistryContext.Provider>
-      )
+      render(<TestComponent />)
 
       expect(screen.getByTestId("value")).toHaveTextContent("84")
     })
@@ -85,11 +76,7 @@ describe("rx-react", () => {
         return <div data-testid="value">{value}</div>
       }
 
-      render(
-        <RegistryContext.Provider value={registry}>
-          <TestComponent />
-        </RegistryContext.Provider>
-      )
+      render(<TestComponent />)
 
       expect(screen.getByTestId("value")).toHaveTextContent("20")
     })
@@ -103,11 +90,9 @@ describe("rx-react", () => {
       }
 
       render(
-        <RegistryContext.Provider value={registry}>
-          <Suspense fallback={<div data-testid="loading">Loading...</div>}>
-            <TestComponent />
-          </Suspense>
-        </RegistryContext.Provider>
+        <Suspense fallback={<div data-testid="loading">Loading...</div>}>
+          <TestComponent />
+        </Suspense>
       )
 
       expect(screen.getByTestId("loading")).toBeInTheDocument()
@@ -122,13 +107,11 @@ describe("rx-react", () => {
     }
 
     render(
-      <RegistryContext.Provider value={registry}>
-        <ErrorBoundary fallback={<div data-testid="error">Error</div>}>
-          <Suspense fallback={<div data-testid="loading">Loading...</div>}>
-            <TestComponent />
-          </Suspense>
-        </ErrorBoundary>
-      </RegistryContext.Provider>,
+      <ErrorBoundary fallback={<div data-testid="error">Error</div>}>
+        <Suspense fallback={<div data-testid="loading">Loading...</div>}>
+          <TestComponent />
+        </Suspense>
+      </ErrorBoundary>,
       {
         // dont log error to console (the default behavior)
         onCaughtError: () => {}
@@ -163,41 +146,41 @@ describe("rx-react", () => {
 
     const dehydratedState: Array<Hydration.DehydratedRx> = [
       {
-        "key": "basic",
-        "value": 1,
-        "dehydratedAt": Date.now()
+        key: "basic",
+        value: 1,
+        dehydratedAt: Date.now()
       },
       {
-        "key": "success",
-        "value": {
-          "_tag": "Success",
-          "value": 123,
-          "waiting": false
+        key: "success",
+        value: {
+          _tag: "Success",
+          value: 123,
+          waiting: false
         },
-        "dehydratedAt": Date.now()
+        dehydratedAt: Date.now()
       },
       {
-        "key": "errored",
-        "value": {
-          "_tag": "Failure",
-          "cause": {
-            "_tag": "Fail",
-            "error": "error"
+        key: "errored",
+        value: {
+          _tag: "Failure",
+          cause: {
+            _tag: "Fail",
+            error: "error"
           },
-          "previousValue": {
-            "_tag": "None"
+          previousValue: {
+            _tag: "None"
           },
-          "waiting": false
+          waiting: false
         },
-        "dehydratedAt": Date.now()
+        dehydratedAt: Date.now()
       },
       {
-        "key": "pending",
-        "value": {
-          "_tag": "Initial",
-          "waiting": true
+        key: "pending",
+        value: {
+          _tag: "Initial",
+          waiting: true
         },
-        "dehydratedAt": Date.now()
+        dehydratedAt: Date.now()
       }
     ]
 
@@ -234,19 +217,78 @@ describe("rx-react", () => {
     }
 
     render(
-      <RegistryContext.Provider value={registry}>
-        <HydrationBoundary state={dehydratedState}>
-          <Basic />
-          <Result1 />
-          <Result2 />
-          <Result3 />
-        </HydrationBoundary>
-      </RegistryContext.Provider>
+      <HydrationBoundary state={dehydratedState}>
+        <Basic />
+        <Result1 />
+        <Result2 />
+        <Result3 />
+      </HydrationBoundary>
     )
 
     expect(screen.getByTestId("value")).toHaveTextContent("1")
     expect(screen.getByTestId("value-1")).toHaveTextContent("123")
     expect(screen.getByTestId("error-2")).toBeInTheDocument()
     expect(screen.getByTestId("loading-3")).toBeInTheDocument()
+  })
+
+  test("hydration streaming", async () => {
+    const latch = Effect.runSync(Effect.makeLatch())
+    let start = 0
+    let stop = 0
+    const rx = Rx.make(
+      Effect.gen(function*() {
+        start = start + 1
+        yield* latch.await
+        stop = stop + 1
+        return 1
+      })
+    ).pipe(
+      Rx.serializable({
+        key: "test",
+        schema: Result.Schema({
+          success: Schema.Number
+        })
+      })
+    )
+
+    registry.mount(rx)
+
+    expect(start).toBe(1)
+    expect(stop).toBe(0)
+
+    const dehydratedState = Hydration.dehydrate(registry, {
+      encodeInitialAs: "promise"
+    })
+
+    function TestComponent() {
+      const value = useRxValue(rx)
+      return <div data-testid="value">{value._tag}</div>
+    }
+
+    render(
+      // provide a fresh registry each time to simulate hydration
+      <RegistryContext.Provider value={Registry.make()}>
+        <HydrationBoundary state={dehydratedState}>
+          <TestComponent />
+        </HydrationBoundary>
+      </RegistryContext.Provider>
+    )
+
+    expect(screen.getByTestId("value")).toHaveTextContent("Initial")
+
+    act(() => {
+      Effect.runSync(latch.open)
+    })
+    await Effect.runPromise(latch.await)
+
+    const test = registry.get(rx)
+    expect(test._tag).toBe("Success")
+    if (test._tag === "Success") {
+      expect(test.value).toBe(1)
+    }
+
+    expect(screen.getByTestId("value")).toHaveTextContent("Success")
+    expect(start).toBe(1)
+    expect(stop).toBe(1)
   })
 })
