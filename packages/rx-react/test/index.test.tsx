@@ -2,6 +2,7 @@ import * as Registry from "@effect-rx/rx/Registry"
 import * as Rx from "@effect-rx/rx/Rx"
 import { act, render, screen, waitFor } from "@testing-library/react"
 import { Effect, Schema } from "effect"
+import { constTrue } from "effect/Function"
 import { Suspense } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { beforeEach, describe, expect, test } from "vitest"
@@ -258,7 +259,9 @@ describe("rx-react", () => {
     expect(start).toBe(1)
     expect(stop).toBe(0)
 
-    const dehydratedState = Hydration.dehydrate(registry)
+    const dehydratedState = Hydration.dehydrate(registry, {
+      shouldDehydrateRx: constTrue
+    })
 
     function TestComponent() {
       const value = useRxValue(rx)

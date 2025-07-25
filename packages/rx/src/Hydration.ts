@@ -2,7 +2,6 @@
  * @since 1.0.0
  */
 import * as Arr from "effect/Array"
-import { constTrue } from "effect/Function"
 import type * as Registry from "./Registry.js"
 import * as Result from "./Result.js"
 import * as Rx from "./Rx.js"
@@ -20,22 +19,36 @@ export interface DehydratedRx {
 
 /**
  * @since 1.0.0
+ * @category models
+ */
+export type ShouldDehydrateRxFn = (rx: Rx.Rx<any> & Rx.Serializable, value: unknown) => boolean
+
+/**
+ * @since 1.0.0
+ * @category dehydration
+ */
+export const defaultShouldDehydrateRx: ShouldDehydrateRxFn = (rx, value) => {
+  return Result.isResult(value) && Result.isSuccess(value)
+}
+
+/**
+ * @since 1.0.0
  * @category dehydration
  */
 export const dehydrate = (
   registry: Registry.Registry,
   options?: {
-    readonly shouldDehydrateRx?: ((rx: Rx.Rx<any> & Rx.Serializable) => boolean) | undefined
+    readonly shouldDehydrateRx?: ShouldDehydrateRxFn | undefined
   }
 ): Array<DehydratedRx> => {
-  const shouldDehydrateRx = options?.shouldDehydrateRx ?? constTrue
+  const shouldDehydrateRx = options?.shouldDehydrateRx ?? defaultShouldDehydrateRx
   const arr = Arr.empty<DehydratedRx>()
   const now = Date.now()
   registry.getNodes().forEach((node, key) => {
     if (!Rx.isSerializable(node.rx)) return
     const rx = node.rx
-    if (shouldDehydrateRx(rx)) {
-      const value = node.value()
+    const value = node.value()
+    if (shouldDehydrateRx(rx, value)) {
       const encodedValue = rx[Rx.SerializableTypeId].encode(value)
 
       // Create a promise that resolves when the rx moves out of Initial state
@@ -68,14 +81,9 @@ export const dehydrate = (
  */
 export const hydrate = (
   registry: Registry.Registry,
-  dehydratedState: Iterable<DehydratedRx>,
-  options?: {
-    readonly shouldHydrateRx?: ((dehydratedRx: DehydratedRx) => boolean) | undefined
-  }
+  dehydratedState: Iterable<DehydratedRx>
 ): void => {
-  const shouldHydrateRx = options?.shouldHydrateRx ?? constTrue
   for (const drx of dehydratedState) {
-    if (!shouldHydrateRx(drx)) continue
     registry.setSerializable(drx.key, drx.value)
 
     // If there's a resultPromise, it means this was in Initial state when dehydrated

@@ -12,9 +12,6 @@ import { RegistryContext } from "./RegistryContext.js"
  */
 export interface HydrationBoundaryProps {
   state?: Iterable<Hydration.DehydratedRx>
-  options?: {
-    readonly shouldHydrateRx?: ((dehydratedRx: Hydration.DehydratedRx) => boolean) | undefined
-  }
   children?: React.ReactNode
 }
 
@@ -24,13 +21,9 @@ export interface HydrationBoundaryProps {
  */
 export const HydrationBoundary: React.FC<HydrationBoundaryProps> = ({
   children,
-  options = {},
   state
 }) => {
   const registry = React.useContext(RegistryContext)
-
-  const optionsRef = React.useRef(options)
-  optionsRef.current = options
 
   // This useMemo is for performance reasons only, everything inside it must
   // be safe to run in every render and code here should be read as "in render".
@@ -71,7 +64,7 @@ export const HydrationBoundary: React.FC<HydrationBoundaryProps> = ({
       if (newDehydratedRxs.length > 0) {
         // It's actually fine to call this with state that already exists
         // in the registry, or is older. hydrate() is idempotent.
-        Hydration.hydrate(registry, newDehydratedRxs, optionsRef.current)
+        Hydration.hydrate(registry, newDehydratedRxs)
       }
 
       if (existingDehydratedRxs.length > 0) {
@@ -83,7 +76,7 @@ export const HydrationBoundary: React.FC<HydrationBoundaryProps> = ({
 
   React.useEffect(() => {
     if (hydrationQueue) {
-      Hydration.hydrate(registry, hydrationQueue, optionsRef.current)
+      Hydration.hydrate(registry, hydrationQueue)
     }
   }, [registry, hydrationQueue])
 
