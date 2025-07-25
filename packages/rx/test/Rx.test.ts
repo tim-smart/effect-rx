@@ -1025,6 +1025,55 @@ describe("Rx", () => {
     expect(r2.get(success)).toEqual(Result.success(123))
     expect(r2.get(pending)).toEqual(Result.initial(true))
   })
+
+  it("optimistic updates", async () => {
+    const latch = Effect.runSync(Effect.makeLatch())
+    const r = Registry.make()
+    const rx = Rx.make<Array<number>>([])
+    const optimisticRx = Rx.optimistic(rx)
+
+    const mutationRx = Rx.fn(() =>
+      Effect.gen(function*() {
+        yield* Rx.setOptimistic(optimisticRx, [2])
+        yield* latch.await
+        yield* Rx.set(rx, [1])
+      })
+    )
+
+    expect(r.get(rx)).toEqual([])
+    expect(r.get(optimisticRx)).toEqual([])
+    r.set(mutationRx, void 0)
+    expect(r.get(rx)).toEqual([])
+    expect(r.get(optimisticRx)).toEqual([2])
+    Effect.runSync(latch.open)
+    await Effect.runPromise(latch.await)
+    expect(r.get(rx)).toEqual([1])
+    expect(r.get(optimisticRx)).toEqual([1])
+  })
+
+  it("optimistic updates failures", async () => {
+    const latch = Effect.runSync(Effect.makeLatch())
+    const r = Registry.make()
+    const rx = Rx.make<Array<number>>([])
+    const optimisticRx = Rx.optimistic(rx)
+
+    const mutationRx = Rx.fn(() =>
+      Effect.gen(function*() {
+        yield* Rx.setOptimistic(optimisticRx, [1])
+        return yield* Effect.fail("error")
+      })
+    )
+
+    expect(r.get(rx)).toEqual([])
+    expect(r.get(optimisticRx)).toEqual([])
+    r.set(mutationRx, void 0)
+    expect(r.get(rx)).toEqual([])
+    expect(r.get(optimisticRx)).toEqual([1])
+    Effect.runSync(latch.open)
+    await Effect.runPromise(latch.await)
+    expect(r.get(rx)).toEqual([])
+    expect(r.get(optimisticRx)).toEqual([])
+  })
 })
 
 interface BuildCounter {
