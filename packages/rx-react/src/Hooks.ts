@@ -2,10 +2,11 @@
  * @since 1.0.0
  */
 "use client"
-import type * as Registry from "@effect-rx/rx/Registry"
-import * as Result from "@effect-rx/rx/Result"
+import * as Registry from "@effect-rx/rx/Registry"
+import type * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
 import type * as RxRef from "@effect-rx/rx/RxRef"
+import { Effect } from "effect"
 import * as Cause from "effect/Cause"
 import type * as Exit from "effect/Exit"
 import { globalValue } from "effect/GlobalValue"
@@ -129,22 +130,18 @@ export const useRxSet = <R, W>(rx: Rx.Writable<R, W>): (_: W | ((_: R) => W)) =>
  */
 export const useRxSetPromise = <E, A, W>(
   rx: Rx.Writable<Result.Result<A, E>, W>
-): (_: W) => Promise<Exit.Exit<A, E>> => {
+): (
+  _: W,
+  options?: {
+    readonly signal?: AbortSignal | undefined
+  } | undefined
+) => Promise<Exit.Exit<A, E>> => {
   const registry = React.useContext(RegistryContext)
-  const resolves = React.useMemo(() => new Set<(result: Exit.Exit<A, E>) => void>(), [])
-  React.useEffect(() =>
-    registry.subscribe(rx, (result) => {
-      if (result.waiting || result._tag === "Initial") return
-      const fns = Array.from(resolves)
-      resolves.clear()
-      const exit = Result.toExit(result)
-      fns.forEach((resolve) => resolve(exit as any))
-    }, { immediate: true }), [registry, rx, resolves])
-  return React.useCallback((value) =>
-    new Promise((resolve) => {
-      resolves.add(resolve)
-      registry.set(rx, value)
-    }), [registry, rx, resolves])
+  mountRx(registry, rx)
+  return React.useCallback((value, options) => {
+    registry.set(rx, value)
+    return Effect.runPromiseExit(Registry.getResult(registry, rx), options)
+  }, [registry, rx])
 }
 
 /**
