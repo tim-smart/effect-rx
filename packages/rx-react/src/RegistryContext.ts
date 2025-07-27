@@ -35,20 +35,30 @@ export const RegistryProvider = (options: {
   readonly timeoutResolution?: number | undefined
   readonly defaultIdleTTL?: number | undefined
 }) => {
-  const registry = React.useMemo(() =>
-    Registry.make({
-      scheduleTask,
-      defaultIdleTTL: 400,
-      ...options
-    }), [])
-  React.useEffect(() => () => {
-    registry.dispose()
-  }, [registry])
-  return React.createElement(RegistryContext.Provider, {
-    value: Registry.make({
-      scheduleTask,
-      defaultIdleTTL: 400,
-      ...options
-    })
-  }, options?.children)
+  const ref = React.useRef<{
+    readonly registry: Registry.Registry
+    timeout?: number | undefined
+  }>(null)
+  if (ref.current === null) {
+    ref.current = {
+      registry: Registry.make({
+        scheduleTask: options.scheduleTask ?? scheduleTask,
+        initialValues: options.initialValues,
+        timeoutResolution: options.timeoutResolution,
+        defaultIdleTTL: options.defaultIdleTTL
+      })
+    }
+  }
+  React.useEffect(() => {
+    if (ref.current?.timeout !== undefined) {
+      clearTimeout(ref.current.timeout)
+    }
+    return () => {
+      setTimeout(() => {
+        ref.current?.registry.dispose()
+        ref.current = null
+      }, 500)
+    }
+  }, [ref])
+  return React.createElement(RegistryContext.Provider, { value: ref.current.registry }, options?.children)
 }
