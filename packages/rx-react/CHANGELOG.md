@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.40.2
+
+### Patch Changes
+
+- [#251](https://github.com/tim-smart/effect-rx/pull/251) [`fa35f7d`](https://github.com/tim-smart/effect-rx/commit/fa35f7d7c85fa6a4fe11c5be09190153971e65d2) Thanks [@tim-smart](https://github.com/tim-smart)! - tie useRxSetPromise lifetime to an optional AbortSignal instead of component
+
 ## 0.40.1
 
 ### Patch Changes
