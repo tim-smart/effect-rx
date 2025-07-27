@@ -44,11 +44,5 @@ export const RegistryProvider = (options: {
   React.useEffect(() => () => {
     registry.dispose()
   }, [registry])
-  return React.createElement(RegistryContext.Provider, {
-    value: Registry.make({
-      scheduleTask,
-      defaultIdleTTL: 400,
-      ...options
-    })
-  }, options?.children)
+  return React.createElement(RegistryContext.Provider, { value: registry }, options?.children)
 }
