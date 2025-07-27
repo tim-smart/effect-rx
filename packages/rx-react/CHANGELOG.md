@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.40.3
+
+### Patch Changes
+
+- [#255](https://github.com/tim-smart/effect-rx/pull/255) [`a5f8d99`](https://github.com/tim-smart/effect-rx/commit/a5f8d99aeffaa88e30530140a7f178a43eec7f8b) Thanks [@tim-smart](https://github.com/tim-smart)! - use memoized registry in RegistryProvider
+
 ## 0.40.2
 
 ### Patch Changes
