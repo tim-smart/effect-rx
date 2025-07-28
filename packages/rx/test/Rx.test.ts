@@ -1027,26 +1027,30 @@ describe("Rx", () => {
   })
 
   it("optimistic updates", async () => {
-    const latch = Effect.runSync(Effect.makeLatch())
+    const haltMutationLatch = Effect.runSync(Effect.makeLatch())
+    const mutationCompleteLatch = Effect.runSync(Effect.makeLatch())
     const r = Registry.make()
     const rx = Rx.make<Array<number>>([])
-    const optimisticRx = Rx.optimistic(rx)
+    const optimisticRx = Rx.optimistic(rx).pipe(Rx.keepAlive)
 
-    const mutationRx = Rx.fn(() =>
+    const mutationRx = Rx.fn((_: void, ctx) =>
       Effect.gen(function*() {
-        yield* Rx.setOptimistic(optimisticRx, [2])
-        yield* latch.await
+        yield* ctx.setOptimistically(optimisticRx, [2])
+        yield* haltMutationLatch.await
         yield* Rx.set(rx, [1])
+        yield* mutationCompleteLatch.open
       })
-    )
+    ).pipe(Rx.keepAlive)
 
     expect(r.get(rx)).toEqual([])
     expect(r.get(optimisticRx)).toEqual([])
     r.set(mutationRx, void 0)
+    // optimistic phase: the optimistic value is set, but the true value is not
     expect(r.get(rx)).toEqual([])
     expect(r.get(optimisticRx)).toEqual([2])
-    Effect.runSync(latch.open)
-    await Effect.runPromise(latch.await)
+    Effect.runSync(haltMutationLatch.open)
+    await Effect.runPromise(mutationCompleteLatch.await)
+    // commit phase: the true value is set, and the optimistic value is reset
     expect(r.get(rx)).toEqual([1])
     expect(r.get(optimisticRx)).toEqual([1])
   })
@@ -1055,22 +1059,24 @@ describe("Rx", () => {
     const latch = Effect.runSync(Effect.makeLatch())
     const r = Registry.make()
     const rx = Rx.make<Array<number>>([])
-    const optimisticRx = Rx.optimistic(rx)
+    const optimisticRx = Rx.optimistic(rx).pipe(Rx.keepAlive)
 
-    const mutationRx = Rx.fn(() =>
+    const mutationRx = Rx.fn((_: void, ctx) =>
       Effect.gen(function*() {
-        yield* Rx.setOptimistic(optimisticRx, [1])
+        yield* ctx.setOptimistically(optimisticRx, [1])
         return yield* Effect.fail("error")
       })
-    )
+    ).pipe(Rx.keepAlive)
 
     expect(r.get(rx)).toEqual([])
     expect(r.get(optimisticRx)).toEqual([])
     r.set(mutationRx, void 0)
+    // optimistic phase: the optimistic value is set, but the true value is not
     expect(r.get(rx)).toEqual([])
     expect(r.get(optimisticRx)).toEqual([1])
     Effect.runSync(latch.open)
     await Effect.runPromise(latch.await)
+    // commit phase: the optimistic value is reset, but the true value is not
     expect(r.get(rx)).toEqual([])
     expect(r.get(optimisticRx)).toEqual([])
   })

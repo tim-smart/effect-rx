@@ -5,6 +5,7 @@ import { pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Option from "effect/Option"
 import * as Queue from "effect/Queue"
+import type * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
 import type * as Registry from "../Registry.js"
 import * as Result from "../Result.js"
@@ -652,6 +653,16 @@ const LifetimeProto: Omit<Lifetime<any>, "node" | "finalizers" | "disposed" | "i
       throw disposedError(this.node.rx)
     }
     this.node.registry.set(rx, value)
+  },
+
+  setOptimistically<A>(this: Lifetime<any>, rx: Rx.Writable<A>, value: A): Effect.Effect<void, never, Scope.Scope> {
+    if (this.disposed) {
+      throw disposedError(this.node.rx)
+    }
+    return Effect.acquireRelease(
+      Effect.sync(() => this.node.registry.set(rx, value)),
+      () => Effect.sync(() => this.node.registry.refresh(rx))
+    )
   },
 
   stream<A>(this: Lifetime<any>, rx: Rx.Rx<A>, options?: {

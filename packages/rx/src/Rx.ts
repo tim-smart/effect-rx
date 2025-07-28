@@ -134,6 +134,7 @@ export interface Context {
   readonly self: <A>() => Option.Option<A>
   readonly setSelf: <A>(a: A) => void
   readonly set: <R, W>(rx: Writable<R, W>, value: W) => void
+  readonly setOptimistically: <A>(rx: Writable<A>, value: A) => Effect.Effect<void, never, Scope.Scope>
   readonly some: <A>(rx: Rx<Option.Option<A>>) => Effect.Effect<A>
   readonly someOnce: <A>(rx: Rx<Option.Option<A>>) => Effect.Effect<A>
   readonly stream: <A>(rx: Rx<A>, options?: {
@@ -1365,19 +1366,11 @@ export const debounce: {
  * @category combinators
  */
 export const optimistic: {
-  <A, E>(rx: Rx<Result.Result<A, E>>): Writable<Result.Result<A, E>, A>
   <A>(rx: Rx<A>): Writable<A>
 } = (rx: Rx<any>) => {
   return writable(
     (get) => get(rx),
-    (ctx, optimisticValue: any) => {
-      const underlyingValue = ctx.get(rx)
-      if (Result.isResult(underlyingValue)) {
-        ctx.setSelf(Result.success(optimisticValue, true))
-      } else {
-        ctx.setSelf(optimisticValue)
-      }
-    }
+    (ctx, optimisticValue: any) => ctx.setSelf(optimisticValue)
   )
 }
 
@@ -1628,11 +1621,8 @@ export const refresh = <A>(self: Rx<A>): Effect.Effect<void, never, RxRegistry> 
  * @since 1.0.0
  * @category conversions
  */
-export const setOptimistic: {
-  <A, E>(rx: Writable<Result.Result<A, E>, A>, optimisticValue: A): Effect.Effect<void, never, RxRegistry>
-  <A, E>(rx: Writable<Result.Result<A, E>, A>): (optimisticValue: A) => Effect.Effect<void, never, RxRegistry>
-  <A>(rx: Writable<A, A>, optimisticValue: A): Effect.Effect<void, never, RxRegistry>
-  <A>(rx: Writable<A, A>): (optimisticValue: A) => Effect.Effect<void, never, RxRegistry>
+export const setOptimistically: {
+  <A>(rx: Writable<A>, optimisticValue: A): Effect.Effect<void, never, RxRegistry>
 } = dual(
   2,
   (rx: Writable<any, any>, optimisticValue: any) => Effect.acquireRelease(set(rx, optimisticValue), () => refresh(rx))
