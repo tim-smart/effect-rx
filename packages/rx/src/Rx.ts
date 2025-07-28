@@ -1313,6 +1313,28 @@ export const map: {
  * @since 1.0.0
  * @category combinators
  */
+export const mapResult: {
+  <R extends Rx<Result.Result<any, any>>, B>(
+    f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
+  ): (
+    self: R
+  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
+    : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>>
+  <R extends Rx<Result.Result<any, any>>, B>(
+    self: R,
+    f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
+  ): [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
+    : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>>
+} = dual(2, <R extends Rx<Result.Result<any, any>>, B>(
+  self: R,
+  f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
+): [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
+  : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>> => map(self, Result.map(f)))
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
 export const debounce: {
   (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A>
   <A extends Rx<any>>(self: A, duration: Duration.DurationInput): Rx.WithoutSerializable<A>
