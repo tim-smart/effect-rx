@@ -120,7 +120,7 @@ Added in v1.0.0
 ```ts
 export declare const useRxSetPromise: <E, A, W>(
   rx: Rx.Writable<Result.Result<A, E>, W>
-) => (_: W) => Promise<Exit.Exit<A, E>>
+) => (_: W, options?: { readonly signal?: AbortSignal | undefined } | undefined) => Promise<Exit.Exit<A, E>>
 ```
 
 Added in v1.0.0

@@ -91,6 +91,7 @@ export type Encoded<A, E> =
   | {
       readonly _tag: "Success"
       readonly waiting: boolean
+      readonly timestamp: number
       readonly value: A
     }
   | {
@@ -116,6 +117,7 @@ export type PartialEncoded<A, E> =
   | {
       readonly _tag: "Success"
       readonly waiting: boolean
+      readonly timestamp: number
       readonly value: A
     }
   | {
@@ -314,7 +316,13 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const fail: <E, A = never>(error: E, previousData?: Option.Option<A>, waiting?: boolean) => Failure<A, E>
+export declare const fail: <E, A = never>(
+  error: E,
+  options?: {
+    readonly previousSuccess?: Option.Option<Success<A, E>> | undefined
+    readonly waiting?: boolean | undefined
+  }
+) => Failure<A, E>
 ```
 
 Added in v1.0.0
@@ -326,8 +334,7 @@ Added in v1.0.0
 ```ts
 export declare const failWithPrevious: <A, E>(
   error: E,
-  previous: Option.Option<Result<A, E>>,
-  waiting?: boolean
+  options: { readonly previous: Option.Option<Result<A, E>>; readonly waiting?: boolean | undefined }
 ) => Failure<A, E>
 ```
 
@@ -340,8 +347,10 @@ Added in v1.0.0
 ```ts
 export declare const failure: <E, A = never>(
   cause: Cause.Cause<E>,
-  previousValue?: Option.Option<A>,
-  waiting?: boolean
+  options?: {
+    readonly previousSuccess?: Option.Option<Success<A, E>> | undefined
+    readonly waiting?: boolean | undefined
+  }
 ) => Failure<A, E>
 ```
 
@@ -354,8 +363,7 @@ Added in v1.0.0
 ```ts
 export declare const failureWithPrevious: <A, E>(
   cause: Cause.Cause<E>,
-  previous: Option.Option<Result<A, E>>,
-  waiting?: boolean
+  options: { readonly previous: Option.Option<Result<A, E>>; readonly waiting?: boolean | undefined }
 ) => Failure<A, E>
 ```
 
@@ -412,7 +420,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const success: <A, E = never>(value: A, waiting?: boolean) => Success<A, E>
+export declare const success: <A, E = never>(
+  value: A,
+  options?: { readonly waiting?: boolean | undefined; readonly timestamp?: number | undefined }
+) => Success<A, E>
 ```
 
 Added in v1.0.0
@@ -447,7 +458,7 @@ Added in v1.0.0
 export interface Failure<A, E = never> extends Result.Proto<A, E> {
   readonly _tag: "Failure"
   readonly cause: Cause.Cause<E>
-  readonly previousValue: Option.Option<A>
+  readonly previousSuccess: Option.Option<Success<A, E>>
 }
 ```
 
@@ -540,6 +551,7 @@ Added in v1.0.0
 export interface Success<A, E = never> extends Result.Proto<A, E> {
   readonly _tag: "Success"
   readonly value: A
+  readonly timestamp: number
 }
 ```
 
