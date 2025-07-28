@@ -652,14 +652,16 @@ function makeStream<A, E>(
       return Channel.suspend(() => {
         const last = Chunk.last(input)
         if (last._tag === "Some") {
-          ctx.setSelf(Result.success(last.value, true))
+          ctx.setSelf(Result.success(last.value, {
+            waiting: true
+          }))
         }
         return writer
       })
     },
     onFailure(cause: Cause.Cause<E>) {
       return Channel.sync(() => {
-        ctx.setSelf(Result.failureWithPrevious(cause, previous))
+        ctx.setSelf(Result.failureWithPrevious(cause, { previous }))
       })
     },
     onDone(_done: unknown) {
@@ -668,7 +670,7 @@ function makeStream<A, E>(
           ctx.self<Result.Result<A, E | NoSuchElementException>>(),
           Option.flatMap(Result.value),
           Option.match({
-            onNone: () => ctx.setSelf(Result.failWithPrevious(new NoSuchElementException(), previous)),
+            onNone: () => ctx.setSelf(Result.failWithPrevious(new NoSuchElementException(), { previous })),
             onSome: (a) => ctx.setSelf(Result.success(a))
           })
         )
@@ -1311,28 +1313,6 @@ export const map: {
  * @since 1.0.0
  * @category combinators
  */
-export const mapResult: {
-  <R extends Rx<Result.Result<any, any>>, B>(
-    f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
-  ): (
-    self: R
-  ) => [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
-    : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>>
-  <R extends Rx<Result.Result<any, any>>, B>(
-    self: R,
-    f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
-  ): [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
-    : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>>
-} = dual(2, <R extends Rx<Result.Result<any, any>>, B>(
-  self: R,
-  f: (_: Result.Result.InferA<Rx.Infer<R>>) => B
-): [R] extends [Writable<infer _, infer RW>] ? Writable<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>, RW>
-  : Rx<Result.Result<B, Result.Result.InferE<Rx.Infer<R>>>> => map(self, Result.map(f)))
-
-/**
- * @since 1.0.0
- * @category combinators
- */
 export const debounce: {
   (duration: Duration.DurationInput): <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A>
   <A extends Rx<any>>(self: A, duration: Duration.DurationInput): Rx.WithoutSerializable<A>
@@ -1359,6 +1339,78 @@ export const debounce: {
     })
   }
 )
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const withOptimisticSet: {
+  <A, E, XA, XE>(
+    fn: RxResultFn<A, XA, XE>,
+    options?: {
+      readonly disableRefresh?: boolean | undefined
+    }
+  ): (
+    self: Rx<Result.Result<A, E>>
+  ) => Writable<Result.Result<A, E>, A>
+  <A, E, XA, XE>(
+    self: Rx<Result.Result<A, E>>,
+    fn: RxResultFn<A, XA, XE>,
+    options?: {
+      readonly disableRefresh?: boolean | undefined
+    }
+  ): Writable<Result.Result<A, E>, A>
+} = dual((args) => TypeId in args[0], <A, E, XA, XE>(
+  self: Rx<Result.Result<A, E>>,
+  fn: RxResultFn<A, XA, XE>,
+  options?: {
+    readonly disableRefresh?: boolean | undefined
+  }
+): Writable<Result.Result<A, E>, A> => {
+  let counter = 0
+  const argRx = state([counter, undefined as A | undefined] as const)
+  return writable((get) => {
+    let lastValue = get.once(self)
+    get.subscribe(self, (value) => {
+      const current = Option.getOrUndefined(get.self<Result.Result<A, E>>())!
+      lastValue = value
+      if (Result.isSuccess(current) && Result.isSuccess(value)) {
+        if (value.timestamp > current.timestamp) {
+          get.setSelf(value)
+        }
+      } else {
+        get.setSelf(lastValue)
+      }
+    })
+    let lastSetAt = 0
+    get.subscribe(argRx, ([, arg]) => {
+      if (arg === undefined) return
+      const value = Result.success(arg, { waiting: true })
+      lastSetAt = value.timestamp
+      get.setSelf(value)
+    })
+    get.subscribe(fn, (value) => {
+      if (value.waiting) return
+      if (Result.isFailure(value)) {
+        return get.setSelf(lastValue)
+      }
+      const current = Option.getOrUndefined(get.self<Result.Result<A, E>>())!
+      if (Result.isSuccess(current) && current.timestamp === lastSetAt) {
+        if (options?.disableRefresh) {
+          get.setSelf(Result.success(current.value))
+        } else {
+          get.refresh(self)
+        }
+      }
+    })
+    return lastValue
+  }, (ctx, value) => {
+    ctx.set(argRx, [++counter, value])
+    ctx.set(fn, value)
+  }, (refresh) => {
+    refresh(self)
+  })
+})
 
 /**
  * @since 1.0.0
@@ -1401,7 +1453,7 @@ export const makeRefreshOnSignal = <_>(signal: Rx<_>) => <A extends Rx<any>>(sel
 
 /**
  * @since 1.0.0
- * @category combinators
+ * @category Focus
  */
 export const refreshOnWindowFocus: <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A> = makeRefreshOnSignal(
   windowFocusSignal
