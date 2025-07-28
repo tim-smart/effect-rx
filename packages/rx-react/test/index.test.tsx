@@ -155,7 +155,8 @@ describe("rx-react", () => {
         value: {
           _tag: "Success",
           value: 123,
-          waiting: false
+          waiting: false,
+          timestamp: Date.now()
         },
         dehydratedAt: Date.now()
       },
@@ -167,7 +168,7 @@ describe("rx-react", () => {
             _tag: "Fail",
             error: "error"
           },
-          previousValue: {
+          previousSuccess: {
             _tag: "None"
           },
           waiting: false
