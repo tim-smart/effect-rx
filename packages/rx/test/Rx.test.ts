@@ -1027,58 +1027,68 @@ describe("Rx", () => {
   })
 
   it("optimistic updates", async () => {
-    const haltMutationLatch = Effect.runSync(Effect.makeLatch())
-    const mutationCompleteLatch = Effect.runSync(Effect.makeLatch())
+    const latch = Effect.runSync(Effect.makeLatch())
     const r = Registry.make()
-    const rx = Rx.make<Array<number>>([])
+    let i = 0
+    const rx = Rx.make<number>(() => i)
     const optimisticRx = Rx.optimistic(rx).pipe(Rx.keepAlive)
 
     const mutationRx = Rx.fn((_: void, ctx) =>
       Effect.gen(function*() {
-        yield* ctx.setOptimistically(optimisticRx, [2])
-        yield* haltMutationLatch.await
-        yield* Rx.set(rx, [1])
-        yield* mutationCompleteLatch.open
+        yield* ctx.setOptimistically(optimisticRx, 2)
+        yield* latch.await
+        i++
+        ctx.refresh(rx)
       })
     ).pipe(Rx.keepAlive)
 
-    expect(r.get(rx)).toEqual([])
-    expect(r.get(optimisticRx)).toEqual([])
+    expect(r.get(rx)).toEqual(0)
+    expect(r.get(optimisticRx)).toEqual(0)
     r.set(mutationRx, void 0)
+
     // optimistic phase: the optimistic value is set, but the true value is not
-    expect(r.get(rx)).toEqual([])
-    expect(r.get(optimisticRx)).toEqual([2])
-    Effect.runSync(haltMutationLatch.open)
-    await Effect.runPromise(mutationCompleteLatch.await)
+    expect(r.get(rx)).toEqual(0)
+    expect(r.get(optimisticRx)).toEqual(2)
+
+    Effect.runSync(latch.open)
+    // wait for the mutation to complete
+    await Effect.runPromise(Registry.getResult(r, mutationRx))
+
     // commit phase: the true value is set, and the optimistic value is reset
-    expect(r.get(rx)).toEqual([1])
-    expect(r.get(optimisticRx)).toEqual([1])
+    expect(r.get(rx)).toEqual(1)
+    expect(r.get(optimisticRx)).toEqual(1)
   })
 
   it("optimistic updates failures", async () => {
     const latch = Effect.runSync(Effect.makeLatch())
     const r = Registry.make()
-    const rx = Rx.make<Array<number>>([])
+    const i = 0
+    const rx = Rx.make<number>(() => i)
     const optimisticRx = Rx.optimistic(rx).pipe(Rx.keepAlive)
 
     const mutationRx = Rx.fn((_: void, ctx) =>
       Effect.gen(function*() {
-        yield* ctx.setOptimistically(optimisticRx, [1])
+        yield* ctx.setOptimistically(optimisticRx, 1)
+        yield* latch.await
         return yield* Effect.fail("error")
       })
     ).pipe(Rx.keepAlive)
 
-    expect(r.get(rx)).toEqual([])
-    expect(r.get(optimisticRx)).toEqual([])
+    expect(r.get(rx)).toEqual(0)
+    expect(r.get(optimisticRx)).toEqual(0)
     r.set(mutationRx, void 0)
+
     // optimistic phase: the optimistic value is set, but the true value is not
-    expect(r.get(rx)).toEqual([])
-    expect(r.get(optimisticRx)).toEqual([1])
+    expect(r.get(rx)).toEqual(0)
+    expect(r.get(optimisticRx)).toEqual(1)
+
     Effect.runSync(latch.open)
-    await Effect.runPromise(latch.await)
+    // wait for the mutation to complete (ignore the error)
+    await Effect.runPromise(Registry.getResult(r, mutationRx).pipe(Effect.ignore))
+
     // commit phase: the optimistic value is reset, but the true value is not
-    expect(r.get(rx)).toEqual([])
-    expect(r.get(optimisticRx)).toEqual([])
+    expect(r.get(rx)).toEqual(0)
+    expect(r.get(optimisticRx)).toEqual(0)
   })
 })
 
