@@ -2,10 +2,11 @@
  * @since 1.0.0
  */
 import * as Cause from "effect/Cause"
-import * as Data from "effect/Data"
+import * as Equal from "effect/Equal"
 import * as Exit from "effect/Exit"
 import type { LazyArg } from "effect/Function"
 import { dual, identity } from "effect/Function"
+import * as Hash from "effect/Hash"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
 import { hasProperty } from "effect/Predicate"
@@ -71,15 +72,38 @@ export declare namespace Result {
     : never
 }
 
-const ResultProto = Data.struct({
+const ResultProto = {
   [TypeId]: {
     E: identity,
     A: identity
   },
   pipe() {
     return pipeArguments(this, arguments)
+  },
+  [Equal.symbol](this: Result<any, any>, that: Result<any, any>): boolean {
+    if (this._tag !== that._tag && this.waiting !== that.waiting) {
+      return false
+    }
+    switch (this._tag) {
+      case "Initial":
+        return true
+      case "Success":
+        return Equal.equals(this.value, (that as Success<any, any>).value)
+      case "Failure":
+        return Equal.equals(this.cause, (that as Failure<any, any>).cause)
+    }
+  },
+  [Hash.symbol](this: Result<any, any>): number {
+    const tagHash = Hash.string(`${this._tag}:${this.waiting}`)
+    if (this._tag === "Initial") {
+      return Hash.cached(this, tagHash)
+    }
+    return Hash.cached(
+      this,
+      Hash.combine(tagHash)(this._tag === "Success" ? Hash.hash(this.value) : Hash.hash(this.cause))
+    )
   }
-})
+}
 
 /**
  * @since 1.0.0

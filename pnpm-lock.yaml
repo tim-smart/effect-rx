@@ -38,6 +38,9 @@ importers:
       '@effect/language-service':
         specifier: ^0.28.2
         version: 0.28.2
+      '@effect/vitest':
+        specifier: ^0.25.0
+        version: 0.25.0(effect@3.17.0)(vitest@3.2.4(@types/node@24.1.0)(jsdom@26.1.0)(tsx@4.20.3)(yaml@2.8.0))
       '@eslint/compat':
         specifier: ^1.3.1
         version: 1.3.1(eslint@9.31.0)
@@ -577,6 +580,12 @@ packages:
     resolution: {integrity: sha512-nC00DQoD2Tx7EMC1B1UvgPLr7QsG5Ck2nHn94LZl5ddteDNQLPAVkAWSKM+BE5ILyE1eMTblQ+EcomPW2rtUdg==}
     peerDependencies:
       effect: ^3.15.5
+
+  '@effect/vitest@0.25.0':
+    resolution: {integrity: sha512-FpOKYdhe3LaOoYn0cm5W9cD9bk2qwr2A+ujMhiDVxN7MMgndFsOd8uxcWjZRX6tWjzU2aKvZXFKGEp93GAmXug==}
+    peerDependencies:
+      effect: ^3.17.0
+      vitest: ^3.2.0
 
   '@emnapi/core@1.4.4':
     resolution: {integrity: sha512-A9CnAbC6ARNMKcIcrQwq6HeHCjpcBZ5wSx4U01WXCqEKlrzB9F9315WDNHkrs2xbx7YjjSxbUYxuN6EQzpcY2g==}
@@ -4761,6 +4770,11 @@ snapshots:
   '@effect/typeclass@0.34.5(effect@3.17.0)':
     dependencies:
       effect: 3.17.0
+
+  '@effect/vitest@0.25.0(effect@3.17.0)(vitest@3.2.4(@types/node@24.1.0)(jsdom@26.1.0)(tsx@4.20.3)(yaml@2.8.0))':
+    dependencies:
+      effect: 3.17.0
+      vitest: 3.2.4(@types/node@24.1.0)(jsdom@26.1.0)(tsx@4.20.3)(yaml@2.8.0)
 
   '@emnapi/core@1.4.4':
     dependencies:
