@@ -1086,7 +1086,7 @@ describe("Rx", () => {
     // wait for the mutation to complete (ignore the error)
     await Effect.runPromise(Registry.getResult(r, mutationRx).pipe(Effect.ignore))
 
-    // commit phase: the optimistic value is reset, but the true value is not
+    // commit phase: the optimistic value is reset to the true value
     expect(r.get(rx)).toEqual(0)
     expect(r.get(optimisticRx)).toEqual(0)
   })
