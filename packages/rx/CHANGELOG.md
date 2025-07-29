@@ -1,5 +1,15 @@
 # @effect-rx/rx
 
+## 0.47.0
+
+### Minor Changes
+
+- [#257](https://github.com/tim-smart/effect-rx/pull/257) [`9121ea4`](https://github.com/tim-smart/effect-rx/commit/9121ea48d3c49bf0409754ef01d6c04e3fb4d283) Thanks [@tim-smart](https://github.com/tim-smart)! - add timestamp to Result.Success
+
+### Patch Changes
+
+- [#257](https://github.com/tim-smart/effect-rx/pull/257) [`9121ea4`](https://github.com/tim-smart/effect-rx/commit/9121ea48d3c49bf0409754ef01d6c04e3fb4d283) Thanks [@tim-smart](https://github.com/tim-smart)! - add Rx.withOptimisticSet
+
 ## 0.46.1
 
 ### Patch Changes

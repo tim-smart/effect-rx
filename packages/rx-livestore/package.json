@@ -1,6 +1,6 @@
 {
   "name": "@effect-rx/rx-livestore",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "effect-rx bindings to livestore",
   "type": "module",
   "publishConfig": {
