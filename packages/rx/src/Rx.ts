@@ -28,6 +28,7 @@ import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
 import * as Subscribable from "effect/Subscribable"
 import * as SubscriptionRef from "effect/SubscriptionRef"
+import type { NoInfer } from "effect/Types"
 import * as internalRegistry from "./internal/registry.js"
 import { runCallbackSync } from "./internal/runtime.js"
 import * as Registry from "./Registry.js"
@@ -515,17 +516,17 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
     <Arg>(): {
       <E, A>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry | R>, options?: {
         readonly initialValue?: A
-      }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
+      }): RxResultFn<Arg, A, E | ER>
       <E, A>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry | R>, options?: {
         readonly initialValue?: A
-      }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER | NoSuchElementException>
+      }): RxResultFn<Arg, A, E | ER | NoSuchElementException>
     }
-    <Arg, E, A>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry | R>, options?: {
+    <E, A, Arg = void>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry | R>, options?: {
       readonly initialValue?: A
-    }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
-    <Arg, E, A>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry | R>, options?: {
+    }): RxResultFn<Arg, A, E | ER>
+    <E, A, Arg = void>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry | R>, options?: {
       readonly initialValue?: A
-    }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER | NoSuchElementException>
+    }): RxResultFn<Arg, A, E | ER | NoSuchElementException>
   }
 
   readonly pull: <A, E>(
@@ -652,14 +653,16 @@ function makeStream<A, E>(
       return Channel.suspend(() => {
         const last = Chunk.last(input)
         if (last._tag === "Some") {
-          ctx.setSelf(Result.success(last.value, true))
+          ctx.setSelf(Result.success(last.value, {
+            waiting: true
+          }))
         }
         return writer
       })
     },
     onFailure(cause: Cause.Cause<E>) {
       return Channel.sync(() => {
-        ctx.setSelf(Result.failureWithPrevious(cause, previous))
+        ctx.setSelf(Result.failureWithPrevious(cause, { previous }))
       })
     },
     onDone(_done: unknown) {
@@ -668,7 +671,7 @@ function makeStream<A, E>(
           ctx.self<Result.Result<A, E | NoSuchElementException>>(),
           Option.flatMap(Result.value),
           Option.match({
-            onNone: () => ctx.setSelf(Result.failWithPrevious(new NoSuchElementException(), previous)),
+            onNone: () => ctx.setSelf(Result.failWithPrevious(new NoSuchElementException(), { previous })),
             onSome: (a) => ctx.setSelf(Result.success(a))
           })
         )
@@ -850,19 +853,19 @@ export const fnSync: {
   <Arg>(): {
     <A>(
       f: (arg: Arg, get: FnContext) => A
-    ): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
+    ): Writable<Option.Option<A>, Arg>
     <A>(
       f: (arg: Arg, get: FnContext) => A,
       options: { readonly initialValue: A }
-    ): Writable<A, RxResultFn.ArgToVoid<Arg>>
+    ): Writable<A, Arg>
   }
-  <Arg, A>(
+  <A, Arg = void>(
     f: (arg: Arg, get: FnContext) => A
-  ): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
-  <Arg, A>(
+  ): Writable<Option.Option<A>, Arg>
+  <A, Arg = void>(
     f: (arg: Arg, get: FnContext) => A,
     options: { readonly initialValue: A }
-  ): Writable<A, RxResultFn.ArgToVoid<Arg>>
+  ): Writable<A, Arg>
 } = function(...args: ReadonlyArray<any>) {
   if (args.length === 0) {
     return makeFnSync
@@ -872,7 +875,7 @@ export const fnSync: {
 
 const makeFnSync = <Arg, A>(f: (arg: Arg, get: FnContext) => A, options?: {
   readonly initialValue?: A
-}): Writable<Option.Option<A> | A, RxResultFn.ArgToVoid<Arg>> => {
+}): Writable<Option.Option<A> | A, Arg> => {
   const argRx = state<[number, Arg]>([0, undefined as any])
   const hasInitialValue = options?.initialValue !== undefined
   return writable(function(get) {
@@ -898,16 +901,6 @@ export interface RxResultFn<Arg, A, E = never> extends Writable<Result.Result<A,
 
 /**
  * @since 1.0.0
- */
-export declare namespace RxResultFn {
-  /**
-   * @since 1.0.0
-   */
-  export type ArgToVoid<Arg> = Arg extends infer A ? unknown extends A ? void : A extends undefined ? void : A : never
-}
-
-/**
- * @since 1.0.0
  * @category symbols
  */
 export const Reset = Symbol.for("@effect-rx/rx/Rx/Reset")
@@ -925,16 +918,16 @@ export type Reset = typeof Reset
 export const fn: {
   <Arg>(): <E, A>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
     readonly initialValue?: A
-  }) => RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
-  <Arg, E, A>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
+  }) => RxResultFn<Arg, A, E>
+  <E, A, Arg = void>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry>, options?: {
     readonly initialValue?: A
-  }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
+  }): RxResultFn<Arg, A, E>
   <Arg>(): <E, A>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry>, options?: {
     readonly initialValue?: A
-  }) => RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
-  <Arg, E, A>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry>, options?: {
+  }) => RxResultFn<Arg, A, E | NoSuchElementException>
+  <E, A, Arg = void>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry>, options?: {
     readonly initialValue?: A
-  }): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
+  }): RxResultFn<Arg, A, E | NoSuchElementException>
 } = function(...args: ReadonlyArray<any>) {
   if (args.length === 0) {
     return makeFn
@@ -947,7 +940,7 @@ const makeFn = <Arg, E, A>(
   options?: {
     readonly initialValue?: A
   }
-): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException> => {
+): RxResultFn<Arg, A, E | NoSuchElementException> => {
   const [read, write] = makeResultFn(f, options)
   return writable(read, write) as any
 }
@@ -1362,6 +1355,93 @@ export const debounce: {
 
 /**
  * @since 1.0.0
+ * @category combinators
+ */
+export const withOptimisticSet: {
+  <A, XA, XE, W = A extends Result.Result<infer _A, infer _E> ? _A : A>(
+    options: {
+      readonly updateToValue: (
+        value: W,
+        current: NoInfer<A>
+      ) => A extends Result.Result<infer _A, infer _E> ? _A : NoInfer<A>
+      readonly fn: RxResultFn<NoInfer<W>, XA, XE>
+      readonly disableRefresh?: boolean | undefined
+    }
+  ): (
+    self: Rx<A>
+  ) => Writable<A, W>
+  <A, XA, XE, W = A extends Result.Result<infer _A, infer _E> ? _A : A>(
+    self: Rx<A>,
+    options: {
+      readonly updateToValue: (
+        value: W,
+        current: NoInfer<A>
+      ) => A extends Result.Result<infer _A, infer _E> ? _A : A
+      readonly fn: RxResultFn<NoInfer<W>, XA, XE>
+      readonly disableRefresh?: boolean | undefined
+    }
+  ): Writable<A, W>
+} = dual(2, <A, W, XA, XE>(
+  self: Rx<A>,
+  options: {
+    readonly updateToValue: (value: W, current: A) => A extends Result.Result<infer _A, infer _E> ? _A : A
+    readonly fn: RxResultFn<W, XA, XE>
+    readonly disableRefresh?: boolean | undefined
+  }
+): Writable<A, W> => {
+  let counter = 0
+  const argRx = state([counter, undefined as A | undefined] as const)
+  return writable((get) => {
+    let lastValue = get.once(self)
+    get.subscribe(self, (value) => {
+      lastValue = value
+      if (!Result.isResult(value)) {
+        return get.setSelf(value)
+      }
+      const current = Option.getOrUndefined(get.self<Result.Result<any, any>>())!
+      if (Result.isSuccess(current) && Result.isSuccess(value)) {
+        if (value.timestamp >= current.timestamp) {
+          get.setSelf(value)
+        }
+      } else {
+        get.setSelf(lastValue)
+      }
+    })
+    let lastSetSuccess: A | undefined
+    get.subscribe(argRx, ([, arg]) => {
+      if (arg === undefined) {
+        return
+      }
+      lastSetSuccess = arg
+      get.setSelf(arg)
+    })
+    get.subscribe(options.fn, (value) => {
+      if (value.waiting || Result.isInitial(value)) {
+        return
+      } else if (Result.isFailure(value)) {
+        return get.setSelf(lastValue)
+      }
+      if (options.disableRefresh !== true) {
+        return get.refresh(self)
+      }
+      const current = Option.getOrUndefined(get.self<Result.Success<any, any>>())!
+      if (current === lastSetSuccess) {
+        get.setSelf(Result.success(current.value))
+      }
+    })
+    return lastValue
+  }, (ctx, value) => {
+    const current = ctx.get(self)
+    const arg = options.updateToValue(value, current)
+    ctx.set(argRx, [++counter, Result.isResult(current) ? Result.success(arg, { waiting: true }) as A : arg as A])
+    ctx.set(options.fn, value)
+  }, (refresh) => {
+    refresh(self)
+  })
+})
+
+/**
+ * @since 1.0.0
  * @category batching
  */
 export const batch: (f: () => void) => void = internalRegistry.batch
@@ -1401,7 +1481,7 @@ export const makeRefreshOnSignal = <_>(signal: Rx<_>) => <A extends Rx<any>>(sel
 
 /**
  * @since 1.0.0
- * @category combinators
+ * @category Focus
  */
 export const refreshOnWindowFocus: <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A> = makeRefreshOnSignal(
   windowFocusSignal

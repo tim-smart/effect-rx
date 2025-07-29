@@ -2,10 +2,11 @@
  * @since 1.0.0
  */
 import * as Cause from "effect/Cause"
-import * as Data from "effect/Data"
+import * as Equal from "effect/Equal"
 import * as Exit from "effect/Exit"
 import type { LazyArg } from "effect/Function"
 import { dual, identity } from "effect/Function"
+import * as Hash from "effect/Hash"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
 import { hasProperty } from "effect/Predicate"
@@ -71,15 +72,38 @@ export declare namespace Result {
     : never
 }
 
-const ResultProto = Data.struct({
+const ResultProto = {
   [TypeId]: {
     E: identity,
     A: identity
   },
   pipe() {
     return pipeArguments(this, arguments)
+  },
+  [Equal.symbol](this: Result<any, any>, that: Result<any, any>): boolean {
+    if (this._tag !== that._tag && this.waiting !== that.waiting) {
+      return false
+    }
+    switch (this._tag) {
+      case "Initial":
+        return true
+      case "Success":
+        return Equal.equals(this.value, (that as Success<any, any>).value)
+      case "Failure":
+        return Equal.equals(this.cause, (that as Failure<any, any>).cause)
+    }
+  },
+  [Hash.symbol](this: Result<any, any>): number {
+    const tagHash = Hash.string(`${this._tag}:${this.waiting}`)
+    if (this._tag === "Initial") {
+      return Hash.cached(this, tagHash)
+    }
+    return Hash.cached(
+      this,
+      Hash.combine(tagHash)(this._tag === "Success" ? Hash.hash(this.value) : Hash.hash(this.cause))
+    )
   }
-})
+}
 
 /**
  * @since 1.0.0
@@ -104,7 +128,7 @@ export const fromExitWithPrevious = <A, E>(
   exit: Exit.Exit<A, E>,
   previous: Option.Option<Result<A, E>>
 ): Success<A, E> | Failure<A, E> =>
-  exit._tag === "Success" ? success(exit.value) : failureWithPrevious(exit.cause, previous)
+  exit._tag === "Success" ? success(exit.value) : failureWithPrevious(exit.cause, { previous })
 
 /**
  * @since 1.0.0
@@ -148,6 +172,7 @@ export const initial = <A = never, E = never>(waiting = false): Initial<A, E> =>
 export interface Success<A, E = never> extends Result.Proto<A, E> {
   readonly _tag: "Success"
   readonly value: A
+  readonly timestamp: number
 }
 
 /**
@@ -160,11 +185,15 @@ export const isSuccess = <A, E>(result: Result<A, E>): result is Success<A, E> =
  * @since 1.0.0
  * @category constructors
  */
-export const success = <A, E = never>(value: A, waiting = false): Success<A, E> => {
+export const success = <A, E = never>(value: A, options?: {
+  readonly waiting?: boolean | undefined
+  readonly timestamp?: number | undefined
+}): Success<A, E> => {
   const result = Object.create(ResultProto)
   result._tag = "Success"
   result.value = value
-  result.waiting = waiting
+  result.waiting = options?.waiting ?? false
+  result.timestamp = options?.timestamp ?? Date.now()
   return result
 }
 
@@ -175,7 +204,7 @@ export const success = <A, E = never>(value: A, waiting = false): Success<A, E> 
 export interface Failure<A, E = never> extends Result.Proto<A, E> {
   readonly _tag: "Failure"
   readonly cause: Cause.Cause<E>
-  readonly previousValue: Option.Option<A>
+  readonly previousSuccess: Option.Option<Success<A, E>>
 }
 
 /**
@@ -197,14 +226,16 @@ export const isInterrupted = <A, E>(result: Result<A, E>): result is Failure<A, 
  */
 export const failure = <E, A = never>(
   cause: Cause.Cause<E>,
-  previousValue: Option.Option<A> = Option.none(),
-  waiting = false
+  options?: {
+    readonly previousSuccess?: Option.Option<Success<A, E>> | undefined
+    readonly waiting?: boolean | undefined
+  }
 ): Failure<A, E> => {
   const result = Object.create(ResultProto)
   result._tag = "Failure"
   result.cause = cause
-  result.previousValue = previousValue
-  result.waiting = waiting
+  result.previousSuccess = options?.previousSuccess ?? Option.none()
+  result.waiting = options?.waiting ?? false
   return result
 }
 
@@ -214,16 +245,24 @@ export const failure = <E, A = never>(
  */
 export const failureWithPrevious = <A, E>(
   cause: Cause.Cause<E>,
-  previous: Option.Option<Result<A, E>>,
-  waiting = false
-): Failure<A, E> => failure(cause, Option.flatMap(previous, value), waiting)
+  options: {
+    readonly previous: Option.Option<Result<A, E>>
+    readonly waiting?: boolean | undefined
+  }
+): Failure<A, E> =>
+  failure(cause, {
+    previousSuccess: options.previous.pipe(Option.filter(isSuccess)),
+    waiting: options.waiting
+  })
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const fail = <E, A = never>(error: E, previousData?: Option.Option<A>, waiting?: boolean): Failure<A, E> =>
-  failure(Cause.fail(error), previousData, waiting)
+export const fail = <E, A = never>(error: E, options?: {
+  readonly previousSuccess?: Option.Option<Success<A, E>> | undefined
+  readonly waiting?: boolean | undefined
+}): Failure<A, E> => failure(Cause.fail(error), options)
 
 /**
  * @since 1.0.0
@@ -231,9 +270,11 @@ export const fail = <E, A = never>(error: E, previousData?: Option.Option<A>, wa
  */
 export const failWithPrevious = <A, E>(
   error: E,
-  previous: Option.Option<Result<A, E>>,
-  waiting?: boolean
-): Failure<A, E> => fail(error, Option.flatMap(previous, value), waiting)
+  options: {
+    readonly previous: Option.Option<Result<A, E>>
+    readonly waiting?: boolean | undefined
+  }
+): Failure<A, E> => failureWithPrevious(Cause.fail(error), options)
 
 /**
  * @since 1.0.0
@@ -257,7 +298,7 @@ export const replacePrevious = <R extends Result<any, any>, XE, A>(
   previous: Option.Option<Result<A, XE>>
 ): Result.With<R, A, Result.InferE<R>> => {
   if (self._tag === "Failure") {
-    return failureWithPrevious(self.cause, previous, self.waiting) as any
+    return failureWithPrevious(self.cause, { previous, waiting: self.waiting }) as any
   }
   return self as any
 }
@@ -270,7 +311,7 @@ export const value = <A, E>(self: Result<A, E>): Option.Option<A> => {
   if (self._tag === "Success") {
     return Option.some(self.value)
   } else if (self._tag === "Failure") {
-    return self.previousValue
+    return Option.map(self.previousSuccess, (s) => s.value)
   }
   return Option.none()
 }
@@ -282,18 +323,14 @@ export const value = <A, E>(self: Result<A, E>): Option.Option<A> => {
 export const getOrElse: {
   <B>(orElse: LazyArg<B>): <A, E>(self: Result<A, E>) => A | B
   <A, E, B>(self: Result<A, E>, orElse: LazyArg<B>): A | B
-} = dual(2, <A, E, B>(self: Result<A, E>, orElse: LazyArg<B>): A | B => self._tag === "Success" ? self.value : orElse())
+} = dual(2, <A, E, B>(self: Result<A, E>, orElse: LazyArg<B>): A | B => Option.getOrElse(value(self), orElse))
 
 /**
  * @since 1.0.0
  * @category accessors
  */
-export const getOrThrow = <A, E>(self: Result<A, E>): A => {
-  if (self._tag === "Success") {
-    return self.value
-  }
-  throw new Error("Result.getOrThrow: called on a Failure")
-}
+export const getOrThrow = <A, E>(self: Result<A, E>): A =>
+  Option.getOrThrowWith(value(self), () => new Cause.NoSuchElementException("Result.getOrThrow: no value found"))
 
 /**
  * @since 1.0.0
@@ -338,9 +375,12 @@ export const map: {
     case "Initial":
       return self as any as Result<B, E>
     case "Failure":
-      return failure(self.cause, Option.map(self.previousValue, f), self.waiting)
+      return failure(self.cause, {
+        previousSuccess: Option.map(self.previousSuccess, (s) => success(f(s.value), s)),
+        waiting: self.waiting
+      })
     case "Success":
-      return success(f(self.value), self.waiting)
+      return success(f(self.value), self)
   }
 })
 
@@ -463,6 +503,7 @@ export type PartialEncoded<A, E> = {
 } | {
   readonly _tag: "Success"
   readonly waiting: boolean
+  readonly timestamp: number
   readonly value: A
 } | {
   readonly _tag: "Failure"
@@ -481,6 +522,7 @@ export type Encoded<A, E> = {
 } | {
   readonly _tag: "Success"
   readonly waiting: boolean
+  readonly timestamp: number
   readonly value: A
 } | {
   readonly _tag: "Failure"
@@ -519,18 +561,20 @@ export const Schema = <
 > => {
   const success_: Success = options.success ?? Schema_.Never as any
   const error: Error = options.error ?? Schema_.Never as any
+  const Success = Schema_.TaggedStruct("Success", {
+    waiting: Schema_.Boolean,
+    timestamp: Schema_.Number,
+    value: success_
+  })
   return Schema_.transform(
     Schema_.Union(
       Schema_.TaggedStruct("Initial", {
         waiting: Schema_.Boolean
       }),
-      Schema_.TaggedStruct("Success", {
-        waiting: Schema_.Boolean,
-        value: success_
-      }),
+      Success,
       Schema_.TaggedStruct("Failure", {
         waiting: Schema_.Boolean,
-        previousValue: Schema_.Option(success_ as any),
+        previousSuccess: Schema_.Option(Success as any),
         cause: Schema_.Cause({
           error,
           defect: Schema_.Defect
@@ -548,8 +592,8 @@ export const Schema = <
         e._tag === "Initial"
           ? initial(e.waiting)
           : e._tag === "Success"
-          ? success(e.value, e.waiting)
-          : failure(e.cause, e.previousValue, e.waiting),
+          ? success(e.value, e)
+          : failure(e.cause, e),
       encode: identity
     }
   ) as any

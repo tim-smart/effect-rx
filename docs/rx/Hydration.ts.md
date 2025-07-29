@@ -30,7 +30,7 @@ Added in v1.0.0
 ```ts
 export declare const dehydrate: (
   registry: Registry.Registry,
-  options?: { readonly encodeInitialAs?: "ignore" | "promise" | "value-only" }
+  options?: { readonly encodeInitialAs?: "ignore" | "promise" | "value-only" | undefined }
 ) => Array<DehydratedRx>
 ```
 

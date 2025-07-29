@@ -2,14 +2,16 @@ import * as Hydration from "@effect-rx/rx/Hydration"
 import * as Registry from "@effect-rx/rx/Registry"
 import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
-import { Cause, Either, FiberRef, Schema, Struct, Subscribable, SubscriptionRef } from "effect"
+import { addEqualityTesters, afterEach, assert, beforeEach, describe, expect, it, test, vitest } from "@effect/vitest"
+import { Cause, Either, Equal, FiberRef, Schema, Struct, Subscribable, SubscriptionRef } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Hash from "effect/Hash"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Stream from "effect/Stream"
-import { afterEach, assert, beforeEach, describe, expect, it, test, vitest } from "vitest"
+
+addEqualityTesters()
 
 describe("Rx", () => {
   beforeEach(() => {
@@ -707,7 +709,7 @@ describe("Rx", () => {
     assert.deepEqual(r.get(count), Result.success(1))
   })
 
-  it("failure with previousValue", async () => {
+  it("failure with previousSuccess", async () => {
     const count = Rx.fn((i: number) => i === 1 ? Effect.fail("fail") : Effect.succeed(i))
     const r = Registry.make()
 
@@ -744,11 +746,11 @@ describe("Rx", () => {
     const cancel = r.mount(multiplied)
 
     assert.strictEqual(r.get(count), 0)
-    assert.deepStrictEqual(r.get(multiplied), Result.success(0, true))
+    assert.deepStrictEqual(r.get(multiplied), Result.success(0, { waiting: true }))
 
     r.set(count, 1)
     await new Promise((resolve) => resolve(null))
-    assert.deepStrictEqual(r.get(multiplied), Result.success(2, true))
+    assert.deepStrictEqual(r.get(multiplied), Result.success(2, { waiting: true }))
 
     cancel()
   })
@@ -762,12 +764,12 @@ describe("Rx", () => {
     const cancel = r.mount(plusOne)
 
     assert.strictEqual(r.get(count), 0)
-    assert.deepStrictEqual(r.get(plusOne), Result.success(1, true))
+    assert.deepStrictEqual(r.get(plusOne), Result.success(1, { waiting: true }))
 
     r.set(count, 1)
     await new Promise((resolve) => resolve(null))
     await new Promise((resolve) => resolve(null))
-    assert.deepStrictEqual(r.get(plusOne), Result.success(3, true))
+    assert.deepStrictEqual(r.get(plusOne), Result.success(3, { waiting: true }))
 
     cancel()
   })
@@ -800,7 +802,7 @@ describe("Rx", () => {
     const rx = Rx.subscribable(Effect.succeed(sub))
     const r = Registry.make()
     const unmount = r.mount(rx)
-    assert.deepStrictEqual(r.get(rx), Result.success(123))
+    assert.isTrue(Equal.equals(r.get(rx), Result.success(123)))
     unmount()
   })
 
@@ -831,10 +833,10 @@ describe("Rx", () => {
     const rx = Rx.subscriptionRef(SubscriptionRef.make(0))
     const r = Registry.make()
     const unmount = r.mount(rx)
-    assert.deepStrictEqual(r.get(rx), Result.success(0, true))
+    assert.deepStrictEqual(r.get(rx), Result.success(0, { waiting: true }))
     r.set(rx, 1)
     await new Promise((resolve) => resolve(null))
-    assert.deepStrictEqual(r.get(rx), Result.success(1, true))
+    assert.deepStrictEqual(r.get(rx), Result.success(1, { waiting: true }))
     unmount()
   })
 
@@ -842,10 +844,10 @@ describe("Rx", () => {
     const rx = counterRuntime.subscriptionRef(SubscriptionRef.make(0))
     const r = Registry.make()
     const unmount = r.mount(rx)
-    assert.deepStrictEqual(r.get(rx), Result.success(0, true))
+    assert.deepStrictEqual(r.get(rx), Result.success(0, { waiting: true }))
     r.set(rx, 1)
     await new Promise((resolve) => resolve(null))
-    assert.deepStrictEqual(r.get(rx), Result.success(1, true))
+    assert.deepStrictEqual(r.get(rx), Result.success(1, { waiting: true }))
     unmount()
   })
 
@@ -998,7 +1000,7 @@ describe("Rx", () => {
               "_tag": "Fail",
               "error": "error",
             },
-            "previousValue": {
+            "previousSuccess": {
               "_tag": "None",
             },
             "waiting": false,
@@ -1008,6 +1010,7 @@ describe("Rx", () => {
           "key": "success",
           "value": {
             "_tag": "Success",
+            "timestamp": ${Date.now()},
             "value": 123,
             "waiting": false,
           },
@@ -1036,8 +1039,107 @@ describe("Rx", () => {
     resolve(123)
     await expect(state.find((r) => r.key === "pending")?.resultPromise).resolves.toEqual({
       "_tag": "Success",
+      "timestamp": expect.any(Number),
       "value": 123,
       "waiting": false
+    })
+  })
+
+  describe("withOptimisticSet", () => {
+    it("non-Result", async () => {
+      const latch = Effect.unsafeMakeLatch()
+      const r = Registry.make()
+      let i = 0
+      const rx = Rx.make(() => i)
+      const optimisticRx = rx.pipe(
+        Rx.withOptimisticSet({
+          updateToValue: (value) => value,
+          fn: Rx.fn(Effect.fnUntraced(function*() {
+            yield* latch.await
+          }))
+        }),
+        Rx.keepAlive
+      )
+
+      expect(r.get(rx)).toEqual(0)
+      expect(r.get(optimisticRx)).toEqual(0)
+      r.set(optimisticRx, 1)
+      i = 2
+
+      // optimistic phase: the optimistic value is set, but the true value is not
+      expect(r.get(rx)).toEqual(0)
+      expect(r.get(optimisticRx)).toEqual(1)
+
+      latch.unsafeOpen()
+      await Effect.runPromise(Effect.yieldNow())
+
+      // commit phase: a refresh is triggered, the authoritative value is used
+      expect(r.get(rx)).toEqual(2)
+      expect(r.get(optimisticRx)).toEqual(2)
+    })
+
+    it("Result", async () => {
+      const latch = Effect.unsafeMakeLatch()
+      const r = Registry.make()
+      let i = 0
+      const rx = Rx.make(Effect.sync(() => i))
+      const optimisticRx = rx.pipe(
+        Rx.withOptimisticSet({
+          updateToValue: (value) => value,
+          fn: Rx.fn(Effect.fnUntraced(function*() {
+            yield* latch.await
+          }))
+        }),
+        Rx.keepAlive
+      )
+
+      expect(r.get(rx)).toEqual(Result.success(0))
+      expect(r.get(optimisticRx)).toEqual(Result.success(0))
+      r.set(optimisticRx, 1)
+      i = 2
+
+      // optimistic phase: the optimistic value is set, but the true value is not
+      expect(r.get(rx)).toEqual(Result.success(0))
+      expect(r.get(optimisticRx)).toEqual(Result.success(1))
+
+      latch.unsafeOpen()
+      await Effect.runPromise(Effect.yieldNow())
+
+      // commit phase: a refresh is triggered, the authoritative value is used
+      expect(r.get(rx)).toEqual(Result.success(2))
+      expect(r.get(optimisticRx)).toEqual(Result.success(2))
+    })
+
+    it("failures", async () => {
+      const latch = Effect.unsafeMakeLatch()
+      const r = Registry.make()
+      const i = 0
+      const rx = Rx.make(() => i)
+      const optimisticRx = rx.pipe(
+        Rx.withOptimisticSet({
+          updateToValue: (value) => value,
+          fn: Rx.fn(Effect.fnUntraced(function*() {
+            yield* latch.await
+            return yield* Effect.fail("error")
+          }))
+        }),
+        Rx.keepAlive
+      )
+
+      expect(r.get(rx)).toEqual(0)
+      expect(r.get(optimisticRx)).toEqual(0)
+      r.set(optimisticRx, 1)
+
+      // optimistic phase: the optimistic value is set, but the true value is not
+      expect(r.get(rx)).toEqual(0)
+      expect(r.get(optimisticRx)).toEqual(1)
+
+      latch.unsafeOpen()
+      await Effect.runPromise(Effect.yieldNow())
+
+      // commit phase: the optimistic value is reset to the true value
+      expect(r.get(rx)).toEqual(0)
+      expect(r.get(optimisticRx)).toEqual(0)
     })
   })
 })

@@ -23,6 +23,7 @@ Added in v1.0.0
   - [update](#update)
 - [Focus](#focus)
   - [makeRefreshOnSignal](#makerefreshonsignal)
+  - [refreshOnWindowFocus](#refreshonwindowfocus)
   - [windowFocusSignal](#windowfocussignal)
 - [KeyValueStore](#keyvaluestore)
   - [kvs](#kvs)
@@ -41,13 +42,13 @@ Added in v1.0.0
   - [keepAlive](#keepalive)
   - [map](#map)
   - [mapResult](#mapresult)
-  - [refreshOnWindowFocus](#refreshonwindowfocus)
   - [serializable](#serializable-1)
   - [setIdleTTL](#setidlettl)
   - [setLazy](#setlazy)
   - [transform](#transform)
   - [withFallback](#withfallback)
   - [withLabel](#withlabel)
+  - [withOptimisticSet](#withoptimisticset)
 - [constructors](#constructors)
   - [context](#context)
   - [family](#family)
@@ -88,9 +89,6 @@ Added in v1.0.0
   - [TypeId (type alias)](#typeid-type-alias)
   - [WritableTypeId](#writabletypeid)
   - [WritableTypeId (type alias)](#writabletypeid-type-alias)
-- [utils](#utils)
-  - [RxResultFn (namespace)](#rxresultfn-namespace)
-    - [ArgToVoid (type alias)](#argtovoid-type-alias)
 
 ---
 
@@ -195,6 +193,16 @@ Added in v1.0.0
 export declare const makeRefreshOnSignal: <_>(
   signal: Rx<_>
 ) => <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A>
+```
+
+Added in v1.0.0
+
+## refreshOnWindowFocus
+
+**Signature**
+
+```ts
+export declare const refreshOnWindowFocus: <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A>
 ```
 
 Added in v1.0.0
@@ -385,16 +393,6 @@ export declare const mapResult: {
 
 Added in v1.0.0
 
-## refreshOnWindowFocus
-
-**Signature**
-
-```ts
-export declare const refreshOnWindowFocus: <A extends Rx<any>>(self: A) => Rx.WithoutSerializable<A>
-```
-
-Added in v1.0.0
-
 ## serializable
 
 **Signature**
@@ -495,6 +493,33 @@ export declare const withLabel: {
 
 Added in v1.0.0
 
+## withOptimisticSet
+
+**Signature**
+
+```ts
+export declare const withOptimisticSet: {
+  <A, XA, XE, W = A extends Result.Result<infer _A, infer _E> ? _A : A>(options: {
+    readonly updateToValue: (
+      value: W,
+      current: NoInfer<A>
+    ) => A extends Result.Result<infer _A, infer _E> ? _A : NoInfer<A>
+    readonly fn: RxResultFn<NoInfer<W>, XA, XE>
+    readonly disableRefresh?: boolean | undefined
+  }): (self: Rx<A>) => Writable<A, W>
+  <A, XA, XE, W = A extends Result.Result<infer _A, infer _E> ? _A : A>(
+    self: Rx<A>,
+    options: {
+      readonly updateToValue: (value: W, current: NoInfer<A>) => A extends Result.Result<infer _A, infer _E> ? _A : A
+      readonly fn: RxResultFn<NoInfer<W>, XA, XE>
+      readonly disableRefresh?: boolean | undefined
+    }
+  ): Writable<A, W>
+}
+```
+
+Added in v1.0.0
+
 # constructors
 
 ## context
@@ -526,19 +551,19 @@ export declare const fn: {
   <Arg>(): <E, A>(
     fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry>,
     options?: { readonly initialValue?: A }
-  ) => RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
-  <Arg, E, A>(
+  ) => RxResultFn<Arg, A, E>
+  <E, A, Arg = void>(
     fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry>,
     options?: { readonly initialValue?: A }
-  ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E>
+  ): RxResultFn<Arg, A, E>
   <Arg>(): <E, A>(
     fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry>,
     options?: { readonly initialValue?: A }
-  ) => RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
-  <Arg, E, A>(
+  ) => RxResultFn<Arg, A, E | NoSuchElementException>
+  <E, A, Arg = void>(
     fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry>,
     options?: { readonly initialValue?: A }
-  ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | NoSuchElementException>
+  ): RxResultFn<Arg, A, E | NoSuchElementException>
 }
 ```
 
@@ -551,17 +576,11 @@ Added in v1.0.0
 ```ts
 export declare const fnSync: {
   <Arg>(): {
-    <A>(f: (arg: Arg, get: FnContext) => A): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
-    <A>(
-      f: (arg: Arg, get: FnContext) => A,
-      options: { readonly initialValue: A }
-    ): Writable<A, RxResultFn.ArgToVoid<Arg>>
+    <A>(f: (arg: Arg, get: FnContext) => A): Writable<Option.Option<A>, Arg>
+    <A>(f: (arg: Arg, get: FnContext) => A, options: { readonly initialValue: A }): Writable<A, Arg>
   }
-  <Arg, A>(f: (arg: Arg, get: FnContext) => A): Writable<Option.Option<A>, RxResultFn.ArgToVoid<Arg>>
-  <Arg, A>(
-    f: (arg: Arg, get: FnContext) => A,
-    options: { readonly initialValue: A }
-  ): Writable<A, RxResultFn.ArgToVoid<Arg>>
+  <A, Arg = void>(f: (arg: Arg, get: FnContext) => A): Writable<Option.Option<A>, Arg>
+  <A, Arg = void>(f: (arg: Arg, get: FnContext) => A, options: { readonly initialValue: A }): Writable<A, Arg>
 }
 ```
 
@@ -927,26 +946,26 @@ export interface RxRuntime<R, ER> extends Rx<Result.Result<Runtime.Runtime<R>, E
         options?: {
           readonly initialValue?: A
         }
-      ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
+      ): RxResultFn<Arg, A, E | ER>
       <E, A>(
         fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry | R>,
         options?: {
           readonly initialValue?: A
         }
-      ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER | NoSuchElementException>
+      ): RxResultFn<Arg, A, E | ER | NoSuchElementException>
     }
-    <Arg, E, A>(
+    <E, A, Arg = void>(
       fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | RxRegistry | R>,
       options?: {
         readonly initialValue?: A
       }
-    ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER>
-    <Arg, E, A>(
+    ): RxResultFn<Arg, A, E | ER>
+    <E, A, Arg = void>(
       fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, RxRegistry | R>,
       options?: {
         readonly initialValue?: A
       }
-    ): RxResultFn<RxResultFn.ArgToVoid<Arg>, A, E | ER | NoSuchElementException>
+    ): RxResultFn<Arg, A, E | ER | NoSuchElementException>
   }
 
   readonly pull: <A, E>(
@@ -1058,22 +1077,6 @@ Added in v1.0.0
 
 ```ts
 export type WritableTypeId = typeof WritableTypeId
-```
-
-Added in v1.0.0
-
-# utils
-
-## RxResultFn (namespace)
-
-Added in v1.0.0
-
-### ArgToVoid (type alias)
-
-**Signature**
-
-```ts
-export type ArgToVoid<Arg> = Arg extends infer A ? (unknown extends A ? void : A extends undefined ? void : A) : never
 ```
 
 Added in v1.0.0
