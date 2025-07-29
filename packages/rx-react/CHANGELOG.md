@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.40.5
+
+### Patch Changes
+
+- [`bd743db`](https://github.com/tim-smart/effect-rx/commit/bd743db5bed2e793225486817f7b028fcb882264) Thanks [@tim-smart](https://github.com/tim-smart)! - fix RegistryProvider disposal
+
 ## 0.40.4
 
 ### Patch Changes
