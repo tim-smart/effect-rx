@@ -54,7 +54,7 @@ export const RegistryProvider = (options: {
       clearTimeout(ref.current.timeout)
     }
     return () => {
-      setTimeout(() => {
+      ref.current!.timeout = setTimeout(() => {
         ref.current?.registry.dispose()
         ref.current = null
       }, 500)
