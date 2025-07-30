@@ -1171,6 +1171,44 @@ describe("Rx", () => {
       expect(r.get(rx)).toEqual(2)
       expect(r.get(optimisticRx)).toEqual(2)
     })
+
+    it("intermediate updates", async () => {
+      const latch = Effect.unsafeMakeLatch()
+      const r = Registry.make()
+      let i = 0
+      const rx = Rx.make(Effect.sync(() => i))
+      const optimisticRx = rx.pipe(
+        Rx.optimistic
+      )
+      const fn = optimisticRx.pipe(
+        Rx.optimisticFn({
+          reducer: (_current, update: number) => Result.success(update),
+          fn: (set) =>
+            Rx.fn(Effect.fnUntraced(function*() {
+              set(Result.success(123))
+              yield* latch.await
+            }))
+        }),
+        Rx.keepAlive
+      )
+
+      expect(r.get(rx)).toEqual(Result.success(0))
+      assert.deepStrictEqual(r.get(optimisticRx), Result.success(0))
+      r.set(fn, 1)
+      i = 2
+
+      // optimistic phase: the intermediate value is set, but the true value is
+      // not
+      assert.deepStrictEqual(r.get(rx), Result.success(0))
+      assert.deepStrictEqual(r.get(optimisticRx), Result.success(123, { waiting: true }))
+
+      latch.unsafeOpen()
+      await Effect.runPromise(Effect.yieldNow())
+
+      // commit phase: a refresh is triggered, the authoritative value is used
+      assert.deepStrictEqual(r.get(rx), Result.success(2))
+      assert.deepStrictEqual(r.get(optimisticRx), Result.success(2))
+    })
   })
 })
 

@@ -40,6 +40,7 @@ Added in v1.0.0
 - [batching](#batching)
   - [batch](#batch)
 - [combinators](#combinators)
+  - [autoDispose](#autodispose)
   - [debounce](#debounce)
   - [initialValue](#initialvalue)
   - [keepAlive](#keepalive)
@@ -243,9 +244,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const optimistic: <A>(
-  self: Rx<A>
-) => Writable<A, Rx<Result.Result<A extends Result.Result<infer _A, infer _E> ? _A : A, unknown>>>
+export declare const optimistic: <A>(self: Rx<A>) => Writable<A, Rx<Result.Result<A, unknown>>>
 ```
 
 Added in v1.0.0
@@ -256,15 +255,19 @@ Added in v1.0.0
 
 ```ts
 export declare const optimisticFn: {
-  <A, W, XA, XE, OW = A extends Result.Result<infer _A, infer _E> ? _A : A>(options: {
-    readonly updateToValue: (value: OW, current: NoInfer<A>) => NoInfer<W>
-    readonly fn: RxResultFn<NoInfer<OW>, XA, XE>
+  <A, W, XA, XE, OW = W>(options: {
+    readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
+    readonly fn:
+      | RxResultFn<NoInfer<OW>, XA, XE>
+      | ((set: (result: NoInfer<W>) => void) => RxResultFn<NoInfer<OW>, XA, XE>)
   }): (self: Writable<A, Rx<Result.Result<W, unknown>>>) => RxResultFn<OW, XA, XE>
-  <A, W, XA, XE, OW = A extends Result.Result<infer _A, infer _E> ? _A : A>(
+  <A, W, XA, XE, OW = W>(
     self: Writable<A, Rx<Result.Result<W, unknown>>>,
     options: {
-      readonly updateToValue: (value: OW, current: NoInfer<A>) => NoInfer<W>
-      readonly fn: RxResultFn<NoInfer<OW>, XA, XE>
+      readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
+      readonly fn:
+        | RxResultFn<NoInfer<OW>, XA, XE>
+        | ((set: (result: NoInfer<W>) => void) => RxResultFn<NoInfer<OW>, XA, XE>)
     }
   ): RxResultFn<OW, XA, XE>
 }
@@ -352,6 +355,21 @@ export declare const batch: (f: () => void) => void
 Added in v1.0.0
 
 # combinators
+
+## autoDispose
+
+Reverts the `keepAlive` behavior of a reactive value, allowing it to be
+disposed of when not in use.
+
+Note that Rx's have this behavior by default.
+
+**Signature**
+
+```ts
+export declare const autoDispose: <A extends Rx<any>>(self: A) => A
+```
+
+Added in v1.0.0
 
 ## debounce
 
