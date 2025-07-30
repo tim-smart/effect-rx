@@ -1369,9 +1369,10 @@ export const optimistic = <A>(
   )
   return writable(
     (get) => {
-      const lastValue = get.once(self)
+      let lastValue = get.once(self)
       const isResult = Result.isResult(lastValue)
       get.subscribe(self, (value) => {
+        lastValue = value
         if (!Result.isResult(value)) {
           return get.setSelf(value)
         }
@@ -1454,7 +1455,7 @@ export const optimisticFn: {
     get.set(transition, Result.success(value, { waiting: true }))
     get.set(self, transition)
     get.set(options.fn, arg)
-    return Effect.onExit(get.result(options.fn), (exit) => {
+    return Effect.onExit(get.result(options.fn, { suspendOnWaiting: true }), (exit) => {
       get.set(transition, Result.fromExit(Exit.as(exit, value)))
       return Effect.void
     })
