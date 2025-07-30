@@ -1,5 +1,14 @@
 # @effect-rx/rx-livestore
 
+## 0.1.3
+
+### Patch Changes
+
+- [`14727fe`](https://github.com/tim-smart/effect-rx/commit/14727fe34b762fdb9064d56385424f707081d1e1) Thanks [@tim-smart](https://github.com/tim-smart)! - fix Result.failureWithPrevious previousSuccess
+
+- Updated dependencies [[`14727fe`](https://github.com/tim-smart/effect-rx/commit/14727fe34b762fdb9064d56385424f707081d1e1)]:
+  - @effect-rx/rx@0.47.5
+
 ## 0.1.2
 
 ### Patch Changes
