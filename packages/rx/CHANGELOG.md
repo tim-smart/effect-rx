@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.47.4
+
+### Patch Changes
+
+- [`858787d`](https://github.com/tim-smart/effect-rx/commit/858787debb808769d28512078b2fbab43adbefdd) Thanks [@tim-smart](https://github.com/tim-smart)! - default optimisticFn updates to void
+
 ## 0.47.3
 
 ### Patch Changes
