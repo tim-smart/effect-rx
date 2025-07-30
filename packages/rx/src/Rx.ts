@@ -1359,18 +1359,17 @@ export const debounce: {
  */
 export const optimistic = <A>(
   self: Rx<A>
-): Writable<A, Rx<Result.Result<A extends Result.Result<infer _A, infer _E> ? _A : A, unknown>>> => {
+): Writable<A, Rx<Result.Result<A, unknown>>> => {
   let counter = 0
   const writeRx = state(
     [
       counter,
-      undefined as any as Rx<Result.Result<A extends Result.Result<infer _A, infer _E> ? _A : A, unknown>>
+      undefined as any as Rx<Result.Result<A, unknown>>
     ] as const
   )
   return writable(
     (get) => {
       let lastValue = get.once(self)
-      const isResult = Result.isResult(lastValue)
       get.subscribe(self, (value) => {
         lastValue = value
         if (!Result.isResult(value)) {
@@ -1385,20 +1384,22 @@ export const optimistic = <A>(
           get.setSelf(value)
         }
       })
-      const transitions = new Set<Rx<Result.Result<A extends Result.Result<infer _A, infer _E> ? _A : A, unknown>>>()
+      const transitions = new Set<Rx<Result.Result<A, unknown>>>()
       const cancels = new Set<() => void>()
       get.subscribe(writeRx, ([, rx]) => {
-        if (transitions.has(rx)) {
-          return
-        }
+        if (transitions.has(rx)) return
         transitions.add(rx)
-        const cancel = get.registry.subscribe(rx, (result) => {
+        let cancel: (() => void) | undefined
+        // eslint-disable-next-line prefer-const
+        cancel = get.registry.subscribe(rx, (result) => {
           if (Result.isSuccess(result) && result.waiting) {
-            return get.setSelf(isResult ? Result.success(result.value, { waiting: true }) : result.value)
+            return get.setSelf(result.value)
           }
           transitions.delete(rx)
-          cancels.delete(cancel)
-          cancel()
+          if (cancel) {
+            cancels.delete(cancel)
+            cancel()
+          }
           if (transitions.size === 0) {
             if (Result.isFailure(result)) {
               get.setSelf(lastValue)
@@ -1406,12 +1407,14 @@ export const optimistic = <A>(
             get.refresh(self)
           }
         }, { immediate: true })
-        cancels.add(cancel)
-      })
-      get.addFinalizer(() => {
-        for (const cancel of cancels) {
+        if (transitions.has(rx)) {
+          cancels.add(cancel)
+        } else {
           cancel()
         }
+      })
+      get.addFinalizer(() => {
+        for (const cancel of cancels) cancel()
         transitions.clear()
         cancels.clear()
       })
@@ -1427,31 +1430,34 @@ export const optimistic = <A>(
  * @category Optimistic
  */
 export const optimisticFn: {
-  <A, W, XA, XE, OW = A extends Result.Result<infer _A, infer _E> ? _A : A>(
+  <A, W, XA, XE, OW = W>(
     options: {
-      readonly updateToValue: (value: OW, current: NoInfer<A>) => NoInfer<W>
+      readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
       readonly fn: RxResultFn<NoInfer<OW>, XA, XE>
     }
   ): (
     self: Writable<A, Rx<Result.Result<W, unknown>>>
   ) => RxResultFn<OW, XA, XE>
-  <A, W, XA, XE, OW = A extends Result.Result<infer _A, infer _E> ? _A : A>(
+  <A, W, XA, XE, OW = W>(
     self: Writable<A, Rx<Result.Result<W, unknown>>>,
     options: {
-      readonly updateToValue: (value: OW, current: NoInfer<A>) => NoInfer<W>
+      readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
       readonly fn: RxResultFn<NoInfer<OW>, XA, XE>
     }
   ): RxResultFn<OW, XA, XE>
-} = dual(2, <A, W, OW, XA, XE>(
+} = dual(2, <A, W, XA, XE, OW = W>(
   self: Writable<A, Rx<Result.Result<W, unknown>>>,
   options: {
-    readonly updateToValue: (value: OW, current: A) => W
+    readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
     readonly fn: RxResultFn<OW, XA, XE>
   }
 ): RxResultFn<OW, XA, XE> => {
   const transition = state<Result.Result<W, unknown>>(Result.initial())
   return fn((arg: OW, get) => {
-    const value = options.updateToValue(arg, get(self))
+    let value = options.reducer(get(self), arg)
+    if (Result.isResult(value) && !value.waiting) {
+      value = Result.waiting(value)
+    }
     get.set(transition, Result.success(value, { waiting: true }))
     get.set(self, transition)
     get.set(options.fn, arg)

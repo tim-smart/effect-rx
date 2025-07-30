@@ -1054,7 +1054,7 @@ describe("Rx", () => {
       const optimisticRx = rx.pipe(Rx.optimistic)
       const fn = optimisticRx.pipe(
         Rx.optimisticFn({
-          updateToValue: (value) => value,
+          reducer: (_current, update) => update,
           fn: Rx.fn(Effect.fnUntraced(function*() {
             yield* latch.await
           }))
@@ -1089,7 +1089,7 @@ describe("Rx", () => {
       )
       const fn = optimisticRx.pipe(
         Rx.optimisticFn({
-          updateToValue: (value) => value,
+          reducer: (_current, update: number) => Result.success(update),
           fn: Rx.fn(Effect.fnUntraced(function*() {
             yield* latch.await
           }))
@@ -1124,7 +1124,7 @@ describe("Rx", () => {
       )
       const fn = optimisticRx.pipe(
         Rx.optimisticFn({
-          updateToValue: (value) => value,
+          reducer: (_, value) => value,
           fn: Rx.fn(Effect.fnUntraced(function*() {
             yield* latch.await
             return yield* Effect.fail("error")
@@ -1147,6 +1147,29 @@ describe("Rx", () => {
       // commit phase: the optimistic value is reset to the true value
       expect(r.get(rx)).toEqual(0)
       expect(r.get(optimisticRx)).toEqual(0)
+    })
+
+    it("sync fn", async () => {
+      const r = Registry.make()
+      let i = 0
+      const rx = Rx.make(() => i)
+      const optimisticRx = rx.pipe(Rx.optimistic, Rx.keepAlive)
+      const fn = optimisticRx.pipe(
+        Rx.optimisticFn({
+          reducer: (_current, update) => update,
+          fn: Rx.fn(() => {
+            i = 2
+            return Effect.void
+          })
+        })
+      )
+
+      expect(r.get(rx)).toEqual(0)
+      expect(r.get(optimisticRx)).toEqual(0)
+      r.set(fn, 1)
+
+      expect(r.get(rx)).toEqual(2)
+      expect(r.get(optimisticRx)).toEqual(2)
     })
   })
 })
