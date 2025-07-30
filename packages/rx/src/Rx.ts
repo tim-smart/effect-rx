@@ -1445,7 +1445,7 @@ export const optimistic = <A>(
  * @category Optimistic
  */
 export const optimisticFn: {
-  <A, W, XA, XE, OW = W>(
+  <A, W, XA, XE, OW = void>(
     options: {
       readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
       readonly fn:
@@ -1455,7 +1455,7 @@ export const optimisticFn: {
   ): (
     self: Writable<A, Rx<Result.Result<W, unknown>>>
   ) => RxResultFn<OW, XA, XE>
-  <A, W, XA, XE, OW = W>(
+  <A, W, XA, XE, OW = void>(
     self: Writable<A, Rx<Result.Result<W, unknown>>>,
     options: {
       readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
@@ -1464,7 +1464,7 @@ export const optimisticFn: {
         | ((set: (result: NoInfer<W>) => void) => RxResultFn<NoInfer<OW>, XA, XE>)
     }
   ): RxResultFn<OW, XA, XE>
-} = dual(2, <A, W, XA, XE, OW = W>(
+} = dual(2, <A, W, XA, XE, OW = void>(
   self: Writable<A, Rx<Result.Result<W, unknown>>>,
   options: {
     readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
