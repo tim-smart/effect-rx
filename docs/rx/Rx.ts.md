@@ -27,6 +27,9 @@ Added in v1.0.0
   - [windowFocusSignal](#windowfocussignal)
 - [KeyValueStore](#keyvaluestore)
   - [kvs](#kvs)
+- [Optimistic](#optimistic)
+  - [optimistic](#optimistic-1)
+  - [optimisticFn](#optimisticfn)
 - [Serializable](#serializable)
   - [Serializable (interface)](#serializable-interface)
   - [SerializableTypeId](#serializabletypeid)
@@ -48,7 +51,6 @@ Added in v1.0.0
   - [transform](#transform)
   - [withFallback](#withfallback)
   - [withLabel](#withlabel)
-  - [withOptimisticSet](#withoptimisticset)
 - [constructors](#constructors)
   - [context](#context)
   - [family](#family)
@@ -230,6 +232,42 @@ export declare const kvs: <A>(options: {
   readonly schema: Schema.Schema<A, any>
   readonly defaultValue: LazyArg<A>
 }) => Writable<A>
+```
+
+Added in v1.0.0
+
+# Optimistic
+
+## optimistic
+
+**Signature**
+
+```ts
+export declare const optimistic: <A>(
+  self: Rx<A>
+) => Writable<A, Rx<Result.Result<A extends Result.Result<infer _A, infer _E> ? _A : A, unknown>>>
+```
+
+Added in v1.0.0
+
+## optimisticFn
+
+**Signature**
+
+```ts
+export declare const optimisticFn: {
+  <A, W, XA, XE, OW = A extends Result.Result<infer _A, infer _E> ? _A : A>(options: {
+    readonly updateToValue: (value: OW, current: NoInfer<A>) => NoInfer<W>
+    readonly fn: RxResultFn<NoInfer<OW>, XA, XE>
+  }): (self: Writable<A, Rx<Result.Result<W, unknown>>>) => RxResultFn<OW, XA, XE>
+  <A, W, XA, XE, OW = A extends Result.Result<infer _A, infer _E> ? _A : A>(
+    self: Writable<A, Rx<Result.Result<W, unknown>>>,
+    options: {
+      readonly updateToValue: (value: OW, current: NoInfer<A>) => NoInfer<W>
+      readonly fn: RxResultFn<NoInfer<OW>, XA, XE>
+    }
+  ): RxResultFn<OW, XA, XE>
+}
 ```
 
 Added in v1.0.0
@@ -488,33 +526,6 @@ Added in v1.0.0
 export declare const withLabel: {
   (name: string): <A extends Rx<any>>(self: A) => A
   <A extends Rx<any>>(self: A, name: string): A
-}
-```
-
-Added in v1.0.0
-
-## withOptimisticSet
-
-**Signature**
-
-```ts
-export declare const withOptimisticSet: {
-  <A, XA, XE, W = A extends Result.Result<infer _A, infer _E> ? _A : A>(options: {
-    readonly updateToValue: (
-      value: W,
-      current: NoInfer<A>
-    ) => A extends Result.Result<infer _A, infer _E> ? _A : NoInfer<A>
-    readonly fn: RxResultFn<NoInfer<W>, XA, XE>
-    readonly disableRefresh?: boolean | undefined
-  }): (self: Rx<A>) => Writable<A, W>
-  <A, XA, XE, W = A extends Result.Result<infer _A, infer _E> ? _A : A>(
-    self: Rx<A>,
-    options: {
-      readonly updateToValue: (value: W, current: NoInfer<A>) => A extends Result.Result<infer _A, infer _E> ? _A : A
-      readonly fn: RxResultFn<NoInfer<W>, XA, XE>
-      readonly disableRefresh?: boolean | undefined
-    }
-  ): Writable<A, W>
 }
 ```
 
