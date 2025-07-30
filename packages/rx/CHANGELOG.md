@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.47.2
+
+### Patch Changes
+
+- [#263](https://github.com/tim-smart/effect-rx/pull/263) [`ddb6678`](https://github.com/tim-smart/effect-rx/commit/ddb66784b12683d3315cfe8b303c4436f5eb5cc5) Thanks [@tim-smart](https://github.com/tim-smart)! - fix sync optimisticFn
+
 ## 0.47.1
 
 ### Patch Changes
