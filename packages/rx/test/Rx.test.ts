@@ -1045,14 +1045,15 @@ describe("Rx", () => {
     })
   })
 
-  describe("withOptimisticSet", () => {
+  describe("optimistic", () => {
     it("non-Result", async () => {
       const latch = Effect.unsafeMakeLatch()
       const r = Registry.make()
       let i = 0
       const rx = Rx.make(() => i)
-      const optimisticRx = rx.pipe(
-        Rx.withOptimisticSet({
+      const optimisticRx = rx.pipe(Rx.optimistic)
+      const fn = optimisticRx.pipe(
+        Rx.optimisticFn({
           updateToValue: (value) => value,
           fn: Rx.fn(Effect.fnUntraced(function*() {
             yield* latch.await
@@ -1063,7 +1064,7 @@ describe("Rx", () => {
 
       expect(r.get(rx)).toEqual(0)
       expect(r.get(optimisticRx)).toEqual(0)
-      r.set(optimisticRx, 1)
+      r.set(fn, 1)
       i = 2
 
       // optimistic phase: the optimistic value is set, but the true value is not
@@ -1084,7 +1085,10 @@ describe("Rx", () => {
       let i = 0
       const rx = Rx.make(Effect.sync(() => i))
       const optimisticRx = rx.pipe(
-        Rx.withOptimisticSet({
+        Rx.optimistic
+      )
+      const fn = optimisticRx.pipe(
+        Rx.optimisticFn({
           updateToValue: (value) => value,
           fn: Rx.fn(Effect.fnUntraced(function*() {
             yield* latch.await
@@ -1095,7 +1099,7 @@ describe("Rx", () => {
 
       expect(r.get(rx)).toEqual(Result.success(0))
       expect(r.get(optimisticRx)).toEqual(Result.success(0))
-      r.set(optimisticRx, 1)
+      r.set(fn, 1)
       i = 2
 
       // optimistic phase: the optimistic value is set, but the true value is not
@@ -1116,7 +1120,10 @@ describe("Rx", () => {
       const i = 0
       const rx = Rx.make(() => i)
       const optimisticRx = rx.pipe(
-        Rx.withOptimisticSet({
+        Rx.optimistic
+      )
+      const fn = optimisticRx.pipe(
+        Rx.optimisticFn({
           updateToValue: (value) => value,
           fn: Rx.fn(Effect.fnUntraced(function*() {
             yield* latch.await
@@ -1128,7 +1135,7 @@ describe("Rx", () => {
 
       expect(r.get(rx)).toEqual(0)
       expect(r.get(optimisticRx)).toEqual(0)
-      r.set(optimisticRx, 1)
+      r.set(fn, 1)
 
       // optimistic phase: the optimistic value is set, but the true value is not
       expect(r.get(rx)).toEqual(0)
