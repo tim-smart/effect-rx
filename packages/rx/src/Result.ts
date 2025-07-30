@@ -251,7 +251,12 @@ export const failureWithPrevious = <A, E>(
   }
 ): Failure<A, E> =>
   failure(cause, {
-    previousSuccess: options.previous.pipe(Option.filter(isSuccess)),
+    previousSuccess: Option.flatMap(options.previous, (result) =>
+      isSuccess(result)
+        ? Option.some(result)
+        : isFailure(result)
+        ? result.previousSuccess
+        : Option.none()),
     waiting: options.waiting
   })
 
