@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.47.3
+
+### Patch Changes
+
+- [#265](https://github.com/tim-smart/effect-rx/pull/265) [`f64c25f`](https://github.com/tim-smart/effect-rx/commit/f64c25f71fffa23e318c3662643b340933fd0d72) Thanks [@tim-smart](https://github.com/tim-smart)! - allow intermediate updates in optimisticFn
+
 ## 0.47.2
 
 ### Patch Changes
