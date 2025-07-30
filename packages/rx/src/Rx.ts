@@ -1193,6 +1193,21 @@ export const keepAlive = <A extends Rx<any>>(self: A): A =>
   })
 
 /**
+ * Reverts the `keepAlive` behavior of a reactive value, allowing it to be
+ * disposed of when not in use.
+ *
+ * Note that Rx's have this behavior by default.
+ *
+ * @since 1.0.0
+ * @category combinators
+ */
+export const autoDispose = <A extends Rx<any>>(self: A): A =>
+  Object.assign(Object.create(Object.getPrototypeOf(self)), {
+    ...self,
+    keepAlive: false
+  })
+
+/**
  * @since 1.0.0
  * @category combinators
  */
@@ -1433,7 +1448,9 @@ export const optimisticFn: {
   <A, W, XA, XE, OW = W>(
     options: {
       readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
-      readonly fn: RxResultFn<NoInfer<OW>, XA, XE>
+      readonly fn:
+        | RxResultFn<NoInfer<OW>, XA, XE>
+        | ((set: (result: NoInfer<W>) => void) => RxResultFn<NoInfer<OW>, XA, XE>)
     }
   ): (
     self: Writable<A, Rx<Result.Result<W, unknown>>>
@@ -1442,14 +1459,18 @@ export const optimisticFn: {
     self: Writable<A, Rx<Result.Result<W, unknown>>>,
     options: {
       readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
-      readonly fn: RxResultFn<NoInfer<OW>, XA, XE>
+      readonly fn:
+        | RxResultFn<NoInfer<OW>, XA, XE>
+        | ((set: (result: NoInfer<W>) => void) => RxResultFn<NoInfer<OW>, XA, XE>)
     }
   ): RxResultFn<OW, XA, XE>
 } = dual(2, <A, W, XA, XE, OW = W>(
   self: Writable<A, Rx<Result.Result<W, unknown>>>,
   options: {
     readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
-    readonly fn: RxResultFn<OW, XA, XE>
+    readonly fn:
+      | RxResultFn<NoInfer<OW>, XA, XE>
+      | ((set: (result: NoInfer<W>) => void) => RxResultFn<NoInfer<OW>, XA, XE>)
   }
 ): RxResultFn<OW, XA, XE> => {
   const transition = state<Result.Result<W, unknown>>(Result.initial())
@@ -1460,8 +1481,16 @@ export const optimisticFn: {
     }
     get.set(transition, Result.success(value, { waiting: true }))
     get.set(self, transition)
-    get.set(options.fn, arg)
-    return Effect.onExit(get.result(options.fn, { suspendOnWaiting: true }), (exit) => {
+    const fn = typeof options.fn === "function"
+      ? autoDispose(options.fn((value) =>
+        get.set(
+          transition,
+          Result.success(Result.isResult(value) ? Result.waiting(value) : value, { waiting: true })
+        )
+      ))
+      : options.fn
+    get.set(fn, arg)
+    return Effect.onExit(get.result(fn, { suspendOnWaiting: true }), (exit) => {
       get.set(transition, Result.fromExit(Exit.as(exit, value)))
       return Effect.void
     })
