@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.40.7
+
+### Patch Changes
+
+- [`858787d`](https://github.com/tim-smart/effect-rx/commit/858787debb808769d28512078b2fbab43adbefdd) Thanks [@tim-smart](https://github.com/tim-smart)! - default optimisticFn updates to void
+
+- Updated dependencies [[`858787d`](https://github.com/tim-smart/effect-rx/commit/858787debb808769d28512078b2fbab43adbefdd)]:
+  - @effect-rx/rx@0.47.4
+
 ## 0.40.6
 
 ### Patch Changes
