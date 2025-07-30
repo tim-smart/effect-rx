@@ -1355,88 +1355,110 @@ export const debounce: {
 
 /**
  * @since 1.0.0
- * @category combinators
+ * @category Optimistic
  */
-export const withOptimisticSet: {
-  <A, XA, XE, W = A extends Result.Result<infer _A, infer _E> ? _A : A>(
-    options: {
-      readonly updateToValue: (
-        value: W,
-        current: NoInfer<A>
-      ) => A extends Result.Result<infer _A, infer _E> ? _A : NoInfer<A>
-      readonly fn: RxResultFn<NoInfer<W>, XA, XE>
-      readonly disableRefresh?: boolean | undefined
-    }
-  ): (
-    self: Rx<A>
-  ) => Writable<A, W>
-  <A, XA, XE, W = A extends Result.Result<infer _A, infer _E> ? _A : A>(
-    self: Rx<A>,
-    options: {
-      readonly updateToValue: (
-        value: W,
-        current: NoInfer<A>
-      ) => A extends Result.Result<infer _A, infer _E> ? _A : A
-      readonly fn: RxResultFn<NoInfer<W>, XA, XE>
-      readonly disableRefresh?: boolean | undefined
-    }
-  ): Writable<A, W>
-} = dual(2, <A, W, XA, XE>(
-  self: Rx<A>,
-  options: {
-    readonly updateToValue: (value: W, current: A) => A extends Result.Result<infer _A, infer _E> ? _A : A
-    readonly fn: RxResultFn<W, XA, XE>
-    readonly disableRefresh?: boolean | undefined
-  }
-): Writable<A, W> => {
+export const optimistic = <A>(
+  self: Rx<A>
+): Writable<A, Rx<Result.Result<A extends Result.Result<infer _A, infer _E> ? _A : A, unknown>>> => {
   let counter = 0
-  const argRx = state([counter, undefined as A | undefined] as const)
-  return writable((get) => {
-    let lastValue = get.once(self)
-    get.subscribe(self, (value) => {
-      lastValue = value
-      if (!Result.isResult(value)) {
-        return get.setSelf(value)
-      }
-      const current = Option.getOrUndefined(get.self<Result.Result<any, any>>())!
-      if (Result.isSuccess(current) && Result.isSuccess(value)) {
-        if (value.timestamp >= current.timestamp) {
+  const writeRx = state(
+    [
+      counter,
+      undefined as any as Rx<Result.Result<A extends Result.Result<infer _A, infer _E> ? _A : A, unknown>>
+    ] as const
+  )
+  return writable(
+    (get) => {
+      let lastValue = get.once(self)
+      const isResult = Result.isResult(lastValue)
+      get.subscribe(self, (value) => {
+        lastValue = value
+        if (!Result.isResult(value)) {
+          return get.setSelf(value)
+        }
+        const current = Option.getOrUndefined(get.self<Result.Result<any, any>>())!
+        if (Result.isSuccess(current) && Result.isSuccess(value)) {
+          if (value.timestamp >= current.timestamp) {
+            get.setSelf(value)
+          }
+        } else {
           get.setSelf(value)
         }
-      } else {
-        get.setSelf(lastValue)
-      }
+      })
+      const transitions = new Set<Rx<Result.Result<A extends Result.Result<infer _A, infer _E> ? _A : A, unknown>>>()
+      const cancels = new Set<() => void>()
+      get.subscribe(writeRx, ([, rx]) => {
+        if (transitions.has(rx)) {
+          return
+        }
+        transitions.add(rx)
+        const cancel = get.registry.subscribe(rx, (result) => {
+          if (Result.isSuccess(result) && result.waiting) {
+            return get.setSelf(isResult ? Result.success(result.value, { waiting: true }) : result.value)
+          }
+          transitions.delete(rx)
+          cancels.delete(cancel)
+          cancel()
+          if (transitions.size === 0) {
+            if (Result.isFailure(result)) {
+              get.setSelf(lastValue)
+            }
+            get.refresh(self)
+          }
+        }, { immediate: true })
+        cancels.add(cancel)
+      })
+      get.addFinalizer(() => {
+        for (const cancel of cancels) {
+          cancel()
+        }
+        transitions.clear()
+        cancels.clear()
+      })
+      return lastValue
+    },
+    (ctx, rx) => ctx.set(writeRx, [++counter, rx]),
+    (refresh) => refresh(self)
+  )
+}
+
+/**
+ * @since 1.0.0
+ * @category Optimistic
+ */
+export const optimisticFn: {
+  <A, W, XA, XE, OW = A extends Result.Result<infer _A, infer _E> ? _A : A>(
+    options: {
+      readonly updateToValue: (value: OW, current: NoInfer<A>) => NoInfer<W>
+      readonly fn: RxResultFn<NoInfer<OW>, XA, XE>
+    }
+  ): (
+    self: Writable<A, Rx<Result.Result<W, unknown>>>
+  ) => RxResultFn<OW, XA, XE>
+  <A, W, XA, XE, OW = A extends Result.Result<infer _A, infer _E> ? _A : A>(
+    self: Writable<A, Rx<Result.Result<W, unknown>>>,
+    options: {
+      readonly updateToValue: (value: OW, current: NoInfer<A>) => NoInfer<W>
+      readonly fn: RxResultFn<NoInfer<OW>, XA, XE>
+    }
+  ): RxResultFn<OW, XA, XE>
+} = dual(2, <A, W, OW, XA, XE>(
+  self: Writable<A, Rx<Result.Result<W, unknown>>>,
+  options: {
+    readonly updateToValue: (value: OW, current: A) => W
+    readonly fn: RxResultFn<OW, XA, XE>
+  }
+): RxResultFn<OW, XA, XE> => {
+  const transition = state<Result.Result<W, unknown>>(Result.initial())
+  return fn((arg: OW, get) => {
+    const value = options.updateToValue(arg, get(self))
+    get.set(transition, Result.success(value, { waiting: true }))
+    get.set(self, transition)
+    get.set(options.fn, arg)
+    return Effect.onExit(get.result(options.fn, { suspendOnWaiting: true }), (exit) => {
+      get.set(transition, Result.fromExit(Exit.as(exit, value)))
+      return Effect.void
     })
-    let lastSetSuccess: A | undefined
-    get.subscribe(argRx, ([, arg]) => {
-      if (arg === undefined) {
-        return
-      }
-      lastSetSuccess = arg
-      get.setSelf(arg)
-    })
-    get.subscribe(options.fn, (value) => {
-      if (value.waiting || Result.isInitial(value)) {
-        return
-      } else if (Result.isFailure(value)) {
-        return get.setSelf(lastValue)
-      }
-      if (options.disableRefresh !== true) {
-        return get.refresh(self)
-      }
-      const current = Option.getOrUndefined(get.self<Result.Success<any, any>>())!
-      if (current === lastSetSuccess) {
-        get.setSelf(Result.success(current.value))
-      }
-    })
-    return lastValue
-  }, (ctx, value) => {
-    const current = ctx.get(self)
-    const arg = options.updateToValue(value, current)
-    ctx.set(argRx, [++counter, Result.isResult(current) ? Result.success(arg, { waiting: true }) as A : arg as A])
-    ctx.set(options.fn, value)
-  }, (refresh) => {
-    refresh(self)
   })
 })
 
