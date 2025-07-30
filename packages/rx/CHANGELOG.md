@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.47.1
+
+### Patch Changes
+
+- [#260](https://github.com/tim-smart/effect-rx/pull/260) [`14a4b82`](https://github.com/tim-smart/effect-rx/commit/14a4b82aca5c859ba6f0bd2be452b9721a8b7f0f) Thanks [@tim-smart](https://github.com/tim-smart)! - seperate optimistic state from mutations
+
 ## 0.47.0
 
 ### Minor Changes
