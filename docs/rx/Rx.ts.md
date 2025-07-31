@@ -255,19 +255,15 @@ Added in v1.0.0
 
 ```ts
 export declare const optimisticFn: {
-  <A, W, XA, XE, OW = W>(options: {
+  <A, W, XA, XE, OW = void>(options: {
     readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
-    readonly fn:
-      | RxResultFn<NoInfer<OW>, XA, XE>
-      | ((set: (result: NoInfer<W>) => void) => RxResultFn<NoInfer<OW>, XA, XE>)
+    readonly fn: RxResultFn<OW, XA, XE> | ((set: (result: NoInfer<W>) => void) => RxResultFn<OW, XA, XE>)
   }): (self: Writable<A, Rx<Result.Result<W, unknown>>>) => RxResultFn<OW, XA, XE>
-  <A, W, XA, XE, OW = W>(
+  <A, W, XA, XE, OW = void>(
     self: Writable<A, Rx<Result.Result<W, unknown>>>,
     options: {
       readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
-      readonly fn:
-        | RxResultFn<NoInfer<OW>, XA, XE>
-        | ((set: (result: NoInfer<W>) => void) => RxResultFn<NoInfer<OW>, XA, XE>)
+      readonly fn: RxResultFn<OW, XA, XE> | ((set: (result: NoInfer<W>) => void) => RxResultFn<OW, XA, XE>)
     }
   ): RxResultFn<OW, XA, XE>
 }

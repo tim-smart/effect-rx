@@ -1449,8 +1449,8 @@ export const optimisticFn: {
     options: {
       readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
       readonly fn:
-        | RxResultFn<NoInfer<OW>, XA, XE>
-        | ((set: (result: NoInfer<W>) => void) => RxResultFn<NoInfer<OW>, XA, XE>)
+        | RxResultFn<OW, XA, XE>
+        | ((set: (result: NoInfer<W>) => void) => RxResultFn<OW, XA, XE>)
     }
   ): (
     self: Writable<A, Rx<Result.Result<W, unknown>>>
@@ -1460,8 +1460,8 @@ export const optimisticFn: {
     options: {
       readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
       readonly fn:
-        | RxResultFn<NoInfer<OW>, XA, XE>
-        | ((set: (result: NoInfer<W>) => void) => RxResultFn<NoInfer<OW>, XA, XE>)
+        | RxResultFn<OW, XA, XE>
+        | ((set: (result: NoInfer<W>) => void) => RxResultFn<OW, XA, XE>)
     }
   ): RxResultFn<OW, XA, XE>
 } = dual(2, <A, W, XA, XE, OW = void>(
@@ -1469,8 +1469,8 @@ export const optimisticFn: {
   options: {
     readonly reducer: (current: NoInfer<A>, update: OW) => NoInfer<W>
     readonly fn:
-      | RxResultFn<NoInfer<OW>, XA, XE>
-      | ((set: (result: NoInfer<W>) => void) => RxResultFn<NoInfer<OW>, XA, XE>)
+      | RxResultFn<OW, XA, XE>
+      | ((set: (result: NoInfer<W>) => void) => RxResultFn<OW, XA, XE>)
   }
 ): RxResultFn<OW, XA, XE> => {
   const transition = state<Result.Result<W, unknown>>(Result.initial())

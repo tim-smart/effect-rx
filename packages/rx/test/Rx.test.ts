@@ -1124,8 +1124,8 @@ describe("Rx", () => {
       )
       const fn = optimisticRx.pipe(
         Rx.optimisticFn({
-          reducer: (_, value: number) => value,
-          fn: Rx.fn(Effect.fnUntraced(function*() {
+          reducer: (_, value) => value,
+          fn: Rx.fn<number>()(Effect.fnUntraced(function*() {
             yield* latch.await
             return yield* Effect.fail("error")
           }))
@@ -1156,8 +1156,8 @@ describe("Rx", () => {
       const optimisticRx = rx.pipe(Rx.optimistic, Rx.keepAlive)
       const fn = optimisticRx.pipe(
         Rx.optimisticFn({
-          reducer: (_current, update: number) => update,
-          fn: Rx.fn(() => {
+          reducer: (_current, update) => update,
+          fn: Rx.fn<number>()(() => {
             i = 2
             return Effect.void
           })
