@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.47.6
+
+### Patch Changes
+
+- [`35a8606`](https://github.com/tim-smart/effect-rx/commit/35a8606402d7868d3a117f933f61fd347753019d) Thanks [@tim-smart](https://github.com/tim-smart)! - remove NoInfer from optimisticFn arg
+
 ## 0.47.5
 
 ### Patch Changes
