@@ -295,28 +295,7 @@ describe("rx-react", () => {
   })
 
   describe("SSR", () => {
-    it("should not execute Rx effects during SSR", () => {
-      const mockFetchData = vi.fn(() => {})
-
-      const userDataRx = Rx.make(Effect.sync(() => mockFetchData()))
-
-      function TestComponent() {
-        const result = useRxValue(userDataRx)
-
-        return <div>{result._tag}</div>
-      }
-
-      function App() {
-        return <TestComponent />
-      }
-
-      const ssrHtml = renderToString(<App />)
-
-      expect(mockFetchData).not.toHaveBeenCalled()
-      expect(ssrHtml).toContain("Initial")
-    })
-
-    it("should run synchronous rx's during SSR", () => {
+    it("should run rx's during SSR by default", () => {
       const getCount = vi.fn(() => 0)
       const counterRx = Rx.make(getCount)
 
@@ -334,5 +313,28 @@ describe("rx-react", () => {
       expect(getCount).toHaveBeenCalled()
       expect(ssrHtml).toContain("0")
     })
+  })
+
+  it("should not execute Rx effects during SSR when using withServerSnapshot", () => {
+    const mockFetchData = vi.fn(() => 0)
+
+    const userDataRx = Rx.make(Effect.sync(() => mockFetchData())).pipe(
+      Rx.withServerSnapshot(() => Result.initial(true))
+    )
+
+    function TestComponent() {
+      const result = useRxValue(userDataRx)
+
+      return <div>{result._tag}</div>
+    }
+
+    function App() {
+      return <TestComponent />
+    }
+
+    const ssrHtml = renderToString(<App />)
+
+    expect(mockFetchData).not.toHaveBeenCalled()
+    expect(ssrHtml).toContain("Initial")
   })
 })

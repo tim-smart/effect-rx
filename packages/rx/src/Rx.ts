@@ -1800,3 +1800,45 @@ export const serializable: {
       decode: Schema.decodeSync(options.schema)
     }
   }))
+
+/**
+ * @since 1.0.0
+ * @category type ids
+ */
+export const HasServerSnapshotTypeId = Symbol.for("@effect-rx/rx/Rx/HasServerSnapshot")
+
+/**
+ * @since 1.0.0
+ * @category type ids
+ */
+export type HasServerSnapshotTypeId = typeof HasServerSnapshotTypeId
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export interface HasServerSnapshot<A> {
+  readonly [HasServerSnapshotTypeId]: HasServerSnapshotTypeId
+  readonly getServerSnapshot: () => A
+}
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export const isHasServerSnapshot = (self: Rx<any>): self is Rx<any> & HasServerSnapshot<any> =>
+  HasServerSnapshotTypeId in self
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const withServerSnapshot: {
+  <A>(getServerSnapshot: () => A): (rx: Rx<A>) => Rx<A> & HasServerSnapshot<A>
+  <A>(rx: Rx<A>, getServerSnapshot: () => A): Rx<A> & HasServerSnapshot<A>
+} = dual(2, <A>(rx: Rx<A>, getServerSnapshot: () => A): Rx<A> & HasServerSnapshot<A> => {
+  return Object.assign(Object.create(Object.getPrototypeOf(rx)), {
+    [HasServerSnapshotTypeId]: HasServerSnapshotTypeId,
+    getServerSnapshot
+  })
+})

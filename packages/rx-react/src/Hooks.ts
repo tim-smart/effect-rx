@@ -3,7 +3,7 @@
  */
 "use client"
 import * as Registry from "@effect-rx/rx/Registry"
-import * as Result from "@effect-rx/rx/Result"
+import type * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
 import type * as RxRef from "@effect-rx/rx/RxRef"
 import { Effect } from "effect"
@@ -24,10 +24,7 @@ const storeRegistry = globalValue(
   () => new WeakMap<Registry.Registry, WeakMap<Rx.Rx<any>, RxStore<any>>>()
 )
 
-const makeStore: {
-  <A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A>
-  <A, E>(registry: Registry.Registry, rx: Rx.Rx<Result.Result<A, E>>): RxStore<Result.Result<A, E>>
-} = (registry: Registry.Registry, rx: Rx.Rx<any>) => {
+function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
   let stores = storeRegistry.get(registry)
   if (stores === undefined) {
     stores = new WeakMap()
@@ -45,10 +42,10 @@ const makeStore: {
       return registry.get(rx)
     },
     getServerSnapshot() {
-      // if (Rx.isResultRx(rx)) {
-      return Result.initial(true)
-      // }
-      // return this.snapshot()
+      if (Rx.isHasServerSnapshot(rx)) {
+        return rx.getServerSnapshot()
+      }
+      return registry.get(rx)
     }
   }
   stores.set(rx, newStore)
