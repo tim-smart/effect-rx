@@ -3,7 +3,7 @@
  */
 "use client"
 import * as Registry from "@effect-rx/rx/Registry"
-import type * as Result from "@effect-rx/rx/Result"
+import * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
 import type * as RxRef from "@effect-rx/rx/RxRef"
 import { Effect } from "effect"
@@ -16,6 +16,7 @@ import { RegistryContext } from "./RegistryContext.js"
 interface RxStore<A> {
   readonly subscribe: (f: () => void) => () => void
   readonly snapshot: () => A
+  readonly getServerSnapshot: () => A
 }
 
 const storeRegistry = globalValue(
@@ -23,7 +24,10 @@ const storeRegistry = globalValue(
   () => new WeakMap<Registry.Registry, WeakMap<Rx.Rx<any>, RxStore<any>>>()
 )
 
-function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
+const makeStore: {
+  <A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A>
+  <A, E>(registry: Registry.Registry, rx: Rx.Rx<Result.Result<A, E>>): RxStore<Result.Result<A, E>>
+} = (registry: Registry.Registry, rx: Rx.Rx<any>) => {
   let stores = storeRegistry.get(registry)
   if (stores === undefined) {
     stores = new WeakMap()
@@ -33,12 +37,18 @@ function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
   if (store !== undefined) {
     return store
   }
-  const newStore: RxStore<A> = {
+  const newStore: RxStore<any> = {
     subscribe(f) {
       return registry.subscribe(rx, f)
     },
     snapshot() {
       return registry.get(rx)
+    },
+    getServerSnapshot() {
+      // if (Rx.isResultRx(rx)) {
+      return Result.initial(true)
+      // }
+      // return this.snapshot()
     }
   }
   stores.set(rx, newStore)
@@ -47,7 +57,8 @@ function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
 
 function useStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): A {
   const store = makeStore(registry, rx)
-  return React.useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot)
+
+  return React.useSyncExternalStore(store.subscribe, store.snapshot, store.getServerSnapshot)
 }
 
 const initialValuesSet = globalValue(

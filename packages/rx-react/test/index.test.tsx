@@ -3,8 +3,9 @@ import * as Rx from "@effect-rx/rx/Rx"
 import { act, render, screen, waitFor } from "@testing-library/react"
 import { Effect, Schema } from "effect"
 import { Suspense } from "react"
+import { renderToString } from "react-dom/server"
 import { ErrorBoundary } from "react-error-boundary"
-import { beforeEach, describe, expect, test } from "vitest"
+import { beforeEach, describe, expect, it, test, vi } from "vitest"
 import { Hydration, RegistryContext, Result, useRxSuspenseSuccess, useRxValue } from "../src/index.js"
 import { HydrationBoundary } from "../src/ReactHydration.js"
 
@@ -291,5 +292,47 @@ describe("rx-react", () => {
     expect(screen.getByTestId("value")).toHaveTextContent("Success")
     expect(start).toBe(1)
     expect(stop).toBe(1)
+  })
+
+  describe("SSR", () => {
+    it("should not execute Rx effects during SSR", () => {
+      const mockFetchData = vi.fn(() => {})
+
+      const userDataRx = Rx.make(Effect.sync(() => mockFetchData()))
+
+      function TestComponent() {
+        const result = useRxValue(userDataRx)
+
+        return <div>{result._tag}</div>
+      }
+
+      function App() {
+        return <TestComponent />
+      }
+
+      const ssrHtml = renderToString(<App />)
+
+      expect(mockFetchData).not.toHaveBeenCalled()
+      expect(ssrHtml).toContain("Initial")
+    })
+
+    it("should run synchronous rx's during SSR", () => {
+      const getCount = vi.fn(() => 0)
+      const counterRx = Rx.make(getCount)
+
+      function TestComponent() {
+        const count = useRxValue(counterRx)
+        return <div>{count}</div>
+      }
+
+      function App() {
+        return <TestComponent />
+      }
+
+      const ssrHtml = renderToString(<App />)
+
+      expect(getCount).toHaveBeenCalled()
+      expect(ssrHtml).toContain("0")
+    })
   })
 })
