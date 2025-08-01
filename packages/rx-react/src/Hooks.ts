@@ -34,7 +34,7 @@ function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
   if (store !== undefined) {
     return store
   }
-  const newStore: RxStore<any> = {
+  const newStore: RxStore<A> = {
     subscribe(f) {
       return registry.subscribe(rx, f)
     },
