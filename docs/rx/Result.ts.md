@@ -75,14 +75,15 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type Builder<Out, A, E, I> = {
+export type Builder<Out, A, E, I> = Pipeable & {
   onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
   orElse<B>(orElse: LazyArg<B>): Out | B
+  orNull(): Out | null
 } & ([A | I] extends [never]
-  ? {
-      render(): Out
-    }
-  : {}) &
+    ? {
+        render(): Out
+      }
+    : {}) &
   ([I] extends [never]
     ? {}
     : {
@@ -97,7 +98,14 @@ export type Builder<Out, A, E, I> = {
     ? {}
     : {
         onFailure<B>(f: (cause: Cause.Cause<E>, result: Failure<A, E>) => B): Builder<Out | B, A, never, I>
+
         onError<B>(f: (error: E, result: Failure<A, E>) => B): Builder<Out | B, A, never, I>
+
+        onErrorIf<B extends E, C>(
+          refinement: Refinement<E, B>,
+          f: (error: B, result: Failure<A, E>) => C
+        ): Builder<Out | C, A, Types.EqualsWith<E, B, E, Exclude<E, B>>, I>
+
         onErrorTag<const Tags extends ReadonlyArray<Types.Tags<E>>, B>(
           tags: Tags,
           f: (error: Types.ExtractTag<E, Tags[number]>, result: Failure<A, E>) => B

@@ -6,11 +6,11 @@ import * as Cause from "effect/Cause"
 import * as Equal from "effect/Equal"
 import * as Exit from "effect/Exit"
 import type { LazyArg } from "effect/Function"
-import { dual, identity } from "effect/Function"
+import { constTrue, dual, identity } from "effect/Function"
 import * as Hash from "effect/Hash"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
-import type { Refinement } from "effect/Predicate"
+import type { Predicate, Refinement } from "effect/Predicate"
 import { hasProperty } from "effect/Predicate"
 import * as Schema_ from "effect/Schema"
 import type * as Types from "effect/Types"
@@ -503,11 +503,24 @@ export const matchWithWaiting: {
       return options.onSuccess(self)
   }
 })
+
+/**
+ * @since 1.0.0
+ * @category Builder
+ */
+export const builder = <A extends Result<any, any>>(self: A): Builder<
+  never,
+  A extends Success<infer _A, infer _E> ? _A : never,
+  A extends Failure<infer _A, infer _E> ? _E : never,
+  A extends Initial<infer _A, infer _E> ? true : never
+> => new BuilderImpl(self)
+
 /**
  * @since 1.0.0
  * @category Builder
  */
 export type Builder<Out, A, E, I> =
+  & Pipeable
   & {
     onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
     orElse<B>(orElse: LazyArg<B>): Out | B
@@ -527,7 +540,14 @@ export type Builder<Out, A, E, I> =
     })
   & ([E] extends [never] ? {} : {
     onFailure<B>(f: (cause: Cause.Cause<E>, result: Failure<A, E>) => B): Builder<Out | B, A, never, I>
+
     onError<B>(f: (error: E, result: Failure<A, E>) => B): Builder<Out | B, A, never, I>
+
+    onErrorIf<B extends E, C>(
+      refinement: Refinement<E, B>,
+      f: (error: B, result: Failure<A, E>) => C
+    ): Builder<Out | C, A, Types.EqualsWith<E, B, E, Exclude<E, B>>, I>
+
     onErrorTag<const Tags extends ReadonlyArray<Types.Tags<E>>, B>(
       tags: Tags,
       f: (error: Types.ExtractTag<E, Tags[number]>, result: Failure<A, E>) => B
@@ -555,6 +575,10 @@ class BuilderImpl<Out, A, E> {
     return this
   }
 
+  pipe() {
+    return pipeArguments(this, arguments)
+  }
+
   onInitial<B>(f: (result: Initial<A, E>) => B): BuilderImpl<Out | B, A, E> {
     return this.when(isInitial, (result) => Option.some(f(result)))
   }
@@ -568,9 +592,17 @@ class BuilderImpl<Out, A, E> {
   }
 
   onError<B>(f: (error: E, result: Failure<A, E>) => B): BuilderImpl<Out | B, A, never> {
+    return this.onErrorIf(constTrue, f) as any
+  }
+
+  onErrorIf<C, B extends E = E>(
+    refinement: Refinement<E, B> | Predicate<E>,
+    f: (error: B, result: Failure<A, E>) => C
+  ): BuilderImpl<Out | C, A, Types.EqualsWith<E, B, E, Exclude<E, B>>> {
     return this.when(isFailure, (result) =>
       Cause.failureOption(result.cause).pipe(
-        Option.map((error) => f(error, result))
+        Option.filter(refinement),
+        Option.map((error) => f(error as B, result))
       ))
   }
 
@@ -578,11 +610,10 @@ class BuilderImpl<Out, A, E> {
     tag: string | ReadonlyArray<string>,
     f: (error: Types.ExtractTag<E, any>, result: Failure<A, E>) => B
   ): BuilderImpl<Out | B, A, Types.ExcludeTag<E, any>> {
-    return this.when(isFailure, (result) =>
-      Cause.failureOption(result.cause).pipe(
-        Option.filter((e) => hasProperty(e, "_tag") && (Array.isArray(tag) ? tag.includes(e._tag) : e._tag === tag)),
-        Option.map((error) => f(error as any, result))
-      ))
+    return this.onErrorIf(
+      (e) => hasProperty(e, "_tag") && (Array.isArray(tag) ? tag.includes(e._tag) : e._tag === tag),
+      f
+    ) as any
   }
 
   onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): BuilderImpl<Out | B, A, E> {
@@ -609,17 +640,6 @@ class BuilderImpl<Out, A, E> {
     throw new Cause.NoSuchElementException(`Result.Builder.render: no output found`)
   }
 }
-
-/**
- * @since 1.0.0
- * @category Builder
- */
-export const builder = <A extends Result<any, any>>(self: A): Builder<
-  never,
-  A extends Success<infer _A, infer _E> ? _A : never,
-  A extends Failure<infer _A, infer _E> ? _E : never,
-  A extends Initial<infer _A, infer _E> ? true : never
-> => new BuilderImpl(self)
 
 /**
  * @since 1.0.0
