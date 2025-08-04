@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.40.13
+
+### Patch Changes
+
+- [`52243c7`](https://github.com/tim-smart/effect-rx/commit/52243c723556775821126e0dfb11e671ba667207) Thanks [@tim-smart](https://github.com/tim-smart)! - add Result.builder.onWaiting
+
+- Updated dependencies [[`52243c7`](https://github.com/tim-smart/effect-rx/commit/52243c723556775821126e0dfb11e671ba667207)]:
+  - @effect-rx/rx@0.47.11
+
 ## 0.40.12
 
 ### Patch Changes

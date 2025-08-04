@@ -1,6 +1,6 @@
 {
   "name": "@effect-rx/rx-vue",
-  "version": "0.20.7",
+  "version": "0.20.8",
   "description": "Reactive toolkit for Effect",
   "type": "module",
   "publishConfig": {
