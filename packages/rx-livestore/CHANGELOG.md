@@ -1,5 +1,14 @@
 # @effect-rx/rx-livestore
 
+## 0.1.6
+
+### Patch Changes
+
+- [`7722d8f`](https://github.com/tim-smart/effect-rx/commit/7722d8f8b3a255062c3cbb45519474f7c2da204e) Thanks [@tim-smart](https://github.com/tim-smart)! - expose orNull in Result.Builder
+
+- Updated dependencies [[`7722d8f`](https://github.com/tim-smart/effect-rx/commit/7722d8f8b3a255062c3cbb45519474f7c2da204e)]:
+  - @effect-rx/rx@0.47.9
+
 ## 0.1.5
 
 ### Patch Changes
