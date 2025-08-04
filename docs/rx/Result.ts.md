@@ -120,7 +120,7 @@ export declare const builder: <A extends Result<any, any>>(
   self: A
 ) => Builder<
   never,
-  A extends Success<infer _A, infer _E> ? A : never,
+  A extends Success<infer _A, infer _E> ? _A : never,
   A extends Failure<infer _A, infer _E> ? _E : never,
   A extends Initial<infer _A, infer _E> ? true : never
 >
