@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.47.7
+
+### Patch Changes
+
+- [`4cc665d`](https://github.com/tim-smart/effect-rx/commit/4cc665d7ca1b116d92968c62b385c24564caabde) Thanks [@tim-smart](https://github.com/tim-smart)! - add Result.error & Result.builder
+
 ## 0.47.6
 
 ### Patch Changes
