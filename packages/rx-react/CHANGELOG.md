@@ -1,5 +1,16 @@
 # @effect-rx/rx-react
 
+## 0.40.12
+
+### Patch Changes
+
+- [`ec2aba9`](https://github.com/tim-smart/effect-rx/commit/ec2aba90fec70889bfe1a15f5d04153b9d270d35) Thanks [@tim-smart](https://github.com/tim-smart)! - add Result.Builder.onErrorIf
+
+- [`da07944`](https://github.com/tim-smart/effect-rx/commit/da07944bb01aca931fd3685831641c0bba3b566d) Thanks [@tim-smart](https://github.com/tim-smart)! - add Rx.withServerValue
+
+- Updated dependencies [[`ec2aba9`](https://github.com/tim-smart/effect-rx/commit/ec2aba90fec70889bfe1a15f5d04153b9d270d35), [`da07944`](https://github.com/tim-smart/effect-rx/commit/da07944bb01aca931fd3685831641c0bba3b566d)]:
+  - @effect-rx/rx@0.47.10
+
 ## 0.40.11
 
 ### Patch Changes
