@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.47.8
+
+### Patch Changes
+
+- [`d48dd1f`](https://github.com/tim-smart/effect-rx/commit/d48dd1f29334d401bce2c0f9f7bf488345fd9b1a) Thanks [@tim-smart](https://github.com/tim-smart)! - add Result.Builder fallback methods
+
 ## 0.47.7
 
 ### Patch Changes
