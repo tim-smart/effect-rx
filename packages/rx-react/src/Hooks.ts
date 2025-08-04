@@ -42,10 +42,7 @@ function makeStore<A>(registry: Registry.Registry, rx: Rx.Rx<A>): RxStore<A> {
       return registry.get(rx)
     },
     getServerSnapshot() {
-      if (Rx.isHasServerSnapshot(rx)) {
-        return rx.getServerSnapshot()
-      }
-      return registry.get(rx)
+      return Rx.getServerValue(rx, registry)
     }
   }
   stores.set(rx, newStore)

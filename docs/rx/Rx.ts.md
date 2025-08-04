@@ -35,6 +35,10 @@ Added in v1.0.0
   - [SerializableTypeId](#serializabletypeid)
   - [SerializableTypeId (type alias)](#serializabletypeid-type-alias)
   - [isSerializable](#isserializable)
+- [ServerValue](#servervalue)
+  - [ServerValueTypeId](#servervaluetypeid)
+  - [getServerValue](#getservervalue)
+  - [withServerValue](#withservervalue)
 - [URL search params](#url-search-params)
   - [searchParam](#searchparam)
 - [batching](#batching)
@@ -315,6 +319,44 @@ Added in v1.0.0
 
 ```ts
 export declare const isSerializable: (self: Rx<any>) => self is Rx<any> & Serializable
+```
+
+Added in v1.0.0
+
+# ServerValue
+
+## ServerValueTypeId
+
+**Signature**
+
+```ts
+export declare const ServerValueTypeId: typeof ServerValueTypeId
+```
+
+Added in v1.0.0
+
+## getServerValue
+
+**Signature**
+
+```ts
+export declare const getServerValue: {
+  (registry: Registry.Registry): <A>(self: Rx<A>) => A
+  <A>(self: Rx<A>, registry: Registry.Registry): A
+}
+```
+
+Added in v1.0.0
+
+## withServerValue
+
+**Signature**
+
+```ts
+export declare const withServerValue: {
+  <A extends Rx<any>>(read: (get: <A>(rx: Rx<A>) => A) => Rx.Infer<A>): (self: A) => A
+  <A extends Rx<any>>(self: A, read: (get: <A>(rx: Rx<A>) => A) => Rx.Infer<A>): A
+}
 ```
 
 Added in v1.0.0

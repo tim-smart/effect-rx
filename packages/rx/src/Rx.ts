@@ -1803,42 +1803,34 @@ export const serializable: {
 
 /**
  * @since 1.0.0
- * @category type ids
+ * @category ServerValue
  */
-export const HasServerSnapshotTypeId = Symbol.for("@effect-rx/rx/Rx/HasServerSnapshot")
+export const ServerValueTypeId = Symbol.for("@effect-rx/rx/Rx/ServerValue")
 
 /**
  * @since 1.0.0
- * @category type ids
+ * @category ServerValue
  */
-export type HasServerSnapshotTypeId = typeof HasServerSnapshotTypeId
+export const withServerValue: {
+  <A extends Rx<any>>(read: (get: <A>(rx: Rx<A>) => A) => Rx.Infer<A>): (self: A) => A
+  <A extends Rx<any>>(self: A, read: (get: <A>(rx: Rx<A>) => A) => Rx.Infer<A>): A
+} = dual(
+  2,
+  <A extends Rx<any>>(self: A, read: (get: <A>(rx: Rx<A>) => A) => Rx.Infer<A>): A =>
+    Object.assign(Object.create(Object.getPrototypeOf(self)), {
+      [ServerValueTypeId]: read
+    })
+)
 
 /**
  * @since 1.0.0
- * @category models
+ * @category ServerValue
  */
-export interface HasServerSnapshot<A> {
-  readonly [HasServerSnapshotTypeId]: HasServerSnapshotTypeId
-  readonly getServerSnapshot: () => A
-}
-
-/**
- * @since 1.0.0
- * @category models
- */
-export const isHasServerSnapshot = (self: Rx<any>): self is Rx<any> & HasServerSnapshot<any> =>
-  HasServerSnapshotTypeId in self
-
-/**
- * @since 1.0.0
- * @category combinators
- */
-export const withServerSnapshot: {
-  <A>(getServerSnapshot: () => A): (rx: Rx<A>) => Rx<A> & HasServerSnapshot<A>
-  <A>(rx: Rx<A>, getServerSnapshot: () => A): Rx<A> & HasServerSnapshot<A>
-} = dual(2, <A>(rx: Rx<A>, getServerSnapshot: () => A): Rx<A> & HasServerSnapshot<A> => {
-  return Object.assign(Object.create(Object.getPrototypeOf(rx)), {
-    [HasServerSnapshotTypeId]: HasServerSnapshotTypeId,
-    getServerSnapshot
-  })
-})
+export const getServerValue: {
+  (registry: Registry.Registry): <A>(self: Rx<A>) => A
+  <A>(self: Rx<A>, registry: Registry.Registry): A
+} = dual(
+  2,
+  <A>(self: Rx<A>, registry: Registry.Registry): A =>
+    ServerValueTypeId in self ? (self as any)[ServerValueTypeId]((rx: Rx<any>) => registry.get(rx)) : registry.get(self)
+)

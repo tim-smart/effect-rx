@@ -112,11 +112,7 @@ describe("rx-react", () => {
         <Suspense fallback={<div data-testid="loading">Loading...</div>}>
           <TestComponent />
         </Suspense>
-      </ErrorBoundary>,
-      {
-        // dont log error to console (the default behavior)
-        onCaughtError: () => {}
-      }
+      </ErrorBoundary>
     )
 
     expect(screen.getByTestId("error")).toBeInTheDocument()
@@ -319,7 +315,7 @@ describe("rx-react", () => {
     const mockFetchData = vi.fn(() => 0)
 
     const userDataRx = Rx.make(Effect.sync(() => mockFetchData())).pipe(
-      Rx.withServerSnapshot(() => Result.initial(true))
+      Rx.withServerValue(() => Result.initial(true))
     )
 
     function TestComponent() {
