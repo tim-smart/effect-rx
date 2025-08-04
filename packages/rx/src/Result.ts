@@ -510,6 +510,7 @@ export const matchWithWaiting: {
 export type Builder<Out, A, E, I> =
   & {
     onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
+    orElse<B>(orElse: LazyArg<B>): Out | B
   }
   & ([A | I] extends [never] ? {
       render(): Out
@@ -588,6 +589,14 @@ class BuilderImpl<Out, A, E> {
       Cause.dieOption(result.cause).pipe(
         Option.map((defect) => f(defect, result))
       ))
+  }
+
+  orElse<B>(orElse: LazyArg<B>): Out | B {
+    return Option.getOrElse(this.output, orElse)
+  }
+
+  orNull(): Out | null {
+    return Option.getOrNull(this.output)
   }
 
   render(): Out {

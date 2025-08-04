@@ -77,6 +77,7 @@ Added in v1.0.0
 ```ts
 export type Builder<Out, A, E, I> = {
   onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
+  orElse<B>(orElse: LazyArg<B>): Out | B
 } & ([A | I] extends [never]
   ? {
       render(): Out
