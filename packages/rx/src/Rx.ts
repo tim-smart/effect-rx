@@ -15,7 +15,7 @@ import * as Exit from "effect/Exit"
 import * as Fiber from "effect/Fiber"
 import * as FiberRef from "effect/FiberRef"
 import type { LazyArg } from "effect/Function"
-import { constVoid, dual, pipe } from "effect/Function"
+import { constant, constVoid, dual, pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
@@ -1800,3 +1800,48 @@ export const serializable: {
       decode: Schema.decodeSync(options.schema)
     }
   }))
+
+/**
+ * @since 1.0.0
+ * @category ServerValue
+ */
+export const ServerValueTypeId = Symbol.for("@effect-rx/rx/Rx/ServerValue")
+
+/**
+ * Overrides the value of an Rx when read on the server.
+ *
+ * @since 1.0.0
+ * @category ServerValue
+ */
+export const withServerValue: {
+  <A extends Rx<any>>(read: (get: <A>(rx: Rx<A>) => A) => Rx.Infer<A>): (self: A) => A
+  <A extends Rx<any>>(self: A, read: (get: <A>(rx: Rx<A>) => A) => Rx.Infer<A>): A
+} = dual(
+  2,
+  <A extends Rx<any>>(self: A, read: (get: <A>(rx: Rx<A>) => A) => Rx.Infer<A>): A =>
+    Object.assign(Object.create(Object.getPrototypeOf(self)), {
+      [ServerValueTypeId]: read
+    })
+)
+
+/**
+ * Sets the Rx's server value to `Result.initial(true)`.
+ *
+ * @since 1.0.0
+ * @category ServerValue
+ */
+export const withServerValueInitial = <A extends Rx<Result.Result<any, any>>>(self: A): A =>
+  withServerValue(self, constant(Result.initial(true)) as any)
+
+/**
+ * @since 1.0.0
+ * @category ServerValue
+ */
+export const getServerValue: {
+  (registry: Registry.Registry): <A>(self: Rx<A>) => A
+  <A>(self: Rx<A>, registry: Registry.Registry): A
+} = dual(
+  2,
+  <A>(self: Rx<A>, registry: Registry.Registry): A =>
+    ServerValueTypeId in self ? (self as any)[ServerValueTypeId]((rx: Rx<any>) => registry.get(rx)) : registry.get(self)
+)
