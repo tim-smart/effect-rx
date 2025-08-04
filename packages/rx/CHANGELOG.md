@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.47.9
+
+### Patch Changes
+
+- [`7722d8f`](https://github.com/tim-smart/effect-rx/commit/7722d8f8b3a255062c3cbb45519474f7c2da204e) Thanks [@tim-smart](https://github.com/tim-smart)! - expose orNull in Result.Builder
+
 ## 0.47.8
 
 ### Patch Changes
