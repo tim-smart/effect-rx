@@ -1,5 +1,12 @@
 # @effect-rx/rx-livestore
 
+## 0.1.9
+
+### Patch Changes
+
+- Updated dependencies [[`011cb68`](https://github.com/tim-smart/effect-rx/commit/011cb687494a491755bd58c8ca8325a032bade31), [`011cb68`](https://github.com/tim-smart/effect-rx/commit/011cb687494a491755bd58c8ca8325a032bade31)]:
+  - @effect-rx/rx@0.48.0
+
 ## 0.1.8
 
 ### Patch Changes

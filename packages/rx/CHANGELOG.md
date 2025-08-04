@@ -1,5 +1,13 @@
 # @effect-rx/rx
 
+## 0.48.0
+
+### Minor Changes
+
+- [`011cb68`](https://github.com/tim-smart/effect-rx/commit/011cb687494a491755bd58c8ca8325a032bade31) Thanks [@tim-smart](https://github.com/tim-smart)! - Rx.pull now returns an NonEmptyArray
+
+- [`011cb68`](https://github.com/tim-smart/effect-rx/commit/011cb687494a491755bd58c8ca8325a032bade31) Thanks [@tim-smart](https://github.com/tim-smart)! - Rx.context now requires an expicit memoMap
+
 ## 0.47.11
 
 ### Patch Changes
