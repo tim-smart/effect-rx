@@ -604,7 +604,12 @@ class BuilderImpl<Out, A, E> {
  * @since 1.0.0
  * @category Builder
  */
-export const builder = <A, E>(self: Result<A, E>): Builder<never, A, E, true> => new BuilderImpl(self)
+export const builder = <A extends Result<any, any>>(self: A): Builder<
+  never,
+  A extends Success<infer _A, infer _E> ? A : never,
+  A extends Failure<infer _A, infer _E> ? _E : never,
+  A extends Initial<infer _A, infer _E> ? true : never
+> => new BuilderImpl(self)
 
 /**
  * @since 1.0.0
