@@ -3,8 +3,9 @@
  */
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import * as KeyValueStore from "@effect/platform/KeyValueStore"
+import * as Arr from "effect/Array"
 import { NoSuchElementException } from "effect/Cause"
-import type * as Cause from "effect/Cause"
+import * as Cause from "effect/Cause"
 import * as Channel from "effect/Channel"
 import * as Chunk from "effect/Chunk"
 import * as EffectContext from "effect/Context"
@@ -564,10 +565,9 @@ export interface RuntimeFactory {
  * @since 1.0.0
  * @category constructors
  */
-export const context: (options?: {
-  readonly memoMap?: Layer.MemoMap | undefined
+export const context: (options: {
+  readonly memoMap: Layer.MemoMap
 }) => RuntimeFactory = (options) => {
-  const memoMap = options?.memoMap ?? Effect.runSync(Layer.makeMemoMap)
   let globalLayer: Layer.Layer<any, any, RxRegistry> | undefined
   function factory<E, R>(
     create: Layer.Layer<R, E, RxRegistry> | ((get: Context) => Layer.Layer<R, E, RxRegistry>)
@@ -587,7 +587,7 @@ export const context: (options?: {
     rx.read = function read(get: Context) {
       const layer = get(layerRx)
       const build = Effect.flatMap(
-        Effect.flatMap(Effect.scope, (scope) => Layer.buildWithMemoMap(layer, memoMap, scope)),
+        Effect.flatMap(Effect.scope, (scope) => Layer.buildWithMemoMap(layer, options.memoMap, scope)),
         (context) => Effect.provide(Effect.runtime<R>(), context)
       )
       return effect(get, build, { uninterruptible: true })
@@ -595,7 +595,7 @@ export const context: (options?: {
 
     return rx
   }
-  factory.memoMap = memoMap
+  factory.memoMap = options.memoMap
   factory.addGlobalLayer = (layer: Layer.Layer<any, any, RxRegistry>) => {
     if (globalLayer === undefined) {
       globalLayer = layer
@@ -985,8 +985,8 @@ function makeResultFn<Arg, E, A>(
  */
 export type PullResult<A, E = never> = Result.Result<{
   readonly done: boolean
-  readonly items: ReadonlyArray<A>
-}, E>
+  readonly items: Arr.NonEmptyArray<A>
+}, E | Cause.NoSuchElementException>
 
 /**
  * @since 1.0.0
@@ -1015,8 +1015,8 @@ const makeStreamPullEffect = <A, E>(
     readonly disableAccumulation?: boolean
   }
 ): Effect.Effect<
-  { readonly done: boolean; readonly items: Array<A> },
-  E,
+  { readonly done: boolean; readonly items: Arr.NonEmptyArray<A> },
+  E | Cause.NoSuchElementException,
   Scope.Scope | RxRegistry
 > =>
   Effect.flatMap(
@@ -1028,20 +1028,30 @@ const makeStreamPullEffect = <A, E>(
       const fiber = Option.getOrThrow(Fiber.getCurrentFiber())
       const context = fiber.currentContext as EffectContext.Context<RxRegistry | Scope.Scope>
       let acc = Chunk.empty<A>()
-      const pull = semaphore.withPermits(1)(Effect.flatMap(
+      const pull: Effect.Effect<
+        {
+          done: boolean
+          items: Arr.NonEmptyArray<A>
+        },
+        NoSuchElementException | E,
+        Registry.RxRegistry
+      > = Effect.flatMap(
         Effect.locally(
-          Effect.suspend(() => {
-            return pullChunk
-          }),
+          Effect.suspend(() => pullChunk),
           FiberRef.currentContext,
           context
         ),
         Either.match({
-          onLeft: () =>
-            Effect.succeed({
-              done: true,
-              items: Chunk.toReadonlyArray(acc) as Array<A>
-            }),
+          onLeft: (): Effect.Effect<
+            { done: boolean; items: Arr.NonEmptyArray<A> },
+            NoSuchElementException
+          > => {
+            const items = Chunk.toReadonlyArray(acc) as Array<A>
+            if (!Arr.isNonEmptyArray(items)) {
+              return Effect.fail(new Cause.NoSuchElementException(`Rx.pull: no items`))
+            }
+            return Effect.succeed({ done: true, items })
+          },
           onRight(chunk) {
             let items: Chunk.Chunk<A>
             if (options?.disableAccumulation) {
@@ -1050,13 +1060,15 @@ const makeStreamPullEffect = <A, E>(
               items = Chunk.appendAll(acc, chunk)
               acc = items
             }
-            return Effect.succeed({
-              done: false,
-              items: Chunk.toReadonlyArray(items) as Array<A>
-            })
+            const arr = Chunk.toReadonlyArray(items) as Array<A>
+            if (!Arr.isNonEmptyArray(arr)) {
+              return pull
+            }
+            return Effect.succeed({ done: false, items: arr })
           }
         })
-      ))
+      )
+      const pullWithSemaphore = semaphore.withPermits(1)(pull)
 
       const runCallback = runCallbackSync(Runtime.make({
         context,
@@ -1072,7 +1084,7 @@ const makeStreamPullEffect = <A, E>(
         get.setSelf(Result.waitingFrom(get.self<PullResult<A, E>>()))
         let cancel: (() => void) | undefined
         // eslint-disable-next-line prefer-const
-        cancel = runCallback(pull, (exit) => {
+        cancel = runCallback(pullWithSemaphore, (exit) => {
           if (cancel) cancels.delete(cancel)
           const result = Result.fromExitWithPrevious(exit, get.self())
           const pending = cancels.size > 0

@@ -609,7 +609,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const context: (options?: { readonly memoMap?: Layer.MemoMap | undefined }) => RuntimeFactory
+export declare const context: (options: { readonly memoMap: Layer.MemoMap }) => RuntimeFactory
 ```
 
 Added in v1.0.0
@@ -881,9 +881,9 @@ Added in v1.0.0
 export type PullResult<A, E = never> = Result.Result<
   {
     readonly done: boolean
-    readonly items: ReadonlyArray<A>
+    readonly items: Arr.NonEmptyArray<A>
   },
-  E
+  E | Cause.NoSuchElementException
 >
 ```
 
