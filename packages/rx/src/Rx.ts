@@ -15,7 +15,7 @@ import * as Exit from "effect/Exit"
 import * as Fiber from "effect/Fiber"
 import * as FiberRef from "effect/FiberRef"
 import type { LazyArg } from "effect/Function"
-import { constVoid, dual, pipe } from "effect/Function"
+import { constant, constVoid, dual, pipe } from "effect/Function"
 import { globalValue } from "effect/GlobalValue"
 import * as Inspectable from "effect/Inspectable"
 import * as Layer from "effect/Layer"
@@ -1808,6 +1808,8 @@ export const serializable: {
 export const ServerValueTypeId = Symbol.for("@effect-rx/rx/Rx/ServerValue")
 
 /**
+ * Overrides the value of an Rx when read on the server.
+ *
  * @since 1.0.0
  * @category ServerValue
  */
@@ -1821,6 +1823,15 @@ export const withServerValue: {
       [ServerValueTypeId]: read
     })
 )
+
+/**
+ * Sets the Rx's server value to `Result.initial(true)`.
+ *
+ * @since 1.0.0
+ * @category ServerValue
+ */
+export const withServerValueInitial = <A extends Rx<Result.Result<any, any>>>(self: A): A =>
+  withServerValue(self, constant(Result.initial(true)) as any)
 
 /**
  * @since 1.0.0

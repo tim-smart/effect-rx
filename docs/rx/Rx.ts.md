@@ -39,6 +39,7 @@ Added in v1.0.0
   - [ServerValueTypeId](#servervaluetypeid)
   - [getServerValue](#getservervalue)
   - [withServerValue](#withservervalue)
+  - [withServerValueInitial](#withservervalueinitial)
 - [URL search params](#url-search-params)
   - [searchParam](#searchparam)
 - [batching](#batching)
@@ -350,6 +351,8 @@ Added in v1.0.0
 
 ## withServerValue
 
+Overrides the value of an Rx when read on the server.
+
 **Signature**
 
 ```ts
@@ -357,6 +360,18 @@ export declare const withServerValue: {
   <A extends Rx<any>>(read: (get: <A>(rx: Rx<A>) => A) => Rx.Infer<A>): (self: A) => A
   <A extends Rx<any>>(self: A, read: (get: <A>(rx: Rx<A>) => A) => Rx.Infer<A>): A
 }
+```
+
+Added in v1.0.0
+
+## withServerValueInitial
+
+Sets the Rx's server value to `Result.initial(true)`.
+
+**Signature**
+
+```ts
+export declare const withServerValueInitial: <A extends Rx<Result.Result<any, any>>>(self: A) => A
 ```
 
 Added in v1.0.0

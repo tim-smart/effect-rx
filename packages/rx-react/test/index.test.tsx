@@ -315,7 +315,7 @@ describe("rx-react", () => {
     const mockFetchData = vi.fn(() => 0)
 
     const userDataRx = Rx.make(Effect.sync(() => mockFetchData())).pipe(
-      Rx.withServerValue(() => Result.initial(true))
+      Rx.withServerValueInitial
     )
 
     function TestComponent() {
