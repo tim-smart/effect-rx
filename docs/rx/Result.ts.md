@@ -76,6 +76,7 @@ Added in v1.0.0
 
 ```ts
 export type Builder<Out, A, E, I> = Pipeable & {
+  onWaiting<B>(f: (result: Result<A, E>) => B): Builder<Out | B, A, E, I>
   onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
   orElse<B>(orElse: LazyArg<B>): Out | B
   orNull(): Out | null
@@ -105,6 +106,7 @@ export type Builder<Out, A, E, I> = Pipeable & {
           refinement: Refinement<E, B>,
           f: (error: B, result: Failure<A, E>) => C
         ): Builder<Out | C, A, Types.EqualsWith<E, B, E, Exclude<E, B>>, I>
+        onErrorIf<C>(predicate: Predicate<E>, f: (error: E, result: Failure<A, E>) => C): Builder<Out | C, A, E, I>
 
         onErrorTag<const Tags extends ReadonlyArray<Types.Tags<E>>, B>(
           tags: Tags,

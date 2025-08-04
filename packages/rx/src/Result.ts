@@ -522,6 +522,7 @@ export const builder = <A extends Result<any, any>>(self: A): Builder<
 export type Builder<Out, A, E, I> =
   & Pipeable
   & {
+    onWaiting<B>(f: (result: Result<A, E>) => B): Builder<Out | B, A, E, I>
     onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
     orElse<B>(orElse: LazyArg<B>): Out | B
     orNull(): Out | null
@@ -547,6 +548,10 @@ export type Builder<Out, A, E, I> =
       refinement: Refinement<E, B>,
       f: (error: B, result: Failure<A, E>) => C
     ): Builder<Out | C, A, Types.EqualsWith<E, B, E, Exclude<E, B>>, I>
+    onErrorIf<C>(
+      predicate: Predicate<E>,
+      f: (error: E, result: Failure<A, E>) => C
+    ): Builder<Out | C, A, E, I>
 
     onErrorTag<const Tags extends ReadonlyArray<Types.Tags<E>>, B>(
       tags: Tags,
@@ -565,6 +570,14 @@ class BuilderImpl<Out, A, E> {
   when<B extends Result<A, E>, C>(
     refinement: Refinement<Result<A, E>, B>,
     f: (result: B) => Option.Option<C>
+  ): any
+  when<C>(
+    refinement: Predicate<Result<A, E>>,
+    f: (result: Result<A, E>) => Option.Option<C>
+  ): any
+  when<C>(
+    refinement: Predicate<Result<A, E>>,
+    f: (result: Result<A, E>) => Option.Option<C>
   ): any {
     if (Option.isNone(this.output) && refinement(this.result)) {
       const b = f(this.result)
@@ -579,16 +592,32 @@ class BuilderImpl<Out, A, E> {
     return pipeArguments(this, arguments)
   }
 
+  onWaiting<B>(f: (result: Result<A, E>) => B): BuilderImpl<Out | B, A, E> {
+    if (this.result.waiting) {
+      this.output = Option.some(f(this.result)) as any
+    }
+    return this
+  }
+
   onInitial<B>(f: (result: Initial<A, E>) => B): BuilderImpl<Out | B, A, E> {
-    return this.when(isInitial, (result) => Option.some(f(result)))
+    if (isInitial(this.result)) {
+      this.output = Option.some(f(this.result)) as any
+    }
+    return this
   }
 
   onSuccess<B>(f: (value: A, result: Success<A, E>) => B): BuilderImpl<Out | B, never, E> {
-    return this.when(isSuccess, (result) => Option.some(f(result.value, result)))
+    if (isSuccess(this.result)) {
+      this.output = Option.some(f(this.result.value, this.result)) as any
+    }
+    return this as any
   }
 
   onFailure<B>(f: (cause: Cause.Cause<E>, result: Failure<A, E>) => B): BuilderImpl<Out | B, A, never> {
-    return this.when(isFailure, (result) => Option.some(f(result.cause, result)))
+    if (isFailure(this.result)) {
+      this.output = Option.some(f(this.result.cause, this.result)) as any
+    }
+    return this as any
   }
 
   onError<B>(f: (error: E, result: Failure<A, E>) => B): BuilderImpl<Out | B, A, never> {
@@ -637,7 +666,7 @@ class BuilderImpl<Out, A, E> {
     } else if (isFailure(this.result)) {
       throw Cause.squash(this.result.cause)
     }
-    throw new Cause.NoSuchElementException(`Result.Builder.render: no output found`)
+    throw new Cause.NoSuchElementException(`Result.builder.render: no output found`)
   }
 }
 
