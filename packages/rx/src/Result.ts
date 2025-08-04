@@ -1,6 +1,7 @@
 /**
  * @since 1.0.0
  */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import * as Cause from "effect/Cause"
 import * as Equal from "effect/Equal"
 import * as Exit from "effect/Exit"
@@ -9,8 +10,10 @@ import { dual, identity } from "effect/Function"
 import * as Hash from "effect/Hash"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
+import type { Refinement } from "effect/Predicate"
 import { hasProperty } from "effect/Predicate"
 import * as Schema_ from "effect/Schema"
+import type * as Types from "effect/Types"
 
 /**
  * @since 1.0.0
@@ -341,12 +344,15 @@ export const getOrThrow = <A, E>(self: Result<A, E>): A =>
  * @since 1.0.0
  * @category accessors
  */
-export const cause = <A, E>(self: Result<A, E>): Option.Option<Cause.Cause<E>> => {
-  if (self._tag === "Failure") {
-    return Option.some(self.cause)
-  }
-  return Option.none()
-}
+export const cause = <A, E>(self: Result<A, E>): Option.Option<Cause.Cause<E>> =>
+  self._tag === "Failure" ? Option.some(self.cause) : Option.none()
+
+/**
+ * @since 1.0.0
+ * @category accessors
+ */
+export const error = <A, E>(self: Result<A, E>): Option.Option<E> =>
+  self._tag === "Failure" ? Cause.failureOption(self.cause) : Option.none()
 
 /**
  * @since 1.0.0
@@ -497,6 +503,108 @@ export const matchWithWaiting: {
       return options.onSuccess(self)
   }
 })
+/**
+ * @since 1.0.0
+ * @category Builder
+ */
+export type Builder<Out, A, E, I> =
+  & {
+    onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
+  }
+  & ([A | I] extends [never] ? {
+      render(): Out
+    } :
+    {})
+  & ([I] extends [never] ? {} :
+    {
+      onInitial<B>(f: (result: Initial<A, E>) => B): Builder<Out | B, A, E, never>
+    })
+  & ([A] extends [never] ? {} :
+    {
+      onSuccess<B>(f: (value: A, result: Success<A, E>) => B): Builder<Out | B, never, E, I>
+    })
+  & ([E] extends [never] ? {} : {
+    onFailure<B>(f: (cause: Cause.Cause<E>, result: Failure<A, E>) => B): Builder<Out | B, A, never, I>
+    onError<B>(f: (error: E, result: Failure<A, E>) => B): Builder<Out | B, A, never, I>
+    onErrorTag<const Tags extends ReadonlyArray<Types.Tags<E>>, B>(
+      tags: Tags,
+      f: (error: Types.ExtractTag<E, Tags[number]>, result: Failure<A, E>) => B
+    ): Builder<Out | B, A, Types.ExcludeTag<E, Tags[number]>, I>
+    onErrorTag<const Tag extends Types.Tags<E>, B>(
+      tag: Tag,
+      f: (error: Types.ExtractTag<E, Tag>, result: Failure<A, E>) => B
+    ): Builder<Out | B, A, Types.ExcludeTag<E, Tag>, I>
+  })
+
+class BuilderImpl<Out, A, E> {
+  constructor(readonly result: Result<A, E>) {}
+  public output = Option.none<Out>()
+
+  when<B extends Result<A, E>, C>(
+    refinement: Refinement<Result<A, E>, B>,
+    f: (result: B) => Option.Option<C>
+  ): any {
+    if (Option.isNone(this.output) && refinement(this.result)) {
+      const b = f(this.result)
+      if (Option.isSome(b)) {
+        ;(this as any).output = b
+      }
+    }
+    return this
+  }
+
+  onInitial<B>(f: (result: Initial<A, E>) => B): BuilderImpl<Out | B, A, E> {
+    return this.when(isInitial, (result) => Option.some(f(result)))
+  }
+
+  onSuccess<B>(f: (value: A, result: Success<A, E>) => B): BuilderImpl<Out | B, never, E> {
+    return this.when(isSuccess, (result) => Option.some(f(result.value, result)))
+  }
+
+  onFailure<B>(f: (cause: Cause.Cause<E>, result: Failure<A, E>) => B): BuilderImpl<Out | B, A, never> {
+    return this.when(isFailure, (result) => Option.some(f(result.cause, result)))
+  }
+
+  onError<B>(f: (error: E, result: Failure<A, E>) => B): BuilderImpl<Out | B, A, never> {
+    return this.when(isFailure, (result) =>
+      Cause.failureOption(result.cause).pipe(
+        Option.map((error) => f(error, result))
+      ))
+  }
+
+  onErrorTag<B>(
+    tag: string | ReadonlyArray<string>,
+    f: (error: Types.ExtractTag<E, any>, result: Failure<A, E>) => B
+  ): BuilderImpl<Out | B, A, Types.ExcludeTag<E, any>> {
+    return this.when(isFailure, (result) =>
+      Cause.failureOption(result.cause).pipe(
+        Option.filter((e) => hasProperty(e, "_tag") && (Array.isArray(tag) ? tag.includes(e._tag) : e._tag === tag)),
+        Option.map((error) => f(error as any, result))
+      ))
+  }
+
+  onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): BuilderImpl<Out | B, A, E> {
+    return this.when(isFailure, (result) =>
+      Cause.dieOption(result.cause).pipe(
+        Option.map((defect) => f(defect, result))
+      ))
+  }
+
+  render(): Out {
+    if (Option.isSome(this.output)) {
+      return this.output.value
+    } else if (isFailure(this.result)) {
+      throw Cause.squash(this.result.cause)
+    }
+    throw new Cause.NoSuchElementException(`Result.Builder.render: no output found`)
+  }
+}
+
+/**
+ * @since 1.0.0
+ * @category Builder
+ */
+export const builder = <A, E>(self: Result<A, E>): Builder<never, A, E, true> => new BuilderImpl(self)
 
 /**
  * @since 1.0.0

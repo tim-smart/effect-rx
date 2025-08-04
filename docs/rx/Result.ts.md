@@ -12,6 +12,9 @@ Added in v1.0.0
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [Builder](#builder)
+  - [Builder (type alias)](#builder-type-alias)
+  - [builder](#builder-1)
 - [Guards](#guards)
   - [isResult](#isresult)
 - [Schemas](#schemas)
@@ -21,6 +24,7 @@ Added in v1.0.0
   - [schemaFromSelf](#schemafromself)
 - [accessors](#accessors)
   - [cause](#cause)
+  - [error](#error)
   - [getOrElse](#getorelse)
   - [getOrThrow](#getorthrow)
   - [value](#value)
@@ -63,6 +67,58 @@ Added in v1.0.0
   - [TypeId (type alias)](#typeid-type-alias)
 
 ---
+
+# Builder
+
+## Builder (type alias)
+
+**Signature**
+
+```ts
+export type Builder<Out, A, E, I> = {
+  onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
+} & ([A | I] extends [never]
+  ? {
+      render(): Out
+    }
+  : {}) &
+  ([I] extends [never]
+    ? {}
+    : {
+        onInitial<B>(f: (result: Initial<A, E>) => B): Builder<Out | B, A, E, never>
+      }) &
+  ([A] extends [never]
+    ? {}
+    : {
+        onSuccess<B>(f: (value: A, result: Success<A, E>) => B): Builder<Out | B, never, E, I>
+      }) &
+  ([E] extends [never]
+    ? {}
+    : {
+        onFailure<B>(f: (cause: Cause.Cause<E>, result: Failure<A, E>) => B): Builder<Out | B, A, never, I>
+        onError<B>(f: (error: E, result: Failure<A, E>) => B): Builder<Out | B, A, never, I>
+        onErrorTag<const Tags extends ReadonlyArray<Types.Tags<E>>, B>(
+          tags: Tags,
+          f: (error: Types.ExtractTag<E, Tags[number]>, result: Failure<A, E>) => B
+        ): Builder<Out | B, A, Types.ExcludeTag<E, Tags[number]>, I>
+        onErrorTag<const Tag extends Types.Tags<E>, B>(
+          tag: Tag,
+          f: (error: Types.ExtractTag<E, Tag>, result: Failure<A, E>) => B
+        ): Builder<Out | B, A, Types.ExcludeTag<E, Tag>, I>
+      })
+```
+
+Added in v1.0.0
+
+## builder
+
+**Signature**
+
+```ts
+export declare const builder: <A, E>(self: Result<A, E>) => Builder<never, A, E, true>
+```
+
+Added in v1.0.0
 
 # Guards
 
@@ -171,6 +227,16 @@ Added in v1.0.0
 
 ```ts
 export declare const cause: <A, E>(self: Result<A, E>) => Option.Option<Cause.Cause<E>>
+```
+
+Added in v1.0.0
+
+## error
+
+**Signature**
+
+```ts
+export declare const error: <A, E>(self: Result<A, E>) => Option.Option<E>
 ```
 
 Added in v1.0.0
