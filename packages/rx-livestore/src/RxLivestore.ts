@@ -10,7 +10,6 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import { constUndefined } from "effect/Function"
 import * as Layer from "effect/Layer"
-import type { Option } from "effect/Option"
 
 /**
  * @since 1.0.0
@@ -29,12 +28,38 @@ export const make = <S extends LiveStoreSchema, Context = {}>(
     readonly otelOptions?: Partial<OtelOptions> | undefined
   }
 ): {
+  /**
+   * A context tag for the Store.
+   */
+  readonly StoreService: Context.Tag<StoreService, Store<S, Context>>
+  /**
+   * A Rx.runtime that contains the Store.
+   */
   readonly runtimeRx: Rx.RxRuntime<StoreService, never>
+  /**
+   * A Rx that allows you to access the Store. It will emit a `Result` that
+   * contains the Store or an error if it could not be created.
+   */
   readonly storeRx: Rx.Rx<Result.Result<Store<S, Context>>>
-  readonly storeRxUnsafe: Rx.Rx<Store<S, Context>>
+  /**
+   * A Rx that allows you to access the Store. It will emit the Store or
+   * `undefined` if has not been created yet.
+   */
+  readonly storeRxUnsafe: Rx.Rx<Store<S, Context> | undefined>
+  /**
+   * Creates a Rx that allows you to resolve a LiveQueryDef. It embeds the loading
+   * of the Store and will emit a `Result` that contains the result of the query
+   */
   readonly makeQueryRx: <A>(query: LiveQueryDef<A>) => Rx.Rx<Result.Result<A>>
-  readonly makeQueryRxUnsafe: <A>(query: LiveQueryDef<A>) => Rx.Rx<A>
-  readonly commitRx: Rx.Writable<Option<void>, {}>
+  /**
+   * Creates a Rx that allows you to resolve a LiveQueryDef. If the Store has
+   * not been created yet, it will return `undefined`.
+   */
+  readonly makeQueryRxUnsafe: <A>(query: LiveQueryDef<A>) => Rx.Rx<A | undefined>
+  /**
+   * A Rx.Writable that allows you to commit an event to the Store.
+   */
+  readonly commitRx: Rx.Writable<void, {}>
 } => {
   const StoreService = Context.GenericTag<StoreService, Store<S, Context>>("@effect-rx/rx-livestore/StoreService")
   const runtimeRx = Rx.runtime(Layer.scoped(
@@ -50,7 +75,7 @@ export const make = <S extends LiveStoreSchema, Context = {}>(
   const storeRx = runtimeRx.rx(StoreService)
   const storeRxUnsafe = Rx.readable((get) => {
     const result = get(storeRx)
-    return Result.getOrElse(result, constUndefined) as Store<S, Context>
+    return Result.getOrElse(result, constUndefined)
   })
   const makeQueryRx = <A>(query: LiveQueryDef<A>) =>
     Rx.readable((get) => {
@@ -70,6 +95,9 @@ export const make = <S extends LiveStoreSchema, Context = {}>(
   const makeQueryRxUnsafe = <A>(query: LiveQueryDef<A>) =>
     Rx.readable((get) => {
       const store = get(storeRxUnsafe)
+      if (store === undefined) {
+        return undefined
+      }
       get.addFinalizer(
         store.subscribe(query, {
           onUpdate(value) {
@@ -79,10 +107,13 @@ export const make = <S extends LiveStoreSchema, Context = {}>(
       )
       return store.query(query)
     })
-  const commitRx = Rx.fnSync((event: {}, get) => {
-    get(storeRxUnsafe)?.commit(event)
+  const commitRx = Rx.writable((get) => {
+    get(storeRxUnsafe)
+  }, (ctx, value: {}) => {
+    ctx.get(storeRxUnsafe)?.commit(value)
   })
   return {
+    StoreService,
     runtimeRx,
     storeRx,
     storeRxUnsafe,
