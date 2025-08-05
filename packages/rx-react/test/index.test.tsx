@@ -6,7 +6,7 @@ import { Suspense } from "react"
 import { renderToString } from "react-dom/server"
 import { ErrorBoundary } from "react-error-boundary"
 import { beforeEach, describe, expect, it, test, vi } from "vitest"
-import { Hydration, RegistryContext, Result, useRxSuspenseSuccess, useRxValue } from "../src/index.js"
+import { Hydration, RegistryContext, Result, useRxSuspense, useRxValue } from "../src/index.js"
 import { HydrationBoundary } from "../src/ReactHydration.js"
 
 describe("rx-react", () => {
@@ -86,7 +86,7 @@ describe("rx-react", () => {
       const rx = Rx.make(Effect.never)
 
       function TestComponent() {
-        const value = useRxSuspenseSuccess(rx).value
+        const value = useRxSuspense(rx).value
         return <div data-testid="value">{value}</div>
       }
 
@@ -103,7 +103,7 @@ describe("rx-react", () => {
   test("suspense error", () => {
     const rx = Rx.make(Effect.fail(new Error("test")))
     function TestComponent() {
-      const value = useRxSuspenseSuccess(rx).value
+      const value = useRxSuspense(rx).value
       return <div data-testid="value">{value}</div>
     }
 
