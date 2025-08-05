@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.48.1
+
+### Patch Changes
+
+- [`999065a`](https://github.com/tim-smart/effect-rx/commit/999065a26c43c450c2556f16312bb015a7f553cf) Thanks [@tim-smart](https://github.com/tim-smart)! - fix Result.builder order preservation
+
 ## 0.48.0
 
 ### Minor Changes
