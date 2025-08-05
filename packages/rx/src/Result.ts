@@ -522,7 +522,7 @@ export const builder = <A extends Result<any, any>>(self: A): Builder<
 export type Builder<Out, A, E, I> =
   & Pipeable
   & {
-    onWaiting<B>(f: (result: Result<A, E>) => B): Builder<Out | B, A, E, I>
+    onWaiting<B>(f: (result: Result<A, E>) => B): Builder<Out | B, A, E, never>
     onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
     orElse<B>(orElse: LazyArg<B>): Out | B
     orNull(): Out | null
@@ -593,7 +593,7 @@ class BuilderImpl<Out, A, E> {
   }
 
   onWaiting<B>(f: (result: Result<A, E>) => B): BuilderImpl<Out | B, A, E> {
-    return this.when((r) => r.waiting, (r) => Option.some(f(r)))
+    return this.when((r) => isInitial(r) || r.waiting, (r) => Option.some(f(r)))
   }
 
   onInitial<B>(f: (result: Initial<A, E>) => B): BuilderImpl<Out | B, A, E> {
