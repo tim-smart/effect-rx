@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.48.4
+
+### Patch Changes
+
+- [`8b2b957`](https://github.com/tim-smart/effect-rx/commit/8b2b9574c394b9456ba020f8f1fb2a8793d5fecc) Thanks [@tim-smart](https://github.com/tim-smart)! - consolidate useRxSet hooks
+
 ## 0.48.3
 
 ### Patch Changes
