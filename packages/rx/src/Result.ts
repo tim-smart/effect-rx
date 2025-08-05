@@ -59,12 +59,12 @@ export declare namespace Result {
   /**
    * @since 1.0.0
    */
-  export type InferA<R extends Result<any, any>> = R extends Result<infer A, infer _> ? A : never
+  export type InferA<R> = R extends Result<infer A, infer _> ? A : never
 
   /**
    * @since 1.0.0
    */
-  export type InferE<R extends Result<any, any>> = R extends Result<infer _, infer E> ? E : never
+  export type InferE<R> = R extends Result<infer _, infer E> ? E : never
 
   /**
    * @since 1.0.0

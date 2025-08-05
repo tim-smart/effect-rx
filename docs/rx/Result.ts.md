@@ -595,7 +595,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type InferA<R extends Result<any, any>> = R extends Result<infer A, infer _> ? A : never
+export type InferA<R> = R extends Result<infer A, infer _> ? A : never
 ```
 
 Added in v1.0.0
@@ -605,7 +605,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export type InferE<R extends Result<any, any>> = R extends Result<infer _, infer E> ? E : never
+export type InferE<R> = R extends Result<infer _, infer E> ? E : never
 ```
 
 Added in v1.0.0

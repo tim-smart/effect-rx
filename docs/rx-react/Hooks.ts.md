@@ -21,7 +21,6 @@ Added in v1.0.0
   - [useRxRefPropValue](#userxrefpropvalue)
   - [useRxRefresh](#userxrefresh)
   - [useRxSet](#userxset)
-  - [useRxSetPromise](#userxsetpromise)
   - [useRxSubscribe](#userxsubscribe)
   - [useRxSuspense](#userxsuspense)
   - [useRxValue](#userxvalue)
@@ -35,9 +34,23 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRx: <R, W>(
-  rx: Rx.Writable<R, W>
-) => readonly [value: R, setOrUpdate: (_: W | ((_: R) => W)) => void]
+export declare const useRx: <R, W, const Mode extends "value" | "promise" | "promiseExit" = "value">(
+  rx: Rx.Writable<R, W>,
+  options?: { readonly mode?: ([R] extends [Result.Result<any, any>] ? Mode : "value") | undefined }
+) => readonly [
+  value: R,
+  write: "promise" extends Mode
+    ? (
+        value: W,
+        options?: { readonly signal?: AbortSignal | undefined } | undefined
+      ) => Promise<Result.Result.InferA<R>>
+    : "promiseExit" extends Mode
+      ? (
+          value: W,
+          options?: { readonly signal?: AbortSignal | undefined } | undefined
+        ) => Promise<Exit.Exit<Result.Result.InferA<R>, Result.Result.InferE<R>>>
+      : (value: W | ((value: R) => W)) => void
+]
 ```
 
 Added in v1.0.0
@@ -107,19 +120,17 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRxSet: <R, W>(rx: Rx.Writable<R, W>) => (_: W | ((_: R) => W)) => void
-```
-
-Added in v1.0.0
-
-## useRxSetPromise
-
-**Signature**
-
-```ts
-export declare const useRxSetPromise: <E, A, W>(
-  rx: Rx.Writable<Result.Result<A, E>, W>
-) => (_: W, options?: { readonly signal?: AbortSignal | undefined } | undefined) => Promise<Exit.Exit<A, E>>
+export declare const useRxSet: <R, W, Mode extends "value" | "promise" | "promiseExit" = never>(
+  rx: Rx.Writable<R, W>,
+  options?: { readonly mode?: ([R] extends [Result.Result<any, any>] ? Mode : "value") | undefined }
+) => "promise" extends Mode
+  ? (value: W, options?: { readonly signal?: AbortSignal | undefined } | undefined) => Promise<Result.Result.InferA<R>>
+  : "promiseExit" extends Mode
+    ? (
+        value: W,
+        options?: { readonly signal?: AbortSignal | undefined } | undefined
+      ) => Promise<Exit.Exit<Result.Result.InferA<R>, Result.Result.InferE<R>>>
+    : (value: W | ((value: R) => W)) => void
 ```
 
 Added in v1.0.0

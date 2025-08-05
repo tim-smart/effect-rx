@@ -2,13 +2,14 @@
  * @since 1.0.0
  */
 "use client"
+
 import * as Registry from "@effect-rx/rx/Registry"
 import type * as Result from "@effect-rx/rx/Result"
 import * as Rx from "@effect-rx/rx/Rx"
 import type * as RxRef from "@effect-rx/rx/RxRef"
 import { Effect } from "effect"
 import * as Cause from "effect/Cause"
-import type * as Exit from "effect/Exit"
+import * as Exit from "effect/Exit"
 import { globalValue } from "effect/GlobalValue"
 import * as React from "react"
 import { RegistryContext } from "./RegistryContext.js"
@@ -99,15 +100,48 @@ function mountRx<A>(registry: Registry.Registry, rx: Rx.Rx<A>): void {
   React.useEffect(() => registry.mount(rx), [rx, registry])
 }
 
-function setRx<R, W>(registry: Registry.Registry, rx: Rx.Writable<R, W>): (_: W | ((_: R) => W)) => void {
-  return React.useCallback((value) => {
-    if (typeof value === "function") {
-      registry.set(rx, (value as any)(registry.get(rx)))
-      return
-    } else {
+function setRx<R, W, Mode extends "value" | "promise" | "promiseExit" = "value">(
+  registry: Registry.Registry,
+  rx: Rx.Writable<R, W>,
+  options?: {
+    readonly mode?: ([R] extends [Result.Result<any, any>] ? Mode : "value") | undefined
+  }
+): "promise" extends Mode ? (
+    (
+      value: W,
+      options?: {
+        readonly signal?: AbortSignal | undefined
+      } | undefined
+    ) => Promise<Result.Result.InferA<R>>
+  ) :
+  "promiseExit" extends Mode ? (
+      (
+        value: W,
+        options?: {
+          readonly signal?: AbortSignal | undefined
+        } | undefined
+      ) => Promise<Exit.Exit<Result.Result.InferA<R>, Result.Result.InferE<R>>>
+    ) :
+  ((value: W | ((value: R) => W)) => void)
+{
+  if (options?.mode === "promise" || options?.mode === "promiseExit") {
+    return React.useCallback((value: W, opts?: any) => {
       registry.set(rx, value)
-    }
-  }, [registry, rx])
+      const promise = Effect.runPromiseExit(
+        Registry.getResult(registry, rx as Rx.Rx<Result.Result<any, any>>, { suspendOnWaiting: true }),
+        opts
+      )
+      return options!.mode === "promise" ? promise.then(flattenExit) : promise
+    }, [registry, rx, options.mode]) as any
+  }
+  return React.useCallback((value: W | ((value: R) => W)) => {
+    registry.set(rx, typeof value === "function" ? (value as any)(registry.get(rx)) : value)
+  }, [registry, rx]) as any
+}
+
+const flattenExit = <A, E>(exit: Exit.Exit<A, E>): A => {
+  if (Exit.isSuccess(exit)) return exit.value
+  throw Cause.squash(exit.cause)
 }
 
 /**
@@ -123,30 +157,36 @@ export const useRxMount = <A>(rx: Rx.Rx<A>): void => {
  * @since 1.0.0
  * @category hooks
  */
-export const useRxSet = <R, W>(rx: Rx.Writable<R, W>): (_: W | ((_: R) => W)) => void => {
-  const registry = React.useContext(RegistryContext)
-  mountRx(registry, rx)
-  return setRx(registry, rx)
-}
-
-/**
- * @since 1.0.0
- * @category hooks
- */
-export const useRxSetPromise = <E, A, W>(
-  rx: Rx.Writable<Result.Result<A, E>, W>
-): (
-  _: W,
+export const useRxSet = <
+  R,
+  W,
+  Mode extends "value" | "promise" | "promiseExit" = never
+>(
+  rx: Rx.Writable<R, W>,
   options?: {
-    readonly signal?: AbortSignal | undefined
-  } | undefined
-) => Promise<Exit.Exit<A, E>> => {
+    readonly mode?: ([R] extends [Result.Result<any, any>] ? Mode : "value") | undefined
+  }
+): "promise" extends Mode ? (
+    (
+      value: W,
+      options?: {
+        readonly signal?: AbortSignal | undefined
+      } | undefined
+    ) => Promise<Result.Result.InferA<R>>
+  ) :
+  "promiseExit" extends Mode ? (
+      (
+        value: W,
+        options?: {
+          readonly signal?: AbortSignal | undefined
+        } | undefined
+      ) => Promise<Exit.Exit<Result.Result.InferA<R>, Result.Result.InferE<R>>>
+    ) :
+  ((value: W | ((value: R) => W)) => void) =>
+{
   const registry = React.useContext(RegistryContext)
   mountRx(registry, rx)
-  return React.useCallback((value, options) => {
-    registry.set(rx, value)
-    return Effect.runPromiseExit(Registry.getResult(registry, rx, { suspendOnWaiting: true }), options)
-  }, [registry, rx])
+  return setRx(registry, rx, options)
 }
 
 /**
@@ -165,13 +205,35 @@ export const useRxRefresh = <A>(rx: Rx.Rx<A>): () => void => {
  * @since 1.0.0
  * @category hooks
  */
-export const useRx = <R, W>(
-  rx: Rx.Writable<R, W>
-): readonly [value: R, setOrUpdate: (_: W | ((_: R) => W)) => void] => {
+export const useRx = <R, W, const Mode extends "value" | "promise" | "promiseExit" = "value">(
+  rx: Rx.Writable<R, W>,
+  options?: {
+    readonly mode?: ([R] extends [Result.Result<any, any>] ? Mode : "value") | undefined
+  }
+): readonly [
+  value: R,
+  write: "promise" extends Mode ? (
+      (
+        value: W,
+        options?: {
+          readonly signal?: AbortSignal | undefined
+        } | undefined
+      ) => Promise<Result.Result.InferA<R>>
+    ) :
+    "promiseExit" extends Mode ? (
+        (
+          value: W,
+          options?: {
+            readonly signal?: AbortSignal | undefined
+          } | undefined
+        ) => Promise<Exit.Exit<Result.Result.InferA<R>, Result.Result.InferE<R>>>
+      ) :
+    ((value: W | ((value: R) => W)) => void)
+] => {
   const registry = React.useContext(RegistryContext)
   return [
     useStore(registry, rx),
-    setRx(registry, rx)
+    setRx(registry, rx, options)
   ] as const
 }
 
