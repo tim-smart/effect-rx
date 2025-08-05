@@ -24,7 +24,6 @@ Added in v1.0.0
   - [useRxSetPromise](#userxsetpromise)
   - [useRxSubscribe](#userxsubscribe)
   - [useRxSuspense](#userxsuspense)
-  - [useRxSuspenseSuccess](#userxsuspensesuccess)
   - [useRxValue](#userxvalue)
 
 ---
@@ -144,23 +143,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRxSuspense: <A, E>(
+export declare const useRxSuspense: <A, E, const IncludeFailure extends boolean = false>(
   rx: Rx.Rx<Result.Result<A, E>>,
-  options?: { readonly suspendOnWaiting?: boolean }
-) => Result.Success<A, E> | Result.Failure<A, E>
-```
-
-Added in v1.0.0
-
-## useRxSuspenseSuccess
-
-**Signature**
-
-```ts
-export declare const useRxSuspenseSuccess: <A, E>(
-  rx: Rx.Rx<Result.Result<A, E>>,
-  options?: { readonly suspendOnWaiting?: boolean }
-) => Result.Success<A, E>
+  options?: { readonly suspendOnWaiting?: boolean | undefined; readonly includeFailure?: IncludeFailure | undefined }
+) => Result.Success<A, E> | (IncludeFailure extends true ? Result.Failure<A, E> : never)
 ```
 
 Added in v1.0.0

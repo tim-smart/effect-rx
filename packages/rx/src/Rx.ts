@@ -1742,8 +1742,9 @@ export const update: {
  * @category Conversions
  */
 export const getResult = <A, E>(
-  self: Rx<Result.Result<A, E>>
-): Effect.Effect<A, E, RxRegistry> => Effect.flatMap(RxRegistry, Registry.getResult(self))
+  self: Rx<Result.Result<A, E>>,
+  options?: { readonly suspendOnWaiting?: boolean | undefined }
+): Effect.Effect<A, E, RxRegistry> => Effect.flatMap(RxRegistry, Registry.getResult(self, options))
 
 /**
  * @since 1.0.0

@@ -23,6 +23,8 @@ Added in v1.0.0
   - [RxRegistry (class)](#rxregistry-class)
 - [constructors](#constructors)
   - [make](#make)
+- [guards](#guards)
+  - [isRegistry](#isregistry)
 - [models](#models)
   - [Registry (interface)](#registry-interface)
 - [type ids](#type-ids)
@@ -39,8 +41,15 @@ Added in v1.0.0
 
 ```ts
 export declare const getResult: {
-  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Effect.Effect<A, E>
-  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Effect.Effect<A, E>
+  <A, E>(
+    rx: Rx.Rx<Result.Result<A, E>>,
+    options?: { readonly suspendOnWaiting?: boolean | undefined }
+  ): (self: Registry) => Effect.Effect<A, E>
+  <A, E>(
+    self: Registry,
+    rx: Rx.Rx<Result.Result<A, E>>,
+    options?: { readonly suspendOnWaiting?: boolean | undefined }
+  ): Effect.Effect<A, E>
 }
 ```
 
@@ -128,6 +137,18 @@ export declare const make: (
       }
     | undefined
 ) => Registry
+```
+
+Added in v1.0.0
+
+# guards
+
+## isRegistry
+
+**Signature**
+
+```ts
+export declare const isRegistry: (u: unknown) => u is Registry
 ```
 
 Added in v1.0.0

@@ -117,7 +117,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const getResult: <A, E>(self: Rx<Result.Result<A, E>>) => Effect.Effect<A, E, RxRegistry>
+export declare const getResult: <A, E>(
+  self: Rx<Result.Result<A, E>>,
+  options?: { readonly suspendOnWaiting?: boolean | undefined }
+) => Effect.Effect<A, E, RxRegistry>
 ```
 
 Added in v1.0.0

@@ -7,6 +7,7 @@ import * as FiberRef from "effect/FiberRef"
 import { dual } from "effect/Function"
 import * as Layer from "effect/Layer"
 import * as Mailbox from "effect/Mailbox"
+import { hasProperty } from "effect/Predicate"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
 import type { Registry } from "./index.js"
@@ -25,6 +26,12 @@ export const TypeId: unique symbol = internal.TypeId
  * @category type ids
  */
 export type TypeId = typeof TypeId
+
+/**
+ * @since 1.0.0
+ * @category guards
+ */
+export const isRegistry = (u: unknown): u is Registry => hasProperty(u, TypeId)
 
 /**
  * @since 1.0.0
@@ -168,19 +175,30 @@ export const toStreamResult: {
  * @category Conversions
  */
 export const getResult: {
-  <A, E>(rx: Rx.Rx<Result.Result<A, E>>): (self: Registry) => Effect.Effect<A, E>
-  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Effect.Effect<A, E>
-} = dual(2, <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>): Effect.Effect<A, E> =>
-  Effect.async((resume) => {
-    const result = self.get(rx)
-    if (result._tag !== "Initial") {
-      return resume(Result.toExit(result) as any)
-    }
-    const cancel = self.subscribe(rx, (value) => {
-      if (value._tag !== "Initial") {
-        resume(Result.toExit(value) as any)
-        cancel()
+  <A, E>(rx: Rx.Rx<Result.Result<A, E>>, options?: {
+    readonly suspendOnWaiting?: boolean | undefined
+  }): (self: Registry) => Effect.Effect<A, E>
+  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>, options?: {
+    readonly suspendOnWaiting?: boolean | undefined
+  }): Effect.Effect<A, E>
+} = dual(
+  (args) => isRegistry(args[0]),
+  <A, E>(self: Registry, rx: Rx.Rx<Result.Result<A, E>>, options?: {
+    readonly suspendOnWaiting?: boolean | undefined
+  }): Effect.Effect<A, E> => {
+    const suspendOnWaiting = options?.suspendOnWaiting ?? false
+    return Effect.async((resume) => {
+      const result = self.get(rx)
+      if (result._tag !== "Initial" && !(suspendOnWaiting && result.waiting)) {
+        return resume(Result.toExit(result) as any)
       }
+      const cancel = self.subscribe(rx, (value) => {
+        if (value._tag !== "Initial" && !(suspendOnWaiting && value.waiting)) {
+          resume(Result.toExit(value) as any)
+          cancel()
+        }
+      })
+      return Effect.sync(cancel)
     })
-    return Effect.sync(cancel)
-  }))
+  }
+)
