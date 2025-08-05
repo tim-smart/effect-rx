@@ -1,5 +1,18 @@
 # @effect-rx/rx-react
 
+## 0.41.0
+
+### Minor Changes
+
+- [`9c5624a`](https://github.com/tim-smart/effect-rx/commit/9c5624a3afb79c2a3117aa286c48fa9a33f5ee84) Thanks [@tim-smart](https://github.com/tim-smart)! - consolidate useRxSuspense apis
+
+### Patch Changes
+
+- [`9c5624a`](https://github.com/tim-smart/effect-rx/commit/9c5624a3afb79c2a3117aa286c48fa9a33f5ee84) Thanks [@tim-smart](https://github.com/tim-smart)! - add suspendOnWaiting to .getResult
+
+- Updated dependencies [[`9c5624a`](https://github.com/tim-smart/effect-rx/commit/9c5624a3afb79c2a3117aa286c48fa9a33f5ee84)]:
+  - @effect-rx/rx@0.48.2
+
 ## 0.40.15
 
 ### Patch Changes
