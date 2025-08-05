@@ -1,5 +1,14 @@
 # @effect-rx/rx-livestore
 
+## 0.1.14
+
+### Patch Changes
+
+- [`82681b3`](https://github.com/tim-smart/effect-rx/commit/82681b3b58569b834d0b6b0fa0ef08442fd8c459) Thanks [@tim-smart](https://github.com/tim-smart)! - relax Result.builder.render() constraints
+
+- Updated dependencies [[`82681b3`](https://github.com/tim-smart/effect-rx/commit/82681b3b58569b834d0b6b0fa0ef08442fd8c459)]:
+  - @effect-rx/rx@0.48.6
+
 ## 0.1.13
 
 ### Patch Changes
