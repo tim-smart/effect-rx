@@ -80,12 +80,8 @@ export type Builder<Out, A, E, I> = Pipeable & {
   onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
   orElse<B>(orElse: LazyArg<B>): Out | B
   orNull(): Out | null
-} & ([A | I] extends [never]
-    ? {
-        render(): Out
-      }
-    : {}) &
-  ([I] extends [never]
+  render(): [A | I] extends [never] ? Out : Out | null
+} & ([I] extends [never]
     ? {}
     : {
         onInitial<B>(f: (result: Initial<A, E>) => B): Builder<Out | B, A, E, never>

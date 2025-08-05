@@ -513,7 +513,7 @@ export const builder = <A extends Result<any, any>>(self: A): Builder<
   A extends Success<infer _A, infer _E> ? _A : never,
   A extends Failure<infer _A, infer _E> ? _E : never,
   A extends Initial<infer _A, infer _E> ? true : never
-> => new BuilderImpl(self)
+> => new BuilderImpl(self) as any
 
 /**
  * @since 1.0.0
@@ -526,11 +526,8 @@ export type Builder<Out, A, E, I> =
     onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
     orElse<B>(orElse: LazyArg<B>): Out | B
     orNull(): Out | null
+    render(): [A | I] extends [never] ? Out : Out | null
   }
-  & ([A | I] extends [never] ? {
-      render(): Out
-    } :
-    {})
   & ([I] extends [never] ? {} :
     {
       onInitial<B>(f: (result: Initial<A, E>) => B): Builder<Out | B, A, E, never>
@@ -653,13 +650,13 @@ class BuilderImpl<Out, A, E> {
     return Option.getOrNull(this.output)
   }
 
-  render(): Out {
+  render(): Out | null {
     if (Option.isSome(this.output)) {
       return this.output.value
     } else if (isFailure(this.result)) {
       throw Cause.squash(this.result.cause)
     }
-    throw new Cause.NoSuchElementException(`Result.builder.render: no output found`)
+    return null
   }
 }
 
