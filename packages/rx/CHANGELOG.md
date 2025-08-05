@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.48.6
+
+### Patch Changes
+
+- [`82681b3`](https://github.com/tim-smart/effect-rx/commit/82681b3b58569b834d0b6b0fa0ef08442fd8c459) Thanks [@tim-smart](https://github.com/tim-smart)! - relax Result.builder.render() constraints
+
 ## 0.48.5
 
 ### Patch Changes
