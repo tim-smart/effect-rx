@@ -76,7 +76,7 @@ Added in v1.0.0
 
 ```ts
 export type Builder<Out, A, E, I> = Pipeable & {
-  onWaiting<B>(f: (result: Result<A, E>) => B): Builder<Out | B, A, E, I>
+  onWaiting<B>(f: (result: Result<A, E>) => B): Builder<Out | B, A, E, never>
   onDefect<B>(f: (defect: unknown, result: Failure<A, E>) => B): Builder<Out | B, A, E, I>
   orElse<B>(orElse: LazyArg<B>): Out | B
   orNull(): Out | null

@@ -29,12 +29,13 @@ Added in v1.0.0
 export declare const make: <S extends LiveStoreSchema, Context = {}>(
   options: CreateStoreOptions<S, Context> & { readonly otelOptions?: Partial<OtelOptions> | undefined }
 ) => {
+  readonly StoreService: Context.Tag<StoreService, Store<S, Context>>
   readonly runtimeRx: Rx.RxRuntime<StoreService, never>
   readonly storeRx: Rx.Rx<Result.Result<Store<S, Context>>>
-  readonly storeRxUnsafe: Rx.Rx<Store<S, Context>>
+  readonly storeRxUnsafe: Rx.Rx<Store<S, Context> | undefined>
   readonly makeQueryRx: <A>(query: LiveQueryDef<A>) => Rx.Rx<Result.Result<A>>
-  readonly makeQueryRxUnsafe: <A>(query: LiveQueryDef<A>) => Rx.Rx<A>
-  readonly commitRx: Rx.Writable<Option<void>, {}>
+  readonly makeQueryRxUnsafe: <A>(query: LiveQueryDef<A>) => Rx.Rx<A | undefined>
+  readonly commitRx: Rx.Writable<void, {}>
 }
 ```
 
