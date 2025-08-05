@@ -1,6 +1,6 @@
 {
   "name": "@effect-rx/rx",
-  "version": "0.48.3",
+  "version": "0.48.4",
   "description": "Reactive toolkit for Effect",
   "type": "module",
   "publishConfig": {
