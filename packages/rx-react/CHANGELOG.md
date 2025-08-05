@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.40.15
+
+### Patch Changes
+
+- [`999065a`](https://github.com/tim-smart/effect-rx/commit/999065a26c43c450c2556f16312bb015a7f553cf) Thanks [@tim-smart](https://github.com/tim-smart)! - fix Result.builder order preservation
+
+- Updated dependencies [[`999065a`](https://github.com/tim-smart/effect-rx/commit/999065a26c43c450c2556f16312bb015a7f553cf)]:
+  - @effect-rx/rx@0.48.1
+
 ## 0.40.14
 
 ### Patch Changes
