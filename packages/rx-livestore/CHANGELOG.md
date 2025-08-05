@@ -1,5 +1,11 @@
 # @effect-rx/rx-livestore
 
+## 0.1.12
+
+### Patch Changes
+
+- [`687ac72`](https://github.com/tim-smart/effect-rx/commit/687ac72049e7982bfe944471bfac3646abc10afd) Thanks [@tim-smart](https://github.com/tim-smart)! - expose livestore StoreService tag
+
 ## 0.1.11
 
 ### Patch Changes
