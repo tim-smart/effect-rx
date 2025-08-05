@@ -1,5 +1,14 @@
 # @effect-rx/rx-vue
 
+## 0.20.12
+
+### Patch Changes
+
+- [`c105255`](https://github.com/tim-smart/effect-rx/commit/c10525595ce2d56f69c3f42871a568136392d721) Thanks [@tim-smart](https://github.com/tim-smart)! - add Result.Builder.onInitialOrWaiting
+
+- Updated dependencies [[`c105255`](https://github.com/tim-smart/effect-rx/commit/c10525595ce2d56f69c3f42871a568136392d721)]:
+  - @effect-rx/rx@0.48.5
+
 ## 0.20.11
 
 ### Patch Changes
