@@ -593,31 +593,19 @@ class BuilderImpl<Out, A, E> {
   }
 
   onWaiting<B>(f: (result: Result<A, E>) => B): BuilderImpl<Out | B, A, E> {
-    if (this.result.waiting) {
-      this.output = Option.some(f(this.result)) as any
-    }
-    return this
+    return this.when((r) => r.waiting, (r) => Option.some(f(r)))
   }
 
   onInitial<B>(f: (result: Initial<A, E>) => B): BuilderImpl<Out | B, A, E> {
-    if (isInitial(this.result)) {
-      this.output = Option.some(f(this.result)) as any
-    }
-    return this
+    return this.when(isInitial, (r) => Option.some(f(r)))
   }
 
   onSuccess<B>(f: (value: A, result: Success<A, E>) => B): BuilderImpl<Out | B, never, E> {
-    if (isSuccess(this.result)) {
-      this.output = Option.some(f(this.result.value, this.result)) as any
-    }
-    return this as any
+    return this.when(isSuccess, (r) => Option.some(f(r.value, r)))
   }
 
   onFailure<B>(f: (cause: Cause.Cause<E>, result: Failure<A, E>) => B): BuilderImpl<Out | B, A, never> {
-    if (isFailure(this.result)) {
-      this.output = Option.some(f(this.result.cause, this.result)) as any
-    }
-    return this as any
+    return this.when(isFailure, (r) => Option.some(f(r.cause, r)))
   }
 
   onError<B>(f: (error: E, result: Failure<A, E>) => B): BuilderImpl<Out | B, A, never> {
