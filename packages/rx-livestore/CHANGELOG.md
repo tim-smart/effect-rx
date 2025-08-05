@@ -1,5 +1,14 @@
 # @effect-rx/rx-livestore
 
+## 0.1.13
+
+### Patch Changes
+
+- [`c105255`](https://github.com/tim-smart/effect-rx/commit/c10525595ce2d56f69c3f42871a568136392d721) Thanks [@tim-smart](https://github.com/tim-smart)! - add Result.Builder.onInitialOrWaiting
+
+- Updated dependencies [[`c105255`](https://github.com/tim-smart/effect-rx/commit/c10525595ce2d56f69c3f42871a568136392d721)]:
+  - @effect-rx/rx@0.48.5
+
 ## 0.1.12
 
 ### Patch Changes
