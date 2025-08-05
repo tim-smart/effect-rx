@@ -6,7 +6,7 @@ import { Suspense } from "react"
 import { renderToString } from "react-dom/server"
 import { ErrorBoundary } from "react-error-boundary"
 import { beforeEach, describe, expect, it, test, vi } from "vitest"
-import { Hydration, RegistryContext, Result, useRx, useRxSet, useRxSuspense, useRxValue } from "../src/index.js"
+import { Hydration, RegistryContext, Result, useRxSuspense, useRxValue } from "../src/index.js"
 import { HydrationBoundary } from "../src/ReactHydration.js"
 
 describe("rx-react", () => {
@@ -15,13 +15,6 @@ describe("rx-react", () => {
   beforeEach(() => {
     registry = Registry.make()
   })
-
-  const fnRx = Rx.fn<number>()(
-    Effect.fnUntraced(function*(n) {
-      yield* Effect.log(n)
-    })
-  )
-  const [result, set] = useRx(fnRx, { mode: "promiseExit" })
 
   describe("useRxValue", () => {
     test("should read value from simple Rx", () => {
