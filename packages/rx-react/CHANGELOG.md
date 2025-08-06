@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.42.3
+
+### Patch Changes
+
+- [#285](https://github.com/tim-smart/effect-rx/pull/285) [`6b4c5d1`](https://github.com/tim-smart/effect-rx/commit/6b4c5d1cd560833e0ef490df6a54feac735dfd0d) Thanks [@ethanniser](https://github.com/ethanniser)! - Fix withServerValue to preserve original Rx properties
+
+- Updated dependencies [[`6b4c5d1`](https://github.com/tim-smart/effect-rx/commit/6b4c5d1cd560833e0ef490df6a54feac735dfd0d)]:
+  - @effect-rx/rx@0.48.7
+
 ## 0.42.2
 
 ### Patch Changes
