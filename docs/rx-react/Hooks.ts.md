@@ -34,7 +34,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useRx: <R, W, const Mode extends "value" | "promise" | "promiseExit" = "value">(
+export declare const useRx: <R, W, const Mode extends "value" | "promise" | "promiseExit" = never>(
   rx: Rx.Writable<R, W>,
   options?: { readonly mode?: ([R] extends [Result.Result<any, any>] ? Mode : "value") | undefined }
 ) => readonly [
