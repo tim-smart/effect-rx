@@ -1,5 +1,11 @@
 # @effect-rx/rx-livestore
 
+## 0.1.15
+
+### Patch Changes
+
+- [`cba3d26`](https://github.com/tim-smart/effect-rx/commit/cba3d260916c624197a1ea664dcea4771376c731) Thanks [@tim-smart](https://github.com/tim-smart)! - expose the livestore Layer
+
 ## 0.1.14
 
 ### Patch Changes
