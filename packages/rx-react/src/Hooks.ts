@@ -100,7 +100,7 @@ function mountRx<A>(registry: Registry.Registry, rx: Rx.Rx<A>): void {
   React.useEffect(() => registry.mount(rx), [rx, registry])
 }
 
-function setRx<R, W, Mode extends "value" | "promise" | "promiseExit" = "value">(
+function setRx<R, W, Mode extends "value" | "promise" | "promiseExit" = never>(
   registry: Registry.Registry,
   rx: Rx.Writable<R, W>,
   options?: {
@@ -205,7 +205,7 @@ export const useRxRefresh = <A>(rx: Rx.Rx<A>): () => void => {
  * @since 1.0.0
  * @category hooks
  */
-export const useRx = <R, W, const Mode extends "value" | "promise" | "promiseExit" = "value">(
+export const useRx = <R, W, const Mode extends "value" | "promise" | "promiseExit" = never>(
   rx: Rx.Writable<R, W>,
   options?: {
     readonly mode?: ([R] extends [Result.Result<any, any>] ? Mode : "value") | undefined
