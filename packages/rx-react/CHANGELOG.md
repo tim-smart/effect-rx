@@ -1,5 +1,11 @@
 # @effect-rx/rx-react
 
+## 0.42.4
+
+### Patch Changes
+
+- [`6c0c11b`](https://github.com/tim-smart/effect-rx/commit/6c0c11bcca96c37d2bd7d36476af4c2ba97b2126) Thanks [@tim-smart](https://github.com/tim-smart)! - fix useRx mode default type
+
 ## 0.42.3
 
 ### Patch Changes
