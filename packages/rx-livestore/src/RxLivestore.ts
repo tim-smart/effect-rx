@@ -33,6 +33,10 @@ export const make = <S extends LiveStoreSchema, Context = {}>(
    */
   readonly StoreService: Context.Tag<StoreService, Store<S, Context>>
   /**
+   * The Layer that builds the Store
+   */
+  readonly layer: Layer.Layer<StoreService>
+  /**
    * A Rx.runtime that contains the Store.
    */
   readonly runtimeRx: Rx.RxRuntime<StoreService, never>
@@ -62,7 +66,7 @@ export const make = <S extends LiveStoreSchema, Context = {}>(
   readonly commitRx: Rx.Writable<void, {}>
 } => {
   const StoreService = Context.GenericTag<StoreService, Store<S, Context>>("@effect-rx/rx-livestore/StoreService")
-  const runtimeRx = Rx.runtime(Layer.scoped(
+  const layer = Layer.scoped(
     StoreService,
     createStore(options).pipe(
       provideOtel({
@@ -71,7 +75,8 @@ export const make = <S extends LiveStoreSchema, Context = {}>(
       }),
       Effect.orDie
     )
-  ))
+  )
+  const runtimeRx = Rx.runtime(layer)
   const storeRx = runtimeRx.rx(StoreService)
   const storeRxUnsafe = Rx.readable((get) => {
     const result = get(storeRx)
@@ -114,6 +119,7 @@ export const make = <S extends LiveStoreSchema, Context = {}>(
   })
   return {
     StoreService,
+    layer,
     runtimeRx,
     storeRx,
     storeRxUnsafe,

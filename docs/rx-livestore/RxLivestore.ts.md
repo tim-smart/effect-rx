@@ -30,6 +30,7 @@ export declare const make: <S extends LiveStoreSchema, Context = {}>(
   options: CreateStoreOptions<S, Context> & { readonly otelOptions?: Partial<OtelOptions> | undefined }
 ) => {
   readonly StoreService: Context.Tag<StoreService, Store<S, Context>>
+  readonly layer: Layer.Layer<StoreService>
   readonly runtimeRx: Rx.RxRuntime<StoreService, never>
   readonly storeRx: Rx.Rx<Result.Result<Store<S, Context>>>
   readonly storeRxUnsafe: Rx.Rx<Store<S, Context> | undefined>
