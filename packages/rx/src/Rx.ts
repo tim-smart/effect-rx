@@ -1833,6 +1833,7 @@ export const withServerValue: {
   2,
   <A extends Rx<any>>(self: A, read: (get: <A>(rx: Rx<A>) => A) => Rx.Infer<A>): A =>
     Object.assign(Object.create(Object.getPrototypeOf(self)), {
+      ...self,
       [ServerValueTypeId]: read
     })
 )

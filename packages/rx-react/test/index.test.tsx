@@ -112,7 +112,16 @@ describe("rx-react", () => {
         <Suspense fallback={<div data-testid="loading">Loading...</div>}>
           <TestComponent />
         </Suspense>
-      </ErrorBoundary>
+      </ErrorBoundary>,
+      {
+        onCaughtError: ((error: unknown) => {
+          if (error instanceof Error && error.message === "test") {
+            return
+          }
+          // eslint-disable-next-line no-console
+          console.error(error)
+        }) as unknown as undefined // todo: fix idk why the types are weird
+      }
     )
 
     expect(screen.getByTestId("error")).toBeInTheDocument()
@@ -308,6 +317,11 @@ describe("rx-react", () => {
 
       expect(getCount).toHaveBeenCalled()
       expect(ssrHtml).toContain("0")
+
+      render(<App />)
+
+      expect(getCount).toHaveBeenCalled()
+      expect(screen.getByText("0")).toBeInTheDocument()
     })
   })
 
@@ -332,5 +346,10 @@ describe("rx-react", () => {
 
     expect(mockFetchData).not.toHaveBeenCalled()
     expect(ssrHtml).toContain("Initial")
+
+    render(<App />)
+
+    expect(mockFetchData).toHaveBeenCalled()
+    expect(screen.getByText("Success")).toBeInTheDocument()
   })
 })
