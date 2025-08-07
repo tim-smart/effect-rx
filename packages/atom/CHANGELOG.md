@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.0
+
+### Minor Changes
+
+- [`2960440`](https://github.com/tim-smart/effect-atom/commit/2960440beea1db1ac84c3654ab9c91dd7dab0841) Thanks [@tim-smart](https://github.com/tim-smart)! - rename rx to atom
+
 ## 0.48.7
 
 ### Patch Changes
