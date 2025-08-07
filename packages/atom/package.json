@@ -1,0 +1,34 @@
+{
+  "name": "@effect-atom/atom",
+  "version": "0.48.7",
+  "description": "Reactive toolkit for Effect",
+  "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tim-smart/effect-atom.git"
+  },
+  "homepage": "https://github.com/tim-smart/effect-atom",
+  "scripts": {
+    "build": "pnpm build-prepare && pnpm build-esm && pnpm build-cjs && pnpm build-annotate && build-utils pack-v2",
+    "build-prepare": "build-utils prepare-v2",
+    "build-esm": "tsc -b tsconfig.build.json",
+    "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
+    "build-annotate": "babel build --plugins annotate-pure-calls --out-dir build --source-maps"
+  },
+  "keywords": [],
+  "author": "Effect contributors",
+  "license": "MIT",
+  "sideEffects": [],
+  "devDependencies": {
+    "@effect/platform": "^0.90.0",
+    "effect": "^3.17.2"
+  },
+  "peerDependencies": {
+    "@effect/platform": "^0.90.0",
+    "effect": "^3.17.0"
+  }
+}

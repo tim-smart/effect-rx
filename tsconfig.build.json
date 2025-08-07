@@ -2,13 +2,13 @@
   "extends": "./tsconfig.base.json",
   "references": [
     {
-      "path": "packages/rx/tsconfig.build.json"
+      "path": "packages/atom/tsconfig.build.json"
     },
     {
-      "path": "packages/rx-react/tsconfig.build.json"
+      "path": "packages/atom-react/tsconfig.build.json"
     },
     {
-      "path": "packages/rx-vue/tsconfig.build.json"
+      "path": "packages/atom-vue/tsconfig.build.json"
     }
   ]
 }

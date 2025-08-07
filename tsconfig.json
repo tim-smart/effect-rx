@@ -2,13 +2,13 @@
   "extends": "./tsconfig.base.json",
   "references": [
     {
-      "path": "packages/rx"
+      "path": "packages/atom"
     },
     {
-      "path": "packages/rx-react"
+      "path": "packages/atom-react"
     },
     {
-      "path": "packages/rx-vue"
+      "path": "packages/atom-vue"
     }
   ]
 }

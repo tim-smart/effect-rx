@@ -1,4 +1,4 @@
-# @effect-rx/rx
+# @effect-atom/atom
 
 A reactive state management library for Effect.
 
@@ -7,28 +7,28 @@ A reactive state management library for Effect.
 If you are using React:
 
 ```bash
-pnpm add @effect-rx/rx-react
+pnpm add @effect-atom/atom-react
 ```
 
-## Creating a Counter with Rx
+## Creating a Counter with Atom
 
 Let's create a simple Counter component, which will increment a number when you click a button.
 
-We will use `Rx.make` to create our Rx, which is a reactive state container.
+We will use `Atom.make` to create our Atom, which is a reactive state container.
 
-We can then use the `useRxValue` & `useRxSet` hooks to read and update the value
-of the Rx.
+We can then use the `useAtomValue` & `useAtomSet` hooks to read and update the value
+of the Atom.
 
 ```tsx
-import { Rx, useRxValue, useRxSet } from "@effect-rx/rx-react"
+import { Atom, useAtomValue, useAtomSet } from "@effect-atom/atom-react"
 
-const countRx = Rx.make(0).pipe(
-  // By default, the Rx will be reset when no longer used.
+const countAtom = Atom.make(0).pipe(
+  // By default, the Atom will be reset when no longer used.
   // This is useful for cleaning up resources when the component unmounts.
   //
-  // If you want to keep the value, you can use `Rx.keepAlive`.
+  // If you want to keep the value, you can use `Atom.keepAlive`.
   //
-  Rx.keepAlive,
+  Atom.keepAlive,
 )
 
 function App() {
@@ -42,12 +42,12 @@ function App() {
 }
 
 function Counter() {
-  const count = useRxValue(countRx)
+  const count = useAtomValue(countAtom)
   return <h1>{count}</h1>
 }
 
 function CounterButton() {
-  const setCount = useRxSet(countRx)
+  const setCount = useAtomSet(countAtom)
   return (
     <button onClick={() => setCount((count) => count + 1)}>Increment</button>
   )
@@ -56,43 +56,43 @@ function CounterButton() {
 
 ## Derived State
 
-You can create derived state from an Rx in a couple of ways.
+You can create derived state from an Atom in a couple of ways.
 
 ```ts
-import { Rx } from "@effect-rx/rx-react"
+import { Atom } from "@effect-atom/atom-react"
 
-const countRx = Rx.make(0)
+const countAtom = Atom.make(0)
 
-// You can use the `get` function to get the value of another Rx.
+// You can use the `get` function to get the value of another Atom.
 //
-// The type of `get` is `Rx.Context`, which also has a bunch of other methods
-// on it to manage Rx's.
+// The type of `get` is `Atom.Context`, which also has a bunch of other methods
+// on it to manage Atom's.
 //
-const doubleCountRx = Rx.make((get) => get(countRx) * 2)
+const doubleCountAtom = Atom.make((get) => get(countAtom) * 2)
 
-// You can also use the `Rx.map` function to create a derived Rx.
-const tripleCountRx = Rx.map(countRx, (count) => count * 3)
+// You can also use the `Atom.map` function to create a derived Atom.
+const tripleCountAtom = Atom.map(countAtom, (count) => count * 3)
 ```
 
 ## Working with Effects
 
-You can also pass effects to the `Rx.make` function.
+You can also pass effects to the `Atom.make` function.
 
-When working with effectful Rx's, you will get back a `Result` type.
+When working with effectful Atom's, you will get back a `Result` type.
 
-You can see all the ways to work with `Result` here: https://tim-smart.github.io/effect-rx/rx/Result.ts.html
+You can see all the ways to work with `Result` here: https://tim-smart.github.io/effect-atom/atom/Result.ts.html
 
 ```ts
-import { Rx, Result } from "@effect-rx/rx-react"
+import { Atom, Result } from "@effect-atom/atom-react"
 
-const countRx: Rx<Result<number>> = Rx.make(Effect.succeed(0))
+const countAtom: Atom<Result<number>> = Atom.make(Effect.succeed(0))
 
-// You can also pass a function to get access to the `Rx.Context`
+// You can also pass a function to get access to the `Atom.Context`
 //
-// `get.result` can be used in Effect's to get the value of an Rx<Result>.
-const resultWithContextRx: Rx<Result<number>> = Rx.make(
-  Effect.fnUntraced(function* (get: Rx.Context) {
-    const count = yield* get.result(countRx)
+// `get.result` can be used in Effect's to get the value of an Atom<Result>.
+const resultWithContextAtom: Atom<Result<number>> = Atom.make(
+  Effect.fnUntraced(function* (get: Atom.Context) {
+    const count = yield* get.result(countAtom)
     return count + 1
   }),
 )
@@ -100,17 +100,17 @@ const resultWithContextRx: Rx<Result<number>> = Rx.make(
 
 ## Working with scoped Effects
 
-All Rx's that use effects are provided with a `Scope`, so you can add finalizers
-that will be run when the Rx is no longer used.
+All Atom's that use effects are provided with a `Scope`, so you can add finalizers
+that will be run when the Atom is no longer used.
 
 ```ts
-import { Rx } from "@effect-rx/rx-react"
+import { Atom } from "@effect-atom/atom-react"
 import { Effect } from "effect"
 
-export const resultRx = Rx.make(
+export const resultAtom = Atom.make(
   Effect.gen(function* () {
-    // Add a finalizer to the `Scope` for this Rx
-    // It will run when the Rx is rebuilt or no longer needed
+    // Add a finalizer to the `Scope` for this Atom
+    // It will run when the Atom is rebuilt or no longer needed
     yield* Effect.addFinalizer(() => Effect.log("finalizer"))
     return "hello"
   }),
@@ -120,7 +120,7 @@ export const resultRx = Rx.make(
 ## Working with Effect Services / Layer's
 
 ```ts
-import { Rx } from "@effect-rx/rx-react"
+import { Atom } from "@effect-atom/atom-react"
 import { Effect } from "effect"
 
 class Users extends Effect.Service<Users>()("app/Users", {
@@ -134,11 +134,11 @@ class Users extends Effect.Service<Users>()("app/Users", {
   }),
 }) {}
 
-// Create a RxRuntime from a Layer
-const runtimeRx: Rx.RxRuntime<Users, never> = Rx.runtime(Users.Default)
+// Create a AtomRuntime from a Layer
+const runtimeAtom: Atom.AtomRuntime<Users, never> = Atom.runtime(Users.Default)
 
-// You can then use the RxRuntime to make Rx's that use the services from the Layer
-export const usersRx = runtimeRx.rx(
+// You can then use the AtomRuntime to make Atom's that use the services from the Layer
+export const usersAtom = runtimeAtom.atom(
   Effect.gen(function* () {
     const users = yield* Users
     return yield* users.getAll
@@ -146,15 +146,15 @@ export const usersRx = runtimeRx.rx(
 )
 ```
 
-## Adding global Layers to RxRuntime's
+## Adding global Layers to AtomRuntime's
 
 This is useful for setting up Tracer's, Logger's, ConfigProvider's, etc.
 
 ```ts
-import { Rx } from "@effect-rx/rx-react"
+import { Atom } from "@effect-atom/atom-react"
 import { ConfigProvider, Layer } from "effect"
 
-Rx.runtime.addGlobalLayer(
+Atom.runtime.addGlobalLayer(
   Layer.setConfigProvider(ConfigProvider.fromJson(import.meta.env)),
 )
 ```
@@ -162,35 +162,36 @@ Rx.runtime.addGlobalLayer(
 ## Working with Stream's
 
 ```tsx
-import { Result, Rx, useRx } from "@effect-rx/rx-react"
+import { Result, Atom, useAtom } from "@effect-atom/atom-react"
 import { Cause, Schedule, Stream } from "effect"
 
-// This will be a simple Rx that emits a incrementing number every second.
+// This will be a simple Atom that emits a incrementing number every second.
 //
-// Rx.make will give back the latest value of a Stream as a Result
-export const countRx: Rx.Rx<Result.Result<number>> = Rx.make(
+// Atom.make will give back the latest value of a Stream as a Result
+export const countAtom: Atom.Atom<Result.Result<number>> = Atom.make(
   Stream.fromSchedule(Schedule.spaced(1000)),
 )
 
-// You can use Rx.pull to create a specialized Rx that will pull from a Stream
+// You can use Atom.pull to create a specialized Atom that will pull from a Stream
 // one chunk at a time.
 //
 // This is useful for infinite scrolling or paginated data.
 //
-// With a `RxRuntime`, you can use `runtimeRx.pull` to create a pull Rx.
-export const countPullRx: Rx.Writable<Rx.PullResult<number>, void> = Rx.pull(
-  Stream.make(1, 2, 3, 4, 5),
-)
+// With a `AtomRuntime`, you can use `runtimeAtom.pull` to create a pull Atom.
+export const countPullAtom: Atom.Writable<
+  Atom.PullResult<number>,
+  void
+> = Atom.pull(Stream.make(1, 2, 3, 4, 5))
 
-// Here is a component that uses countPullRx to display the numbers in a list.
+// Here is a component that uses countPullAtom to display the numbers in a list.
 //
-// You can use `useRx` to both read the value of an Rx and gain access to the
+// You can use `useAtom` to both read the value of an Atom and gain access to the
 // setter function.
 //
 // Each time the setter function is called, it will pull a new chunk of data
 // from the Stream, and append it to the list.
-export function CountPullRxComponent() {
-  const [result, pull] = useRx(countPullRx)
+export function CountPullAtomComponent() {
+  const [result, pull] = useAtom(countPullAtom)
 
   return Result.match(result, {
     onInitial: () => <div>Loading...</div>,
@@ -210,10 +211,10 @@ export function CountPullRxComponent() {
 }
 ```
 
-## Working with sets of Rx's
+## Working with sets of Atom's
 
 ```ts
-import { Rx } from "@effect-rx/rx-react"
+import { Atom } from "@effect-atom/atom-react"
 import { Effect } from "effect"
 
 class Users extends Effect.Service<Users>()("app/Users", {
@@ -223,16 +224,16 @@ class Users extends Effect.Service<Users>()("app/Users", {
   }),
 }) {}
 
-// Create a RxRuntime from a Layer
-const runtimeRx: Rx.RxRuntime<Users, never> = Rx.runtime(Users.Default)
+// Create a AtomRuntime from a Layer
+const runtimeAtom: Atom.AtomRuntime<Users, never> = Atom.runtime(Users.Default)
 
-// Rx's work by reference, so we need to use Rx.family to dynamically create a
-// set of Rx's from a key.
+// Atom's work by reference, so we need to use Atom.family to dynamically create a
+// set of Atom's from a key.
 //
-// Rx.family will ensure that we get a stable reference to the Rx for each key.
+// Atom.family will ensure that we get a stable reference to the Atom for each key.
 //
-export const userRx = Rx.family((id: string) =>
-  runtimeRx.rx(
+export const userAtom = Atom.family((id: string) =>
+  runtimeAtom.atom(
     Effect.gen(function* () {
       const users = yield* Users
       return yield* users.findById(id)
@@ -244,34 +245,34 @@ export const userRx = Rx.family((id: string) =>
 ## Working with functions
 
 ```ts
-import { Rx, useRxSet, useRxSetPromise } from "@effect-rx/rx-react"
+import { Atom, useAtomSet, useAtomSetPromise } from "@effect-atom/atom-react"
 import { Effect, Exit } from "effect"
 
-// Create a simple Rx.fn that logs a number
-const logRx = Rx.fn(
+// Create a simple Atom.fn that logs a number
+const logAtom = Atom.fn(
   Effect.fnUntraced(function* (arg: number) {
     yield* Effect.log("got arg", arg)
   }),
 )
 
 export function LogComponent() {
-  // To call the Rx.fn, we need to use the useRxSet hook
-  const logNumber = useRxSet(logRx)
+  // To call the Atom.fn, we need to use the useAtomSet hook
+  const logNumber = useAtomSet(logAtom)
   return <button onClick={() => logNumber(42)}>Log 42</button>
 }
 
-// You can also use it with Rx.runtime
+// You can also use it with Atom.runtime
 class Users extends Effect.Service<Users>()("app/Users", {
   succeed: {
     create: (name: string) => Effect.succeed({ id: 1, name }),
   } as const,
 }) {}
 
-const runtimeRx = Rx.runtime(Users.Default)
+const runtimeAtom = Atom.runtime(Users.Default)
 
-// Here we are using runtimeRx.fn to create a function from the Users.create
+// Here we are using runtimeAtom.fn to create a function from the Users.create
 // method.
-export const createUserRx = runtimeRx.fn(
+export const createUserAtom = runtimeAtom.fn(
   Effect.fnUntraced(function* (name: string) {
     const users = yield* Users
     return yield* users.create(name)
@@ -279,8 +280,8 @@ export const createUserRx = runtimeRx.fn(
 )
 
 export function CreateUserComponent() {
-  // If your function returns a Result, you can use the useRxSetPromise hook
-  const createUser = useRxSetPromise(createUserRx)
+  // If your function returns a Result, you can use the useAtomSetPromise hook
+  const createUser = useAtomSetPromise(createUserAtom)
   return (
     <button
       onClick={async () => {
@@ -299,17 +300,17 @@ export function CreateUserComponent() {
 ## Wrapping an event listener
 
 ```ts
-import { Rx } from "@effect-rx/rx-react"
+import { Atom } from "@effect-atom/atom-react"
 
-// This is a simple Rx that will emit the current scroll position of the
+// This is a simple Atom that will emit the current scroll position of the
 // window.
-export const scrollYRx: Rx.Rx<number> = Rx.make((get) => {
+export const scrollYAtom: Atom.Atom<number> = Atom.make((get) => {
   // The handler will use `get.setSelf` to update the value of itself
   const onScroll = () => {
     get.setSelf(window.scrollY)
   }
   // We need to use `get.addFinalizer` to remove the event listener when the
-  // Rx is no longer used.
+  // Atom is no longer used.
   window.addEventListener("scroll", onScroll)
   get.addFinalizer(() => window.removeEventListener("scroll", onScroll))
 
@@ -321,31 +322,29 @@ export const scrollYRx: Rx.Rx<number> = Rx.make((get) => {
 ## Integration with search params
 
 ```ts
-import { Rx } from "@effect-rx/rx-react"
+import { Atom } from "@effect-atom/atom-react"
 import { Option, Schema } from "effect"
 
-// Create an Rx that reads and writes to the URL search parameters
-export const simpleParamRx: Rx.Writable<string> = Rx.searchParam("simple")
+// Create an Atom that reads and writes to the URL search parameters
+export const simpleParamAtom: Atom.Writable<string> = Atom.searchParam("simple")
 
 // You can also use a schema to further parse the value
-export const numberParamRx: Rx.Writable<Option.Option<number>> = Rx.searchParam(
-  "number",
-  { schema: Schema.NumberFromString },
-)
+export const numberParamAtom: Atom.Writable<Option.Option<number>> =
+  Atom.searchParam("number", { schema: Schema.NumberFromString })
 ```
 
 ## Integration with local storage
 
 ```ts
-import { Rx } from "@effect-rx/rx-react"
+import { Atom } from "@effect-atom/atom-react"
 import { BrowserKeyValueStore } from "@effect/platform-browser"
 import { Schema } from "effect"
 
-// Create an Rx that reads and writes to localStorage.
+// Create an Atom that reads and writes to localStorage.
 //
 // It uses Schema to define the type of the value stored.
-export const flagRx = Rx.kvs({
-  runtime: Rx.runtime(BrowserKeyValueStore.layerLocalStorage),
+export const flagAtom = Atom.kvs({
+  runtime: Atom.runtime(BrowserKeyValueStore.layerLocalStorage),
   key: "flag",
   schema: Schema.Boolean,
   defaultValue: () => false,
