@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.4
+
+### Patch Changes
+
+- [`d50d26f`](https://github.com/tim-smart/effect-atom/commit/d50d26f0a7efc5f6a00e4799ec427c04c1b34009) Thanks [@tim-smart](https://github.com/tim-smart)! - add timeToLive to rpc queries
+
 ## 0.1.3
 
 ### Patch Changes
