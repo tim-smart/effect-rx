@@ -30,6 +30,8 @@ Added in v1.0.0
 - [Optimistic](#optimistic)
   - [optimistic](#optimistic-1)
   - [optimisticFn](#optimisticfn)
+- [Reactivity](#reactivity)
+  - [withReactivity](#withreactivity)
 - [Serializable](#serializable)
   - [Serializable (interface)](#serializable-interface)
   - [SerializableTypeId](#serializabletypeid)
@@ -277,6 +279,23 @@ export declare const optimisticFn: {
     }
   ): AtomResultFn<OW, XA, XE>
 }
+```
+
+Added in v1.0.0
+
+# Reactivity
+
+## withReactivity
+
+An alias to `Rx.runtime.withReactivity`, for refreshing an atom whenever the
+keys change in the `Reactivity` service.
+
+**Signature**
+
+```ts
+export declare const withReactivity: (
+  keys: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>>
+) => <A extends Atom<any>>(atom: A) => A
 ```
 
 Added in v1.0.0
@@ -990,14 +1009,6 @@ export interface AtomRuntime<R, ER> extends Atom<Result.Result<Runtime.Runtime<R
           get: Context
         ) => Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R | AtomRegistry | Reactivity.Reactivity>)
   ) => Atom<Result.Result<A, E | E1>>
-
-  /**
-   * Uses the `Reactivity` service from the runtime to refresh the atom whenever
-   * the keys change.
-   */
-  readonly withReactivity: (
-    keys: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>>
-  ) => <A extends Atom<any>>(atom: A) => A
 }
 ```
 
@@ -1044,6 +1055,14 @@ export interface RuntimeFactory {
   ): AtomRuntime<R, E>
   readonly memoMap: Layer.MemoMap
   readonly addGlobalLayer: <A, E>(layer: Layer.Layer<A, E, AtomRegistry | Reactivity.Reactivity>) => void
+
+  /**
+   * Uses the `Reactivity` service from the runtime to refresh the atom whenever
+   * the keys change.
+   */
+  readonly withReactivity: (
+    keys: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>>
+  ) => <A extends Atom<any>>(atom: A) => A
 }
 ```
 
