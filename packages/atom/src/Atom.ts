@@ -263,23 +263,6 @@ const RuntimeProto = {
         return readSubscribable(get, ref, runtime)
       }
     )
-  },
-
-  withReactivity(
-    this: AtomRuntime<any, any>,
-    keys: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>>
-  ) {
-    return <A extends Atom<any>>(atom: A): A =>
-      transform(atom, (get) => {
-        const runtimeResult = get(this)
-        if (!Result.isSuccess(runtimeResult)) return get(atom)
-        const reactivity = EffectContext.get(runtimeResult.value.context, Reactivity.Reactivity)
-        get.addFinalizer(reactivity.unsafeRegister(keys, () => {
-          get.refresh(atom)
-        }))
-        get.subscribe(atom, (value) => get.setSelf(value))
-        return get.once(atom)
-      }) as any as A
   }
 }
 
@@ -612,14 +595,6 @@ export interface AtomRuntime<R, ER> extends Atom<Result.Result<Runtime.Runtime<R
         get: Context
       ) => Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R | AtomRegistry | Reactivity.Reactivity>)
   ) => Atom<Result.Result<A, E | E1>>
-
-  /**
-   * Uses the `Reactivity` service from the runtime to refresh the atom whenever
-   * the keys change.
-   */
-  readonly withReactivity: (
-    keys: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>>
-  ) => <A extends Atom<any>>(atom: A) => A
 }
 
 /**
@@ -634,6 +609,14 @@ export interface RuntimeFactory {
   ): AtomRuntime<R, E>
   readonly memoMap: Layer.MemoMap
   readonly addGlobalLayer: <A, E>(layer: Layer.Layer<A, E, AtomRegistry | Reactivity.Reactivity>) => void
+
+  /**
+   * Uses the `Reactivity` service from the runtime to refresh the atom whenever
+   * the keys change.
+   */
+  readonly withReactivity: (
+    keys: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>>
+  ) => <A extends Atom<any>>(atom: A) => A
 }
 
 /**
@@ -676,6 +659,22 @@ export const context: (options: {
   factory.addGlobalLayer = (layer: Layer.Layer<any, any, AtomRegistry | Reactivity.Reactivity>) => {
     globalLayer = Layer.provideMerge(globalLayer, Layer.provide(layer, Reactivity.layer))
   }
+  const reactivityAtom = make(
+    Effect.scopeWith((scope) => Layer.buildWithMemoMap(Reactivity.layer, options.memoMap, scope)).pipe(
+      Effect.map(EffectContext.get(Reactivity.Reactivity))
+    )
+  )
+  factory.withReactivity =
+    (keys: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>>) =>
+    <A extends Atom<any>>(atom: A): A =>
+      transform(atom, (get) => {
+        const reactivity = Result.getOrThrow(get(reactivityAtom))
+        get.addFinalizer(reactivity.unsafeRegister(keys, () => {
+          get.refresh(atom)
+        }))
+        get.subscribe(atom, (value) => get.setSelf(value))
+        return get.once(atom)
+      }) as any as A
   return factory
 }
 
@@ -696,6 +695,17 @@ export const runtime: RuntimeFactory = globalValue(
   "@effect-atom/atom/Atom/defaultContext",
   () => context({ memoMap: defaultMemoMap })
 )
+
+/**
+ * An alias to `Rx.runtime.withReactivity`, for refreshing an atom whenever the
+ * keys change in the `Reactivity` service.
+ *
+ * @since 1.0.0
+ * @category Reactivity
+ */
+export const withReactivity: (
+  keys: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>>
+) => <A extends Atom<any>>(atom: A) => A = runtime.withReactivity
 
 // -----------------------------------------------------------------------------
 // constructors - stream

@@ -1216,7 +1216,7 @@ describe("Atom", () => {
       const r = Registry.make()
       let rebuilds = 0
       const atom = Atom.make(() => rebuilds++).pipe(
-        counterRuntime.withReactivity(["counter"]),
+        Atom.withReactivity(["counter"]),
         Atom.keepAlive
       )
       const fn = counterRuntime.fn(

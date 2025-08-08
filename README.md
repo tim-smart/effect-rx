@@ -370,9 +370,9 @@ const runtimeAtom = Atom.runtime(Layer.empty)
 let i = 0
 const count = Atom.make(() => i++).pipe(
   // Refresh when the "counter" key changes
-  runtimeAtom.withReactivity(["counter"]),
+  Atom.withReactivity(["counter"]),
   // Or refresh when "counter" or "counter:1" or "counter:2" changes
-  runtimeAtom.withReactivity({
+  Atom.withReactivity({
     counter: [1, 2],
   }),
 )
