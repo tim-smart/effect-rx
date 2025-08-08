@@ -353,7 +353,7 @@ export const flagAtom = Atom.kvs({
 
 ## Integration with `Reactivity` from `@effect/experimental`
 
-`Reactivity` is an Effect services allows you make queries reactive when
+`Reactivity` is an Effect service that allows you make queries reactive when
 mutations happen.
 
 You can use an `Rx.runtime` to hook into the `Reactivity` service and trigger
