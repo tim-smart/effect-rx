@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.1
+
+### Patch Changes
+
+- [`4e94fdd`](https://github.com/tim-smart/effect-atom/commit/4e94fddd1429a29e272d977e2183624d43a14ebb) Thanks [@tim-smart](https://github.com/tim-smart)! - add Reactivity integration from @effect/experimental
+
 ## 0.1.0
 
 ### Minor Changes
