@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.5
+
+### Patch Changes
+
+- [#297](https://github.com/tim-smart/effect-atom/pull/297) [`467ca83`](https://github.com/tim-smart/effect-atom/commit/467ca831982528672d9f74d11bc1288a3ad6d5dc) Thanks [@md-y](https://github.com/md-y)! - Fixed PullResult type for RPC stream queries
+
 ## 0.1.4
 
 ### Patch Changes
