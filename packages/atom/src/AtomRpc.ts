@@ -70,8 +70,8 @@ export interface AtomRpcClient<Rpcs extends Rpc.Any, E> {
     infer _Middleware
   > ? [_Success] extends [RpcSchema.Stream<infer _A, infer _E>] ? Atom.Writable<
         Atom.PullResult<
-          _A,
-          _E | _Error["Type"] | E | _Middleware["failure"]["Type"]
+          _A["Type"],
+          _E["Type"] | _Error["Type"] | E | _Middleware["failure"]["Type"]
         >,
         void
       >
