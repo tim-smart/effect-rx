@@ -393,3 +393,75 @@ const someMutationManual = runtimeAtom.fn(
   }),
 )
 ```
+
+## `@effect/rpc` integration
+
+You can use the `AtomRpc` module to create an Atom that can call RPCs. It offers
+apis for both queries and mutations.
+
+```ts
+import {
+  Atom,
+  AtomRpc,
+  Result,
+  useAtomSet,
+  useAtomValue
+} from "@effect-atom/atom-react"
+import * as BrowserSocket from "@effect/platform-browser/BrowserSocket"
+import { RpcGroup } from "@effect/rpc"
+import * as Rpc from "@effect/rpc/Rpc"
+import * as RpcClient from "@effect/rpc/RpcClient"
+import * as RpcSerialization from "@effect/rpc/RpcSerialization"
+import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
+
+// Define the RPCs
+class Rpcs extends RpcGroup.make(
+  Rpc.make("increment"),
+  Rpc.make("count", {
+    success: Schema.Number
+  })
+) {}
+
+// Use AtomRpc.make to create an AtomRpcClient
+const rpcAtom = AtomRpc.make(Rpcs, {
+  // Provide a runtime that includes the RpcClient.Protocol
+  runtime: Atom.runtime(
+    RpcClient.layerProtocolSocket({
+      retryTransientErrors: true
+    }).pipe(
+      Layer.provide(BrowserSocket.layerWebSocket("ws://localhost:3000/rpc")),
+      Layer.provide(RpcSerialization.layerJson)
+    )
+  )
+})
+
+function SomeComponent() {
+  // Use `rpcAtom.query` for readonly queries
+  const count = useAtomValue(rpcAtom.query("count", void 0, {
+    // You can also register reactivity keys, which can be used to invalidate
+    // the query
+    reactivityKeys: ["count"]
+  }))
+
+  // Use `rpcAtom.mutation` for mutations
+  const increment = useAtomSet(rpcAtom.mutation("increment"))
+
+  return (
+    <div>
+      <p>Count: {Result.getOrElse(count, () => 0)}</p>
+      <button
+        onClick={() =>
+          increment({
+            payload: void 0,
+            // Mutations can also have reactivity keys, which will invalidate
+            // the query when the mutation is done.
+            reactivityKeys: ["count"]
+          })}
+      >
+        Increment
+      </button>
+    </div>
+  )
+}
+```
