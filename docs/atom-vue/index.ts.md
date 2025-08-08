@@ -20,6 +20,7 @@ Added in v1.0.0
 - [modules](#modules)
   - [From "@effect-atom/atom/Atom"](#from-effect-atomatomatom)
   - [From "@effect-atom/atom/AtomRef"](#from-effect-atomatomatomref)
+  - [From "@effect-atom/atom/AtomRpc"](#from-effect-atomatomatomrpc)
   - [From "@effect-atom/atom/Registry"](#from-effect-atomatomregistry)
   - [From "@effect-atom/atom/Result"](#from-effect-atomatomresult)
 - [registry](#registry)
@@ -93,6 +94,18 @@ Re-exports all named exports from the "@effect-atom/atom/AtomRef" module as `Ato
 
 ```ts
 export * as AtomRef from "@effect-atom/atom/AtomRef"
+```
+
+Added in v1.0.0
+
+## From "@effect-atom/atom/AtomRpc"
+
+Re-exports all named exports from the "@effect-atom/atom/AtomRpc" module as `AtomRpc`.
+
+**Signature**
+
+```ts
+export * as AtomRpc from "@effect-atom/atom/AtomRpc"
 ```
 
 Added in v1.0.0

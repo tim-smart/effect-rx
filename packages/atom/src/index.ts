@@ -22,3 +22,8 @@ export * as Atom from "./Atom.js"
  * @since 1.0.0
  */
 export * as AtomRef from "./AtomRef.js"
+
+/**
+ * @since 1.0.0
+ */
+export * as AtomRpc from "./AtomRpc.js"

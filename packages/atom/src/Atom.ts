@@ -517,6 +517,8 @@ function makeEffect<A, E>(
  * @category models
  */
 export interface AtomRuntime<R, ER> extends Atom<Result.Result<Runtime.Runtime<R>, ER>> {
+  readonly factory: RuntimeFactory
+
   readonly layer: Atom<Layer.Layer<R, ER>>
 
   readonly atom: {
@@ -636,6 +638,7 @@ export const context: (options: {
     self.keepAlive = false
     self.lazy = true
     self.refresh = undefined
+    self.factory = factory
 
     const layerAtom = keepAlive(
       typeof create === "function"
