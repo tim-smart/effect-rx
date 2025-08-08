@@ -1210,6 +1210,28 @@ describe("Atom", () => {
       assert.deepStrictEqual(r.get(optimisticAtom), Result.success(2))
     })
   })
+
+  describe("Reactivity", () => {
+    it("rebuilds on mutation", async () => {
+      const r = Registry.make()
+      let rebuilds = 0
+      const atom = Atom.make(() => rebuilds++).pipe(
+        counterRuntime.withReactivity(["counter"]),
+        Atom.keepAlive
+      )
+      const fn = counterRuntime.fn(
+        Effect.fn(function*() {
+        }),
+        { reactivityKeys: ["counter"] }
+      )
+      assert.strictEqual(r.get(atom), 0)
+      r.set(fn, void 0)
+      assert.strictEqual(r.get(atom), 1)
+      r.set(fn, void 0)
+      r.set(fn, void 0)
+      assert.strictEqual(r.get(atom), 3)
+    })
+  })
 })
 
 interface BuildCounter {

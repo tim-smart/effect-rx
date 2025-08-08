@@ -2,6 +2,7 @@
  * @since 1.0.0
  */
 /* eslint-disable @typescript-eslint/no-empty-object-type */
+import * as Reactivity from "@effect/experimental/Reactivity"
 import * as KeyValueStore from "@effect/platform/KeyValueStore"
 import * as Arr from "effect/Array"
 import { NoSuchElementException } from "effect/Cause"
@@ -23,6 +24,7 @@ import * as Layer from "effect/Layer"
 import * as MutableHashMap from "effect/MutableHashMap"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
+import type { ReadonlyRecord } from "effect/Record"
 import * as Runtime from "effect/Runtime"
 import * as Schema from "effect/Schema"
 import * as Scope from "effect/Scope"
@@ -192,9 +194,12 @@ const RuntimeProto = {
     })
   },
 
-  fn(this: AtomRuntime<any, any>, arg: any, options?: { readonly initialValue?: unknown }) {
+  fn(this: AtomRuntime<any, any>, arg: any, options?: {
+    readonly initialValue?: unknown
+    readonly reactivityKeys?: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+  }) {
     if (arguments.length === 0) {
-      return (arg: any, options?: { readonly initialValue?: unknown }) => makeFnRuntime(this, arg, options)
+      return (arg: any, options?: {}) => makeFnRuntime(this, arg, options)
     }
     return makeFnRuntime(this, arg, options)
   },
@@ -258,11 +263,50 @@ const RuntimeProto = {
         return readSubscribable(get, ref, runtime)
       }
     )
+  },
+
+  withReactivity(
+    this: AtomRuntime<any, any>,
+    keys: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>>
+  ) {
+    return <A extends Atom<any>>(atom: A): A =>
+      transform(atom, (get) => {
+        const runtimeResult = get(this)
+        if (!Result.isSuccess(runtimeResult)) return get(atom)
+        const reactivity = EffectContext.get(runtimeResult.value.context, Reactivity.Reactivity)
+        get.addFinalizer(reactivity.unsafeRegister(keys, () => {
+          get.refresh(atom)
+        }))
+        get.subscribe(atom, (value) => get.setSelf(value))
+        return get.once(atom)
+      }) as any as A
   }
 }
 
-const makeFnRuntime = (self: AtomRuntime<any, any>, arg: any, options?: { readonly initialValue?: unknown }) => {
-  const [read, write, argAtom] = makeResultFn(arg, options)
+const makeFnRuntime = (
+  self: AtomRuntime<any, any>,
+  arg: (
+    arg: any,
+    get: FnContext
+  ) =>
+    | Effect.Effect<any, any, Scope.Scope | AtomRegistry>
+    | Stream.Stream<any, any, AtomRegistry>,
+  options?: {
+    readonly initialValue?: unknown
+    readonly reactivityKeys?: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+  }
+) => {
+  const [read, write, argAtom] = makeResultFn(
+    options?.reactivityKeys ?
+      ((a: any, get: FnContext) => {
+        const effect = arg(a, get)
+        return Effect.isEffect(effect)
+          ? Reactivity.mutation(effect, options.reactivityKeys!)
+          : Stream.ensuring(effect, Reactivity.invalidate(options.reactivityKeys!))
+      }) as any :
+      arg,
+    options
+  )
   return writable((get) => {
     get.get(argAtom)
     const previous = get.self<Result.Result<any, any>>()
@@ -493,42 +537,60 @@ export interface AtomRuntime<R, ER> extends Atom<Result.Result<Runtime.Runtime<R
   readonly layer: Atom<Layer.Layer<R, ER>>
 
   readonly atom: {
-    <A, E>(create: (get: Context) => Effect.Effect<A, E, Scope.Scope | R | AtomRegistry>, options?: {
+    <A, E>(
+      create: (get: Context) => Effect.Effect<A, E, Scope.Scope | R | AtomRegistry | Reactivity.Reactivity>,
+      options?: {
+        readonly initialValue?: A
+      }
+    ): Atom<Result.Result<A, E | ER>>
+    <A, E>(effect: Effect.Effect<A, E, Scope.Scope | R | AtomRegistry | Reactivity.Reactivity>, options?: {
       readonly initialValue?: A
     }): Atom<Result.Result<A, E | ER>>
-    <A, E>(effect: Effect.Effect<A, E, Scope.Scope | R>, options?: {
+    <A, E>(create: (get: Context) => Stream.Stream<A, E, AtomRegistry | Reactivity.Reactivity | R>, options?: {
       readonly initialValue?: A
     }): Atom<Result.Result<A, E | ER>>
-    <A, E>(create: (get: Context) => Stream.Stream<A, E, AtomRegistry | R>, options?: {
-      readonly initialValue?: A
-    }): Atom<Result.Result<A, E | ER>>
-    <A, E>(stream: Stream.Stream<A, E, AtomRegistry | R>, options?: {
+    <A, E>(stream: Stream.Stream<A, E, AtomRegistry | Reactivity.Reactivity | R>, options?: {
       readonly initialValue?: A
     }): Atom<Result.Result<A, E | ER>>
   }
 
   readonly fn: {
     <Arg>(): {
-      <E, A>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | AtomRegistry | R>, options?: {
-        readonly initialValue?: A
-      }): AtomResultFn<Arg, A, E | ER>
-      <E, A>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, AtomRegistry | R>, options?: {
-        readonly initialValue?: A
-      }): AtomResultFn<Arg, A, E | ER | NoSuchElementException>
+      <E, A>(
+        fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | AtomRegistry | Reactivity.Reactivity | R>,
+        options?: {
+          readonly initialValue?: A | undefined
+          readonly reactivityKeys?: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+        }
+      ): AtomResultFn<Arg, A, E | ER>
+      <E, A>(
+        fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, AtomRegistry | Reactivity.Reactivity | R>,
+        options?: {
+          readonly initialValue?: A | undefined
+          readonly reactivityKeys?: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+        }
+      ): AtomResultFn<Arg, A, E | ER | NoSuchElementException>
     }
     <E, A, Arg = void>(
-      fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | AtomRegistry | R>,
+      fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | AtomRegistry | Reactivity.Reactivity | R>,
       options?: {
-        readonly initialValue?: A
+        readonly initialValue?: A | undefined
+        readonly reactivityKeys?: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
       }
     ): AtomResultFn<Arg, A, E | ER>
-    <E, A, Arg = void>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, AtomRegistry | R>, options?: {
-      readonly initialValue?: A
-    }): AtomResultFn<Arg, A, E | ER | NoSuchElementException>
+    <E, A, Arg = void>(
+      fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, AtomRegistry | Reactivity.Reactivity | R>,
+      options?: {
+        readonly initialValue?: A | undefined
+        readonly reactivityKeys?: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+      }
+    ): AtomResultFn<Arg, A, E | ER | NoSuchElementException>
   }
 
   readonly pull: <A, E>(
-    create: ((get: Context) => Stream.Stream<A, E, R | AtomRegistry>) | Stream.Stream<A, E, R | AtomRegistry>,
+    create:
+      | ((get: Context) => Stream.Stream<A, E, R | AtomRegistry | Reactivity.Reactivity>)
+      | Stream.Stream<A, E, R | AtomRegistry | Reactivity.Reactivity>,
     options?: {
       readonly disableAccumulation?: boolean
       readonly initialValue?: ReadonlyArray<A>
@@ -537,15 +599,27 @@ export interface AtomRuntime<R, ER> extends Atom<Result.Result<Runtime.Runtime<R
 
   readonly subscriptionRef: <A, E>(
     create:
-      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R | AtomRegistry>
-      | ((get: Context) => Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R | AtomRegistry>)
+      | Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R | AtomRegistry | Reactivity.Reactivity>
+      | ((
+        get: Context
+      ) => Effect.Effect<SubscriptionRef.SubscriptionRef<A>, E, R | AtomRegistry | Reactivity.Reactivity>)
   ) => Writable<Result.Result<A, E>, A>
 
   readonly subscribable: <A, E, E1 = never>(
     create:
-      | Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R | AtomRegistry>
-      | ((get: Context) => Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R | AtomRegistry>)
+      | Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R | AtomRegistry | Reactivity.Reactivity>
+      | ((
+        get: Context
+      ) => Effect.Effect<Subscribable.Subscribable<A, E, R>, E1, R | AtomRegistry | Reactivity.Reactivity>)
   ) => Atom<Result.Result<A, E | E1>>
+
+  /**
+   * Uses the `Reactivity` service from the runtime to refresh the atom whenever
+   * the keys change.
+   */
+  readonly withReactivity: (
+    keys: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>>
+  ) => <A extends Atom<any>>(atom: A) => A
 }
 
 /**
@@ -554,10 +628,12 @@ export interface AtomRuntime<R, ER> extends Atom<Result.Result<Runtime.Runtime<R
  */
 export interface RuntimeFactory {
   <R, E>(
-    create: Layer.Layer<R, E, AtomRegistry> | ((get: Context) => Layer.Layer<R, E, AtomRegistry>)
+    create:
+      | Layer.Layer<R, E, AtomRegistry | Reactivity.Reactivity>
+      | ((get: Context) => Layer.Layer<R, E, AtomRegistry | Reactivity.Reactivity>)
   ): AtomRuntime<R, E>
   readonly memoMap: Layer.MemoMap
-  readonly addGlobalLayer: <A, E>(layer: Layer.Layer<A, E, AtomRegistry>) => void
+  readonly addGlobalLayer: <A, E>(layer: Layer.Layer<A, E, AtomRegistry | Reactivity.Reactivity>) => void
 }
 
 /**
@@ -567,9 +643,11 @@ export interface RuntimeFactory {
 export const context: (options: {
   readonly memoMap: Layer.MemoMap
 }) => RuntimeFactory = (options) => {
-  let globalLayer: Layer.Layer<any, any, AtomRegistry> | undefined
+  let globalLayer: Layer.Layer<any, any, AtomRegistry> = Reactivity.layer
   function factory<E, R>(
-    create: Layer.Layer<R, E, AtomRegistry> | ((get: Context) => Layer.Layer<R, E, AtomRegistry>)
+    create:
+      | Layer.Layer<R, E, AtomRegistry | Reactivity.Reactivity>
+      | ((get: Context) => Layer.Layer<R, E, AtomRegistry | Reactivity.Reactivity>)
   ): AtomRuntime<R, E> {
     const self = Object.create(RuntimeProto)
     self.keepAlive = false
@@ -578,8 +656,8 @@ export const context: (options: {
 
     const layerAtom = keepAlive(
       typeof create === "function"
-        ? readable((get) => globalLayer ? Layer.provideMerge(create(get), globalLayer) : create(get))
-        : readable(() => globalLayer ? Layer.provideMerge(create, globalLayer) : create)
+        ? readable((get) => Layer.provideMerge(create(get), globalLayer))
+        : readable(() => Layer.provideMerge(create, globalLayer))
     )
     self.layer = layerAtom
 
@@ -595,12 +673,8 @@ export const context: (options: {
     return self
   }
   factory.memoMap = options.memoMap
-  factory.addGlobalLayer = (layer: Layer.Layer<any, any, AtomRegistry>) => {
-    if (globalLayer === undefined) {
-      globalLayer = layer
-    } else {
-      globalLayer = Layer.provideMerge(globalLayer, layer)
-    }
+  factory.addGlobalLayer = (layer: Layer.Layer<any, any, AtomRegistry | Reactivity.Reactivity>) => {
+    globalLayer = Layer.provideMerge(globalLayer, Layer.provide(layer, Reactivity.layer))
   }
   return factory
 }
@@ -916,16 +990,16 @@ export type Reset = typeof Reset
  */
 export const fn: {
   <Arg>(): <E, A>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | AtomRegistry>, options?: {
-    readonly initialValue?: A
+    readonly initialValue?: A | undefined
   }) => AtomResultFn<Arg, A, E>
   <E, A, Arg = void>(fn: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | AtomRegistry>, options?: {
-    readonly initialValue?: A
+    readonly initialValue?: A | undefined
   }): AtomResultFn<Arg, A, E>
   <Arg>(): <E, A>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, AtomRegistry>, options?: {
-    readonly initialValue?: A
+    readonly initialValue?: A | undefined
   }) => AtomResultFn<Arg, A, E | NoSuchElementException>
   <E, A, Arg = void>(fn: (arg: Arg, get: FnContext) => Stream.Stream<A, E, AtomRegistry>, options?: {
-    readonly initialValue?: A
+    readonly initialValue?: A | undefined
   }): AtomResultFn<Arg, A, E | NoSuchElementException>
 } = function(...args: ReadonlyArray<any>) {
   if (args.length === 0) {
@@ -937,7 +1011,7 @@ export const fn: {
 const makeFn = <Arg, E, A>(
   f: (arg: Arg, get: FnContext) => Stream.Stream<A, E, AtomRegistry> | Effect.Effect<A, E, Scope.Scope | AtomRegistry>,
   options?: {
-    readonly initialValue?: A
+    readonly initialValue?: A | undefined
   }
 ): AtomResultFn<Arg, A, E | NoSuchElementException> => {
   const [read, write] = makeResultFn(f, options)
@@ -946,7 +1020,9 @@ const makeFn = <Arg, E, A>(
 
 function makeResultFn<Arg, E, A>(
   f: (arg: Arg, get: FnContext) => Effect.Effect<A, E, Scope.Scope | AtomRegistry> | Stream.Stream<A, E, AtomRegistry>,
-  options?: { readonly initialValue?: A }
+  options?: {
+    readonly initialValue?: A
+  }
 ) {
   const argAtom = state<[number, Arg]>([0, undefined as any])
   const initialValue = options?.initialValue !== undefined
