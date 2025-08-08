@@ -10,6 +10,7 @@ import type * as RpcGroup from "@effect/rpc/RpcGroup"
 import type { RequestId } from "@effect/rpc/RpcMessage"
 import * as RpcSchema from "@effect/rpc/RpcSchema"
 import * as Data from "effect/Data"
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import { pipe } from "effect/Function"
@@ -59,6 +60,7 @@ export interface AtomRpcClient<Rpcs extends Rpc.Any, E> {
         | ReadonlyArray<unknown>
         | ReadonlyRecord<string, ReadonlyArray<unknown>>
         | undefined
+      readonly timeToLive?: Duration.DurationInput | undefined
     }
   ) => Rpc.ExtractTag<Rpcs, Tag> extends Rpc.Rpc<
     infer _Tag,
@@ -125,9 +127,9 @@ export const make = <Rpcs extends Rpc.Any, ER>(
     )
   )
 
-  const queryFamily = Atom.family(({ headers, payload, reactivityKeys, tag }: QueryKey) => {
+  const queryFamily = Atom.family(({ headers, payload, reactivityKeys, tag, timeToLive }: QueryKey) => {
     const rpc = group.requests.get(tag)! as any as Rpc.AnyWithProps
-    const atom = RpcSchema.isStreamSchema(rpc.successSchema)
+    let atom = RpcSchema.isStreamSchema(rpc.successSchema)
       ? Atom.pull((get) =>
         get.result(client).pipe(
           Effect.map((client) => client(tag, payload, { headers } as any)),
@@ -141,6 +143,9 @@ export const make = <Rpcs extends Rpc.Any, ER>(
             Effect.flatMap((client) => client(tag, payload, { headers } as any))
           )
       )
+    if (timeToLive) {
+      atom = Duration.isFinite(timeToLive) ? Atom.setIdleTTL(atom, timeToLive) : Atom.keepAlive(atom)
+    }
     return reactivityKeys ? options.runtime.factory.withReactivity(reactivityKeys)(atom) : atom
   })
 
@@ -150,6 +155,7 @@ export const make = <Rpcs extends Rpc.Any, ER>(
     options?: {
       readonly headers?: Headers.Input | undefined
       readonly reactivityKeys?: ReadonlyArray<unknown> | undefined
+      readonly timeToLive?: Duration.DurationInput | undefined
     }
   ) =>
     queryFamily(
@@ -161,7 +167,8 @@ export const make = <Rpcs extends Rpc.Any, ER>(
           : undefined,
         reactivityKeys: options?.reactivityKeys
           ? Data.array(options.reactivityKeys)
-          : undefined
+          : undefined,
+        timeToLive: options?.timeToLive ? Duration.decode(options.timeToLive) : undefined
       })
     )
 
@@ -177,13 +184,15 @@ class QueryKey extends Data.Class<{
   payload: any
   headers?: Headers.Headers | undefined
   reactivityKeys?: ReadonlyArray<unknown> | undefined
+  timeToLive?: Duration.Duration | undefined
 }> {
   [Equal.symbol](that: QueryKey) {
     return (
       this.tag === that.tag &&
       Equal.equals(this.payload, that.payload) &&
       Equal.equals(this.headers, that.headers) &&
-      Equal.equals(this.reactivityKeys, that.reactivityKeys)
+      Equal.equals(this.reactivityKeys, that.reactivityKeys) &&
+      Equal.equals(this.timeToLive, that.timeToLive)
     )
   }
   [Hash.symbol]() {
@@ -192,6 +201,7 @@ class QueryKey extends Data.Class<{
       Hash.combine(Hash.hash(this.payload)),
       Hash.combine(Hash.hash(this.headers)),
       Hash.combine(Hash.hash(this.reactivityKeys)),
+      Hash.combine(Hash.hash(this.timeToLive)),
       Hash.cached(this)
     )
   }

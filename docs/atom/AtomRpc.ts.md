@@ -78,6 +78,7 @@ export interface AtomRpcClient<Rpcs extends Rpc.Any, E> {
     options?: {
       readonly headers?: Headers.Input | undefined
       readonly reactivityKeys?: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+      readonly timeToLive?: Duration.DurationInput | undefined
     }
   ) => Rpc.ExtractTag<Rpcs, Tag> extends Rpc.Rpc<
     infer _Tag,
