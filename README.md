@@ -350,3 +350,46 @@ export const flagAtom = Atom.kvs({
   defaultValue: () => false,
 })
 ```
+
+## Integration with `Reactivity` from `@effect/experimental`
+
+`Reactivity` is an Effect services allows you make queries reactive when
+mutations happen.
+
+You can use an `Rx.runtime` to hook into the `Reactivity` service and trigger
+`Atom` refreshes when mutations happen.
+
+```ts
+import { Atom } from "@effect-atom/atom-react"
+import * as Reactivity from "@effect/experimental/Reactivity"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+
+const runtimeAtom = Atom.runtime(Layer.empty)
+
+let i = 0
+const count = Atom.make(() => i++).pipe(
+  // Refresh when the "counter" key changes
+  runtimeAtom.withReactivity(["counter"]),
+  // Or refresh when "counter" or "counter:1" or "counter:2" changes
+  runtimeAtom.withReactivity({
+    counter: [1, 2],
+  }),
+)
+
+const someMutation = runtimeAtom.fn(
+  Effect.fn(function* () {
+    yield* Effect.log("Mutating the counter")
+  }),
+  // Invalidate the "counter" key when the Effect is finished
+  { reactivityKeys: ["counter"] },
+)
+
+const someMutationManual = runtimeAtom.fn(
+  Effect.fn(function* () {
+    yield* Effect.log("Mutating the counter again")
+    // You can also manually invalidate the "counter" key
+    yield* Reactivity.invalidate(["counter"])
+  }),
+)
+```
