@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.1.3
+
+### Patch Changes
+
+- [`d50d26f`](https://github.com/tim-smart/effect-atom/commit/d50d26f0a7efc5f6a00e4799ec427c04c1b34009) Thanks [@tim-smart](https://github.com/tim-smart)! - add timeToLive to rpc queries
+
+- Updated dependencies [[`d50d26f`](https://github.com/tim-smart/effect-atom/commit/d50d26f0a7efc5f6a00e4799ec427c04c1b34009)]:
+  - @effect-atom/atom@0.1.4
+
 ## 0.1.2
 
 ### Patch Changes
