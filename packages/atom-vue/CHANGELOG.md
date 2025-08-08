@@ -1,5 +1,14 @@
 # @effect-rx/rx-vue
 
+## 0.1.2
+
+### Patch Changes
+
+- [`4ba4a28`](https://github.com/tim-smart/effect-atom/commit/4ba4a28e1dcca202bb1fe3597bcc26738b860f50) Thanks [@tim-smart](https://github.com/tim-smart)! - add AtomRpc module, for wrapping an RpcClient
+
+- Updated dependencies [[`4ba4a28`](https://github.com/tim-smart/effect-atom/commit/4ba4a28e1dcca202bb1fe3597bcc26738b860f50)]:
+  - @effect-atom/atom@0.1.3
+
 ## 0.1.1
 
 ### Patch Changes
