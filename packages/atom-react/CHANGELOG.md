@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.1.1
+
+### Patch Changes
+
+- [`6bf2cbc`](https://github.com/tim-smart/effect-atom/commit/6bf2cbca3abbebbc5165198b4a02563b832d1a57) Thanks [@tim-smart](https://github.com/tim-smart)! - move withReactivity api to top level
+
+- Updated dependencies [[`6bf2cbc`](https://github.com/tim-smart/effect-atom/commit/6bf2cbca3abbebbc5165198b4a02563b832d1a57)]:
+  - @effect-atom/atom@0.1.2
+
 ## 0.1.0
 
 ### Minor Changes
