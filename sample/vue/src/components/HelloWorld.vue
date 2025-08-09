@@ -1,38 +1,27 @@
 <script setup lang="ts">
-import { Atom, AtomRpc, useAtomValue } from '@effect-atom/atom-vue';
-import { Rpc, RpcClient, RpcGroup, RpcSerialization, RpcServer } from '@effect/rpc/index';
-import { Effect, Layer, Schema } from 'effect';
-import { ref } from 'vue'
+import { Atom, useAtomValue } from '@effect-atom/atom-vue';
+import { Effect} from 'effect';
+import { onUnmounted, ref } from 'vue'
 
 defineProps<{ msg: string }>()
 
 const count = ref(0)
 
-const helloWorldRpcs = RpcGroup.make(Rpc.make("GetHelloWorld", { payload: { echo: Schema.String }, success: Schema.Struct({ echo: Schema.String, at: Schema.Date})}))
-const helloWorldImpl = helloWorldRpcs.toLayer(Effect.gen(function* () {
-  return {
-    GetHelloWorld: Effect.fn(function* (payload) {
-      return { echo: `Hello, ${payload.echo}`, at: new Date() }
-    })
-  }
-}))
-const helloWorldServer = RpcServer.layer(helloWorldRpcs).pipe(Layer.provide(helloWorldImpl))
-
-
-const helloWorldAtom = AtomRpc.make(helloWorldRpcs, {
-  runtime: Atom.runtime(    RpcClient.layerProtocolSocket({
-      
-    }).pipe(Layer.provide(RpcSerialization.layerJson)),),
-})
-
 const req = ref({ echo: "initial" })
 
 const result = useAtomValue(() => {
-  console.log("Querying HelloWorld.GetHelloWorld with:", req.value)
+  console.log("Computing Atom:", req.value)
   return Atom.refreshOnWindowFocus(
-    helloWorldAtom.query("GetHelloWorld", req.value),
+    Atom.make(() => Effect.gen(function* () {
+      return  { echo: req.value.echo, at: new Date()}
+    })),
   )
 })
+
+const intervalEnabled = ref(false)
+
+const interval = setInterval(() => intervalEnabled.value && (req.value = { echo: `Hello World ${new Date().toLocaleTimeString()}` }), 5_000)
+onUnmounted(() => clearInterval(interval))
 </script>
 
 <template>
@@ -49,6 +38,10 @@ const result = useAtomValue(() => {
     <div v-if="result.waiting">Waiting...</div>
     Success: {{ result.value }}
   </div>
+
+  <button @click="intervalEnabled = !intervalEnabled">
+    Toggle interval {{ !intervalEnabled ? 'ON' : 'OFF' }}
+  </button>
 
   <div class="card">
     <button type="button" @click="count++">count is {{ count }}</button>
