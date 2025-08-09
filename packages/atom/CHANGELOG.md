@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.6
+
+### Patch Changes
+
+- [`5da9675`](https://github.com/tim-smart/effect-atom/commit/5da967506a72eaa0cb7daee36e4fcaf185a71205) Thanks [@tim-smart](https://github.com/tim-smart)! - update optimistic merging behaviour
+
 ## 0.1.5
 
 ### Patch Changes

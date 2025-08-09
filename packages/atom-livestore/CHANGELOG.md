@@ -1,5 +1,14 @@
 # @effect-rx/rx-livestore
 
+## 0.1.4
+
+### Patch Changes
+
+- [`5da9675`](https://github.com/tim-smart/effect-atom/commit/5da967506a72eaa0cb7daee36e4fcaf185a71205) Thanks [@tim-smart](https://github.com/tim-smart)! - update optimistic merging behaviour
+
+- Updated dependencies [[`5da9675`](https://github.com/tim-smart/effect-atom/commit/5da967506a72eaa0cb7daee36e4fcaf185a71205)]:
+  - @effect-atom/atom@0.1.6
+
 ## 0.1.3
 
 ### Patch Changes
