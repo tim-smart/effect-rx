@@ -6,7 +6,7 @@ import type * as AtomRef from "@effect-atom/atom/AtomRef"
 import * as Registry from "@effect-atom/atom/Registry"
 import { globalValue } from "effect/GlobalValue"
 import type { InjectionKey, Ref } from "vue"
-import { getCurrentScope, inject, onScopeDispose, ref } from "vue"
+import { computed, inject, ref, watchEffect } from "vue"
 
 /**
  * @since 1.0.0
@@ -61,62 +61,58 @@ export const injectRegistry = (): Registry.Registry => {
   return inject(registryKey) ?? defaultRegistry
 }
 
-/**
- * @since 1.0.0
- * @category composables
- */
-export const useAtom = <R, W>(atom: Atom.Writable<R, W>): readonly [Readonly<Ref<R>>, (_: W) => void] => {
+const useAtomValueRef = <A extends Atom.Atom<any>>(atom: () => A) => {
   const registry = injectRegistry()
-  const value = ref<R>(registry.get(atom))
-  const cancel = registry.subscribe(atom, (nextValue) => {
-    value.value = nextValue as any
+  const atomRef = computed(atom)
+  const value = ref(registry.get(atomRef.value))
+  watchEffect((onCleanup) => {
+    onCleanup(registry.subscribe(atomRef.value, (nextValue) => {
+      value.value = nextValue
+    }))
   })
-  if (getCurrentScope()) {
-    onScopeDispose(cancel)
-  }
-  return [value as Readonly<Ref<R>>, (_) => registry.set(atom, _)]
+  return [value as Readonly<Ref<Atom.Type<A>>>, atomRef, registry] as const
 }
 
 /**
  * @since 1.0.0
  * @category composables
  */
-export const useAtomValue = <A>(atom: Atom.Atom<A>): Readonly<Ref<A>> => {
-  const registry = injectRegistry()
-  const value = ref<A>(registry.get(atom))
-  const cancel = registry.subscribe(atom, (nextValue) => {
-    value.value = nextValue as any
-  })
-  if (getCurrentScope()) {
-    onScopeDispose(cancel)
-  }
-  return value as Readonly<Ref<A>>
+export const useAtom = <R, W>(atom: () => Atom.Writable<R, W>): readonly [Readonly<Ref<R>>, (_: W) => void] => {
+  const [value, atomRef, registry] = useAtomValueRef(atom)
+  return [value as Readonly<Ref<R>>, (_) => registry.set(atomRef.value, _)]
 }
 
 /**
  * @since 1.0.0
  * @category composables
  */
-export const useAtomSet = <R, W>(atom: Atom.Writable<R, W>): (_: W) => void => {
+export const useAtomValue = <A>(atom: () => Atom.Atom<A>): Readonly<Ref<A>> => useAtomValueRef(atom)[0]
+
+/**
+ * @since 1.0.0
+ * @category composables
+ */
+export const useAtomSet = <R, W>(atom: () => Atom.Writable<R, W>): (_: W) => void => {
   const registry = injectRegistry()
-  const cancel = registry.mount(atom)
-  if (getCurrentScope()) {
-    onScopeDispose(cancel)
-  }
-  return (_) => registry.set(atom, _)
+  const atomRef = computed(atom)
+  watchEffect((onCleanup) => {
+    onCleanup(registry.mount(atomRef.value))
+  })
+  return (_) => registry.set(atomRef.value, _)
 }
 
 /**
  * @since 1.0.0
  * @category composables
  */
-export const useAtomRef = <A>(atomRef: AtomRef.ReadonlyRef<A>): Readonly<Ref<A>> => {
-  const value = ref<A>(atomRef.value)
-  const cancel = atomRef.subscribe((nextValue) => {
-    value.value = nextValue as any
+export const useAtomRef = <A>(atomRef: () => AtomRef.ReadonlyRef<A>): Readonly<Ref<A>> => {
+  const atomRefRef = computed(atomRef)
+  const value = ref<A>(atomRefRef.value.value)
+  watchEffect((onCleanup) => {
+    const atomRef = atomRefRef.value
+    onCleanup(atomRef.subscribe((next) => {
+      value.value = next
+    }))
   })
-  if (getCurrentScope()) {
-    onScopeDispose(cancel)
-  }
   return value as Readonly<Ref<A>>
 }
