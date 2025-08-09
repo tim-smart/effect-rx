@@ -64,11 +64,11 @@ export const injectRegistry = (): Registry.Registry => {
 const useAtomValueRef = <A extends Atom.Atom<any>>(atom: () => A) => {
   const registry = injectRegistry()
   const atomRef = computed(atom)
-  const value = ref(registry.get(atomRef.value))
+  const value = ref(undefined as any as A)
   watchEffect((onCleanup) => {
     onCleanup(registry.subscribe(atomRef.value, (nextValue) => {
       value.value = nextValue
-    }))
+    }, { immediate: true }))
   })
   return [value as Readonly<Ref<Atom.Type<A>>>, atomRef, registry] as const
 }
