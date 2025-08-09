@@ -1,5 +1,11 @@
 # @effect-rx/rx-vue
 
+## 0.1.7
+
+### Patch Changes
+
+- [#302](https://github.com/tim-smart/effect-atom/pull/302) [`1506756`](https://github.com/tim-smart/effect-atom/commit/1506756dde0351ba0465be6dfcf0ee4711d93bc8) Thanks [@patroza](https://github.com/patroza)! - use Vue injects' default value for Registry
+
 ## 0.1.6
 
 ### Patch Changes
