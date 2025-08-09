@@ -58,7 +58,7 @@ export const defaultRegistry: Registry.Registry = globalValue(
  * @category registry
  */
 export const injectRegistry = (): Registry.Registry => {
-  return inject(registryKey) ?? defaultRegistry
+  return inject(registryKey, defaultRegistry)
 }
 
 const useAtomValueRef = <A extends Atom.Atom<any>>(atom: () => A) => {
