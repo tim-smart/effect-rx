@@ -1645,6 +1645,7 @@ export const windowFocusSignal: Atom<number> = readable((get) => {
  */
 export const makeRefreshOnSignal = <_>(signal: Atom<_>) => <A extends Atom<any>>(self: A): WithoutSerializable<A> =>
   transform(self, (get) => {
+    get.once(signal)
     get.subscribe(signal, (_) => get.refresh(self))
     get.subscribe(self, (value) => get.setSelf(value))
     return get.once(self)

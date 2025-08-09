@@ -37,7 +37,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useAtom: <R, W>(atom: Atom.Writable<R, W>) => readonly [Readonly<Ref<R>>, (_: W) => void]
+export declare const useAtom: <R, W>(atom: () => Atom.Writable<R, W>) => readonly [Readonly<Ref<R>>, (_: W) => void]
 ```
 
 Added in v1.0.0
@@ -47,7 +47,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useAtomRef: <A>(atomRef: AtomRef.ReadonlyRef<A>) => Readonly<Ref<A>>
+export declare const useAtomRef: <A>(atomRef: () => AtomRef.ReadonlyRef<A>) => Readonly<Ref<A>>
 ```
 
 Added in v1.0.0
@@ -57,7 +57,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useAtomSet: <R, W>(atom: Atom.Writable<R, W>) => (_: W) => void
+export declare const useAtomSet: <R, W>(atom: () => Atom.Writable<R, W>) => (_: W) => void
 ```
 
 Added in v1.0.0
@@ -67,7 +67,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const useAtomValue: <A>(atom: Atom.Atom<A>) => Readonly<Ref<A>>
+export declare const useAtomValue: <A>(atom: () => Atom.Atom<A>) => Readonly<Ref<A>>
 ```
 
 Added in v1.0.0
