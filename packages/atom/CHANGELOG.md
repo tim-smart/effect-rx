@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.7
+
+### Patch Changes
+
+- [`925f91a`](https://github.com/tim-smart/effect-atom/commit/925f91a013115dafff7d4c6e103e5774c684cb4f) Thanks [@tim-smart](https://github.com/tim-smart)! - ensure refresh signal is setup before subscribing
+
 ## 0.1.6
 
 ### Patch Changes
