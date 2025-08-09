@@ -1491,12 +1491,26 @@ export const optimistic = <A>(
           return get.setSelf(value)
         }
         const current = Option.getOrUndefined(get.self<Result.Result<any, any>>())!
-        if (Result.isSuccess(current) && Result.isSuccess(value)) {
-          if (value.timestamp >= current.timestamp) {
-            get.setSelf(value)
+        switch (value._tag) {
+          case "Initial": {
+            if (Result.isInitial(current)) {
+              get.setSelf(value)
+            }
+            return
           }
-        } else {
-          get.setSelf(value)
+          case "Success": {
+            if (Result.isSuccess(current)) {
+              if (value.timestamp >= current.timestamp) {
+                get.setSelf(value)
+              }
+            } else {
+              get.setSelf(value)
+            }
+            return
+          }
+          case "Failure": {
+            return get.setSelf(value)
+          }
         }
       })
       const transitions = new Set<Atom<Result.Result<A, unknown>>>()
