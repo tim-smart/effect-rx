@@ -1,5 +1,11 @@
 # @effect-rx/rx-vue
 
+## 0.1.5
+
+### Patch Changes
+
+- [`4029388`](https://github.com/tim-smart/effect-atom/commit/4029388e83c62bc90bec5d9e21f65d8029fe7d8c) Thanks [@tim-smart](https://github.com/tim-smart)! - allow accessing other reactive values in vue hooks
+
 ## 0.1.4
 
 ### Patch Changes
