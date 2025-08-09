@@ -1,5 +1,11 @@
 # @effect-rx/rx-vue
 
+## 0.1.6
+
+### Patch Changes
+
+- [`0be885d`](https://github.com/tim-smart/effect-atom/commit/0be885d791caf8c0a326b88d557b84729bad282d) Thanks [@tim-smart](https://github.com/tim-smart)! - use subscribe immediate in vue
+
 ## 0.1.5
 
 ### Patch Changes
