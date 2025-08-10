@@ -25,6 +25,8 @@ Added in v1.0.0
   - [makeRefreshOnSignal](#makerefreshonsignal)
   - [refreshOnWindowFocus](#refreshonwindowfocus)
   - [windowFocusSignal](#windowfocussignal)
+- [Guards](#guards)
+  - [isAtom](#isatom)
 - [KeyValueStore](#keyvaluestore)
   - [kvs](#kvs)
 - [Optimistic](#optimistic)
@@ -228,6 +230,18 @@ Added in v1.0.0
 
 ```ts
 export declare const windowFocusSignal: Atom<number>
+```
+
+Added in v1.0.0
+
+# Guards
+
+## isAtom
+
+**Signature**
+
+```ts
+export declare const isAtom: (u: unknown) => u is Atom<any>
 ```
 
 Added in v1.0.0

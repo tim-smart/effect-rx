@@ -1080,22 +1080,27 @@ describe("Atom", () => {
     })
 
     it("Result", async () => {
+      const runtime = Atom.runtime(Layer.empty)
       const latch = Effect.unsafeMakeLatch()
       const r = Registry.make()
       let i = 0
-      const atom = Atom.make(Effect.sync(() => i))
+      const atom = Atom.make(Effect.sync(() => {
+        return i
+      }))
       const optimisticAtom = atom.pipe(
         Atom.optimistic
       )
       const fn = optimisticAtom.pipe(
         Atom.optimisticFn({
           reducer: (_current, update: number) => Result.success(update),
-          fn: Atom.fn(Effect.fnUntraced(function*() {
+          fn: runtime.fn(Effect.fnUntraced(function*() {
             yield* latch.await
           }))
-        }),
-        Atom.keepAlive
+        })
       )
+
+      r.mount(optimisticAtom)
+      r.mount(fn)
 
       expect(r.get(atom)).toEqual(Result.success(0))
       expect(r.get(optimisticAtom)).toEqual(Result.success(0))
@@ -1118,7 +1123,11 @@ describe("Atom", () => {
       const latch = Effect.unsafeMakeLatch()
       const r = Registry.make()
       const i = 0
-      const atom = Atom.make(() => i)
+      let rebuilds = 0
+      const atom = Atom.make(() => {
+        rebuilds++
+        return i
+      })
       const optimisticAtom = atom.pipe(
         Atom.optimistic
       )
@@ -1129,9 +1138,11 @@ describe("Atom", () => {
             yield* latch.await
             return yield* Effect.fail("error")
           }))
-        }),
-        Atom.keepAlive
+        })
       )
+
+      r.mount(fn)
+      r.mount(optimisticAtom)
 
       expect(r.get(atom)).toEqual(0)
       expect(r.get(optimisticAtom)).toEqual(0)
@@ -1147,6 +1158,7 @@ describe("Atom", () => {
       // commit phase: the optimistic value is reset to the true value
       expect(r.get(atom)).toEqual(0)
       expect(r.get(optimisticAtom)).toEqual(0)
+      expect(rebuilds).toEqual(1)
     })
 
     it("sync fn", async () => {

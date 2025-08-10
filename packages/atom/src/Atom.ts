@@ -24,6 +24,7 @@ import * as Layer from "effect/Layer"
 import * as MutableHashMap from "effect/MutableHashMap"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
+import { hasProperty } from "effect/Predicate"
 import type { ReadonlyRecord } from "effect/Record"
 import * as Runtime from "effect/Runtime"
 import * as Schema from "effect/Schema"
@@ -63,6 +64,12 @@ export interface Atom<A> extends Pipeable, Inspectable.Inspectable {
   readonly label?: readonly [name: string, stack: string]
   readonly idleTTL?: number
 }
+
+/**
+ * @since 1.0.0
+ * @category Guards
+ */
+export const isAtom = (u: unknown): u is Atom<any> => hasProperty(u, TypeId)
 
 /**
  * @since 1.0.0
@@ -1472,9 +1479,7 @@ export const debounce: {
  * @since 1.0.0
  * @category Optimistic
  */
-export const optimistic = <A>(
-  self: Atom<A>
-): Writable<A, Atom<Result.Result<A, unknown>>> => {
+export const optimistic = <A>(self: Atom<A>): Writable<A, Atom<Result.Result<A, unknown>>> => {
   let counter = 0
   const writeAtom = state(
     [
@@ -1485,8 +1490,10 @@ export const optimistic = <A>(
   return writable(
     (get) => {
       let lastValue = get.once(self)
+      let needsRefresh = false
       get.subscribe(self, (value) => {
         lastValue = value
+        needsRefresh = false
         if (!Result.isResult(value)) {
           return get.setSelf(value)
         }
@@ -1529,11 +1536,16 @@ export const optimistic = <A>(
             cancels.delete(cancel)
             cancel()
           }
+          if (!needsRefresh && !Result.isFailure(result)) {
+            needsRefresh = true
+          }
           if (transitions.size === 0) {
-            if (Result.isFailure(result)) {
+            if (needsRefresh) {
+              needsRefresh = false
+              get.refresh(self)
+            } else {
               get.setSelf(lastValue)
             }
-            get.refresh(self)
           }
         }, { immediate: true })
         if (transitions.has(atom)) {
