@@ -401,7 +401,6 @@ apis for both queries and mutations.
 
 ```ts
 import {
-  Atom,
   AtomRpc,
   Result,
   useAtomSet,
@@ -412,6 +411,7 @@ import { RpcGroup } from "@effect/rpc"
 import * as Rpc from "@effect/rpc/Rpc"
 import * as RpcClient from "@effect/rpc/RpcClient"
 import * as RpcSerialization from "@effect/rpc/RpcSerialization"
+import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 
@@ -423,12 +423,13 @@ class Rpcs extends RpcGroup.make(
   })
 ) {}
 
-// Use AtomRpc.Tag to create a special Context.Tag that can be used to access
-// the client and create the rpc atoms.
+// Use AtomRpc.make to create an AtomRpcClient
 class CountClient extends AtomRpc.Tag<CountClient>()("CountClient", {
   group: Rpcs,
-  // Provide a Layer that includes the RpcClient.Protocol
-  protocol: RpcClient.layerProtocolSocket({ retryTransientErrors: true }).pipe(
+  // Provide a runtime that includes the RpcClient.Protocol
+  protocol: RpcClient.layerProtocolSocket({
+    retryTransientErrors: true
+  }).pipe(
     Layer.provide(BrowserSocket.layerWebSocket("ws://localhost:3000/rpc")),
     Layer.provide(RpcSerialization.layerJson)
   )
@@ -436,14 +437,14 @@ class CountClient extends AtomRpc.Tag<CountClient>()("CountClient", {
 
 function SomeComponent() {
   // Use `rpcAtom.query` for readonly queries
-  const count = useAtomValue(rpcAtom.query("count", void 0, {
+  const count = useAtomValue(CountClient.query("count", void 0, {
     // You can also register reactivity keys, which can be used to invalidate
     // the query
     reactivityKeys: ["count"]
   }))
 
   // Use `rpcAtom.mutation` for mutations
-  const increment = useAtomSet(rpcAtom.mutation("increment"))
+  const increment = useAtomSet(CountClient.mutation("increment"))
 
   return (
     <div>
@@ -462,4 +463,20 @@ function SomeComponent() {
     </div>
   )
 }
+
+// Or you can define custom atoms using the `CountClient.runtime`
+const incrementAtom = CountClient.runtime.fn(Effect.fnUntraced(function*() {
+  const client = yield* CountClient // Use the Tag to access the client
+  yield* client("increment", void 0)
+}))
+
+// Or use it in your Effect services
+class MyService extends Effect.Service<MyService>()("MyService", {
+  dependencies: [CountClient.layer], // Add the CountClient.layer as a dependency
+  scoped: Effect.gen(function*() {
+    const client = yield* CountClient // Use the Tag to access the client
+    const useClient = () => client("increment", void 0)
+    return { useClient } as const
+  })
+}) {}
 ```
