@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.1.7
+
+### Patch Changes
+
+- [`b4f0745`](https://github.com/tim-smart/effect-atom/commit/b4f07450d5191cf30b1fcf0313388a14a39cdff4) Thanks [@tim-smart](https://github.com/tim-smart)! - switch AtomRpc to a Tag based api
+
+- Updated dependencies [[`b4f0745`](https://github.com/tim-smart/effect-atom/commit/b4f07450d5191cf30b1fcf0313388a14a39cdff4)]:
+  - @effect-atom/atom@0.1.9
+
 ## 0.1.6
 
 ### Patch Changes
