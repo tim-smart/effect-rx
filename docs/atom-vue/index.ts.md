@@ -23,6 +23,8 @@ Added in v1.0.0
   - [From "@effect-atom/atom/AtomRpc"](#from-effect-atomatomatomrpc)
   - [From "@effect-atom/atom/Registry"](#from-effect-atomatomregistry)
   - [From "@effect-atom/atom/Result"](#from-effect-atomatomresult)
+- [re-exports](#re-exports)
+  - [From "@effect-atom/atom/AtomHttpApi"](#from-effect-atomatomatomhttpapi)
 - [registry](#registry)
   - [defaultRegistry](#defaultregistry)
   - [injectRegistry](#injectregistry)
@@ -130,6 +132,20 @@ Re-exports all named exports from the "@effect-atom/atom/Result" module as `Resu
 
 ```ts
 export * as Result from "@effect-atom/atom/Result"
+```
+
+Added in v1.0.0
+
+# re-exports
+
+## From "@effect-atom/atom/AtomHttpApi"
+
+Re-exports all named exports from the "@effect-atom/atom/AtomHttpApi" module as `AtomHttpApi`.
+
+**Signature**
+
+```ts
+export * as AtomHttpApi from "@effect-atom/atom/AtomHttpApi"
 ```
 
 Added in v1.0.0

@@ -19,6 +19,7 @@ Added in v1.0.0
 - [hooks](#hooks)
   - [From "./Hooks.js"](#from-hooksjs)
 - [re-exports](#re-exports)
+  - [From "@effect-atom/atom/AtomHttpApi"](#from-effect-atomatomatomhttpapi)
   - [From "@effect-atom/atom/AtomRef"](#from-effect-atomatomatomref)
   - [From "@effect-atom/atom/AtomRpc"](#from-effect-atomatomatomrpc)
   - [From "@effect-atom/atom/Hydration"](#from-effect-atomatomhydration)
@@ -70,6 +71,18 @@ export * from "./Hooks.js"
 Added in v1.0.0
 
 # re-exports
+
+## From "@effect-atom/atom/AtomHttpApi"
+
+Re-exports all named exports from the "@effect-atom/atom/AtomHttpApi" module as `AtomHttpApi`.
+
+**Signature**
+
+```ts
+export * as AtomHttpApi from "@effect-atom/atom/AtomHttpApi"
+```
+
+Added in v1.0.0
 
 ## From "@effect-atom/atom/AtomRef"
 
