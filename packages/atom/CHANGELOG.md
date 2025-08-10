@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.11
+
+### Patch Changes
+
+- [`6a18e2d`](https://github.com/tim-smart/effect-atom/commit/6a18e2d2e2c30a575ba851eeeb6500f2f5a38eb5) Thanks [@tim-smart](https://github.com/tim-smart)! - fix AtomHttpApi types
+
 ## 0.1.10
 
 ### Patch Changes
