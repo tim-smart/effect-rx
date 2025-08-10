@@ -1,6 +1,6 @@
 ---
 title: index.ts
-nav_order: 5
+nav_order: 6
 parent: "@effect-atom/atom"
 ---
 
@@ -14,6 +14,7 @@ Added in v1.0.0
 
 - [exports](#exports)
   - [From "./Atom.js"](#from-atomjs)
+  - [From "./AtomHttpApi.js"](#from-atomhttpapijs)
   - [From "./AtomRef.js"](#from-atomrefjs)
   - [From "./AtomRpc.js"](#from-atomrpcjs)
   - [From "./Hydration.js"](#from-hydrationjs)
@@ -32,6 +33,18 @@ Re-exports all named exports from the "./Atom.js" module as `Atom`.
 
 ```ts
 export * as Atom from "./Atom.js"
+```
+
+Added in v1.0.0
+
+## From "./AtomHttpApi.js"
+
+Re-exports all named exports from the "./AtomHttpApi.js" module as `AtomHttpApi`.
+
+**Signature**
+
+```ts
+export * as AtomHttpApi from "./AtomHttpApi.js"
 ```
 
 Added in v1.0.0
