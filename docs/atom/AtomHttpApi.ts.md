@@ -114,7 +114,7 @@ export interface AtomHttpApiClient<Self, Id extends string, Groups extends HttpA
       Name
     >
   >(
-    group: Group,
+    group: GroupName,
     endpoint: Name,
     request: [Endpoint] extends [
       HttpApiEndpoint.HttpApiEndpoint<

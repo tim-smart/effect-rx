@@ -30,9 +30,7 @@ import type * as Result from "./Result.js"
 export interface AtomHttpApiClient<Self, Id extends string, Groups extends HttpApiGroup.HttpApiGroup.Any, ApiE, E>
   extends Context.Tag<Self, Simplify<HttpApiClient.Client<Groups, ApiE, never>>>
 {
-  new(
-    _: never
-  ): Context.TagClassShape<Id, Simplify<HttpApiClient.Client<Groups, ApiE, never>>>
+  new(_: never): Context.TagClassShape<Id, Simplify<HttpApiClient.Client<Groups, ApiE, never>>>
 
   readonly layer: Layer.Layer<Self, E>
   readonly runtime: Atom.AtomRuntime<Self, E>
@@ -81,7 +79,7 @@ export interface AtomHttpApiClient<Self, Id extends string, Groups extends HttpA
       Name
     >
   >(
-    group: Group,
+    group: GroupName,
     endpoint: Name,
     request: [Endpoint] extends [
       HttpApiEndpoint.HttpApiEndpoint<
@@ -169,7 +167,7 @@ export const Tag =
     ).pipe(Layer.provide(options.httpClient)) as Layer.Layer<Self, E>
     self.runtime = Atom.runtime(self.layer)
 
-    const mutationFamily = (Atom.family(({ endpoint, group }: MutationKey) =>
+    const mutationFamily = Atom.family(({ endpoint, group }: MutationKey) =>
       self.runtime.fn<{
         path: any
         urlParams: any
@@ -185,7 +183,7 @@ export const Tag =
             : effect
         })
       )
-    )) as any
+    ) as any
 
     self.mutation = ((group: string, endpoint: string) =>
       mutationFamily(
@@ -195,22 +193,22 @@ export const Tag =
         })
       )) as any
 
-    const queryFamily = Atom.family(
-      (opts: QueryKey) => {
-        let atom = self.runtime.atom(Effect.flatMap(self, (client_) => {
+    const queryFamily = Atom.family((opts: QueryKey) => {
+      let atom = self.runtime.atom(
+        Effect.flatMap(self, (client_) => {
           const client = client_ as any
           return client[opts.group][opts.endpoint](opts) as Effect.Effect<any>
-        }))
-        if (opts.timeToLive) {
-          atom = Duration.isFinite(opts.timeToLive)
-            ? Atom.setIdleTTL(atom, opts.timeToLive)
-            : Atom.keepAlive(atom)
-        }
-        return opts.reactivityKeys
-          ? self.runtime.factory.withReactivity(opts.reactivityKeys)(atom)
-          : atom
+        })
+      )
+      if (opts.timeToLive) {
+        atom = Duration.isFinite(opts.timeToLive)
+          ? Atom.setIdleTTL(atom, opts.timeToLive)
+          : Atom.keepAlive(atom)
       }
-    )
+      return opts.reactivityKeys
+        ? self.runtime.factory.withReactivity(opts.reactivityKeys)(atom)
+        : atom
+    })
 
     self.query = ((
       group: string,
