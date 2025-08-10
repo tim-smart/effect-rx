@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.8
+
+### Patch Changes
+
+- [`59bf76d`](https://github.com/tim-smart/effect-atom/commit/59bf76d6dd32f5def02db4bb975353e4ab4ca515) Thanks [@tim-smart](https://github.com/tim-smart)! - improve optimistic refresh behaviour
+
 ## 0.1.7
 
 ### Patch Changes
