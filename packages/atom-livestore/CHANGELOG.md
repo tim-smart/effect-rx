@@ -1,5 +1,14 @@
 # @effect-rx/rx-livestore
 
+## 0.1.8
+
+### Patch Changes
+
+- [`dc8a411`](https://github.com/tim-smart/effect-atom/commit/dc8a4115bf295c5ce0edc2f74649ab2e12b59d90) Thanks [@tim-smart](https://github.com/tim-smart)! - add AtomHttpApi for integration with HttpApi
+
+- Updated dependencies [[`dc8a411`](https://github.com/tim-smart/effect-atom/commit/dc8a4115bf295c5ce0edc2f74649ab2e12b59d90)]:
+  - @effect-atom/atom@0.1.10
+
 ## 0.1.7
 
 ### Patch Changes
