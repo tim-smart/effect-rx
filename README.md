@@ -396,8 +396,8 @@ const someMutationManual = runtimeAtom.fn(
 
 ## `@effect/rpc` integration
 
-You can use the `AtomRpc` module to create an Atom that can call RPCs. It offers
-apis for both queries and mutations.
+You can use the `AtomRpc` module to create an RPC client with integration with
+`effect-atom`. It offers apis for both queries and mutations.
 
 ```ts
 import {
@@ -423,10 +423,10 @@ class Rpcs extends RpcGroup.make(
   })
 ) {}
 
-// Use AtomRpc.make to create an AtomRpcClient
+// Use AtomRpc.Tag to create a special Context.Tag that builds the RPC client
 class CountClient extends AtomRpc.Tag<CountClient>()("CountClient", {
   group: Rpcs,
-  // Provide a runtime that includes the RpcClient.Protocol
+  // Provide a Layer that provides the RpcClient.Protocol
   protocol: RpcClient.layerProtocolSocket({
     retryTransientErrors: true
   }).pipe(
@@ -436,14 +436,14 @@ class CountClient extends AtomRpc.Tag<CountClient>()("CountClient", {
 }) {}
 
 function SomeComponent() {
-  // Use `rpcAtom.query` for readonly queries
+  // Use `CountClient.query` for readonly queries
   const count = useAtomValue(CountClient.query("count", void 0, {
     // You can also register reactivity keys, which can be used to invalidate
     // the query
     reactivityKeys: ["count"]
   }))
 
-  // Use `rpcAtom.mutation` for mutations
+  // Use `CountClient.mutation` for mutations
   const increment = useAtomSet(CountClient.mutation("increment"))
 
   return (
