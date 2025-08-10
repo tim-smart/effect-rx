@@ -423,18 +423,16 @@ class Rpcs extends RpcGroup.make(
   })
 ) {}
 
-// Use AtomRpc.make to create an AtomRpcClient
-const rpcAtom = AtomRpc.make(Rpcs, {
-  // Provide a runtime that includes the RpcClient.Protocol
-  runtime: Atom.runtime(
-    RpcClient.layerProtocolSocket({
-      retryTransientErrors: true
-    }).pipe(
-      Layer.provide(BrowserSocket.layerWebSocket("ws://localhost:3000/rpc")),
-      Layer.provide(RpcSerialization.layerJson)
-    )
+// Use AtomRpc.Tag to create a special Context.Tag that can be used to access
+// the client and create the rpc atoms.
+class CountClient extends AtomRpc.Tag<CountClient>()("CountClient", {
+  group: Rpcs,
+  // Provide a Layer that includes the RpcClient.Protocol
+  protocol: RpcClient.layerProtocolSocket({ retryTransientErrors: true }).pipe(
+    Layer.provide(BrowserSocket.layerWebSocket("ws://localhost:3000/rpc")),
+    Layer.provide(RpcSerialization.layerJson)
   )
-})
+}) {}
 
 function SomeComponent() {
   // Use `rpcAtom.query` for readonly queries

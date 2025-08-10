@@ -9,14 +9,17 @@ import type { RpcClientError } from "@effect/rpc/RpcClientError"
 import type * as RpcGroup from "@effect/rpc/RpcGroup"
 import type { RequestId } from "@effect/rpc/RpcMessage"
 import * as RpcSchema from "@effect/rpc/RpcSchema"
+import * as Context from "effect/Context"
 import * as Data from "effect/Data"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import { pipe } from "effect/Function"
 import * as Hash from "effect/Hash"
+import * as Layer from "effect/Layer"
 import type { ReadonlyRecord } from "effect/Record"
 import * as Stream from "effect/Stream"
+import type { Mutable, NoInfer } from "effect/Types"
 import * as Atom from "./Atom.js"
 import type * as Result from "./Result.js"
 
@@ -24,10 +27,15 @@ import type * as Result from "./Result.js"
  * @since 1.0.0
  * @category Models
  */
-export interface AtomRpcClient<Rpcs extends Rpc.Any, E> {
-  readonly client: Atom.Atom<
-    Result.Result<RpcClient.RpcClient.Flat<Rpcs, RpcClientError>, E>
-  >
+export interface AtomRpcClient<Self, Id extends string, Rpcs extends Rpc.Any, E>
+  extends Context.Tag<Self, RpcClient.RpcClient.Flat<Rpcs, RpcClientError>>
+{
+  new(
+    _: never
+  ): Context.TagClassShape<Id, RpcClient.RpcClient.Flat<Rpcs, RpcClientError>>
+
+  readonly layer: Layer.Layer<Self, E>
+  readonly runtime: Atom.AtomRuntime<Self, E>
 
   readonly mutation: <Tag extends Rpc.Tag<Rpcs>>(
     arg: Tag
@@ -42,6 +50,7 @@ export interface AtomRpcClient<Rpcs extends Rpc.Any, E> {
       {
         readonly payload: Rpc.PayloadConstructor<Rpc.ExtractTag<Rpcs, Tag>>
         readonly reactivityKeys?:
+          | ReadonlyArray<unknown>
           | ReadonlyRecord<string, ReadonlyArray<unknown>>
           | undefined
         readonly headers?: Headers.Input | undefined
@@ -56,10 +65,7 @@ export interface AtomRpcClient<Rpcs extends Rpc.Any, E> {
     payload: Rpc.PayloadConstructor<Rpc.ExtractTag<Rpcs, Tag>>,
     options?: {
       readonly headers?: Headers.Input | undefined
-      readonly reactivityKeys?:
-        | ReadonlyArray<unknown>
-        | ReadonlyRecord<string, ReadonlyArray<unknown>>
-        | undefined
+      readonly reactivityKeys?: ReadonlyArray<unknown> | undefined
       readonly timeToLive?: Duration.DurationInput | undefined
     }
   ) => Rpc.ExtractTag<Rpcs, Tag> extends Rpc.Rpc<
@@ -84,15 +90,25 @@ export interface AtomRpcClient<Rpcs extends Rpc.Any, E> {
     : never
 }
 
+declare global {
+  interface ErrorConstructor {
+    stackTraceLimit: number
+  }
+}
+
 /**
  * @since 1.0.0
  * @category Constructors
  */
-export const make = <Rpcs extends Rpc.Any, ER>(
-  group: RpcGroup.RpcGroup<Rpcs>,
+export const Tag = <Self>() =>
+<const Id extends string, Rpcs extends Rpc.Any, ER>(
+  id: Id,
   options: {
-    readonly runtime: Atom.AtomRuntime<
-      RpcClient.Protocol | Rpc.MiddlewareClient<Rpcs> | Rpc.Context<Rpcs>,
+    readonly group: RpcGroup.RpcGroup<Rpcs>
+    readonly protocol: Layer.Layer<
+      | RpcClient.Protocol
+      | Rpc.MiddlewareClient<NoInfer<Rpcs>>
+      | Rpc.Context<NoInfer<Rpcs>>,
       ER
     >
     readonly spanPrefix?: string | undefined
@@ -100,16 +116,23 @@ export const make = <Rpcs extends Rpc.Any, ER>(
     readonly generateRequestId?: (() => RequestId) | undefined
     readonly disableTracing?: boolean | undefined
   }
-): AtomRpcClient<Rpcs, ER> => {
-  const client = options.runtime.atom(
-    RpcClient.make(group, {
+): AtomRpcClient<Self, Id, Rpcs, ER> => {
+  const self: Mutable<AtomRpcClient<Self, Id, Rpcs, ER>> = Context.Tag(id)<
+    Self,
+    RpcClient.RpcClient.Flat<Rpcs, RpcClientError>
+  >() as any
+
+  self.layer = Layer.scoped(
+    self,
+    RpcClient.make(options.group, {
       ...options,
       flatten: true
     })
-  )
+  ).pipe(Layer.provide(options.protocol)) as Layer.Layer<Self, ER>
+  self.runtime = Atom.runtime(self.layer)
 
-  const mutation = Atom.family(<Tag extends Rpc.Tag<Rpcs>>(tag: Tag) =>
-    options.runtime.fn<{
+  self.mutation = Atom.family(<Tag extends Rpc.Tag<Rpcs>>(tag: Tag) =>
+    self.runtime.fn<{
       readonly payload: Rpc.PayloadConstructor<Rpc.ExtractTag<Rpcs, Tag>>
       readonly reactivityKeys?:
         | ReadonlyArray<unknown>
@@ -117,39 +140,41 @@ export const make = <Rpcs extends Rpc.Any, ER>(
         | undefined
       readonly headers?: Headers.Input | undefined
     }>()(
-      Effect.fnUntraced(function*({ headers, payload, reactivityKeys }, get) {
-        const c = yield* get.result(client)
-        const effect = c(tag, payload, { headers } as any)
+      Effect.fnUntraced(function*({ headers, payload, reactivityKeys }) {
+        const client = yield* self
+        const effect = client(tag, payload, { headers } as any)
         return yield* reactivityKeys
           ? Reactivity.mutation(effect, reactivityKeys)
           : effect
       })
     )
+  ) as any
+
+  const queryFamily = Atom.family(
+    ({ headers, payload, reactivityKeys, tag, timeToLive }: QueryKey) => {
+      const rpc = options.group.requests.get(tag)! as any as Rpc.AnyWithProps
+      let atom = RpcSchema.isStreamSchema(rpc.successSchema)
+        ? self.runtime.pull(
+          self.pipe(
+            Effect.map((client) => client(tag, payload, { headers } as any)),
+            Stream.unwrap
+          )
+        )
+        : self.runtime.atom(
+          Effect.flatMap(self, (client) => client(tag, payload, { headers } as any))
+        )
+      if (timeToLive) {
+        atom = Duration.isFinite(timeToLive)
+          ? Atom.setIdleTTL(atom, timeToLive)
+          : Atom.keepAlive(atom)
+      }
+      return reactivityKeys
+        ? self.runtime.factory.withReactivity(reactivityKeys)(atom)
+        : atom
+    }
   )
 
-  const queryFamily = Atom.family(({ headers, payload, reactivityKeys, tag, timeToLive }: QueryKey) => {
-    const rpc = group.requests.get(tag)! as any as Rpc.AnyWithProps
-    let atom = RpcSchema.isStreamSchema(rpc.successSchema)
-      ? Atom.pull((get) =>
-        get.result(client).pipe(
-          Effect.map((client) => client(tag, payload, { headers } as any)),
-          Stream.unwrap
-        )
-      )
-      : Atom.make((get) =>
-        get
-          .result(client)
-          .pipe(
-            Effect.flatMap((client) => client(tag, payload, { headers } as any))
-          )
-      )
-    if (timeToLive) {
-      atom = Duration.isFinite(timeToLive) ? Atom.setIdleTTL(atom, timeToLive) : Atom.keepAlive(atom)
-    }
-    return reactivityKeys ? options.runtime.factory.withReactivity(reactivityKeys)(atom) : atom
-  })
-
-  const query = <Tag extends Rpc.Tag<Rpcs>>(
+  self.query = <Tag extends Rpc.Tag<Rpcs>>(
     tag: Tag,
     payload: Rpc.PayloadConstructor<Rpc.ExtractTag<Rpcs, Tag>>,
     options?: {
@@ -168,15 +193,13 @@ export const make = <Rpcs extends Rpc.Any, ER>(
         reactivityKeys: options?.reactivityKeys
           ? Data.array(options.reactivityKeys)
           : undefined,
-        timeToLive: options?.timeToLive ? Duration.decode(options.timeToLive) : undefined
+        timeToLive: options?.timeToLive
+          ? Duration.decode(options.timeToLive)
+          : undefined
       })
-    )
+    ) as any
 
-  return {
-    client,
-    mutation,
-    query
-  } as any
+  return self as AtomRpcClient<Self, Id, Rpcs, ER>
 }
 
 class QueryKey extends Data.Class<{

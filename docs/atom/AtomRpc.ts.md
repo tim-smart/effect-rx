@@ -13,7 +13,7 @@ Added in v1.0.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [Constructors](#constructors)
-  - [make](#make)
+  - [Tag](#tag)
 - [Models](#models)
   - [AtomRpcClient (interface)](#atomrpcclient-interface)
 
@@ -21,21 +21,25 @@ Added in v1.0.0
 
 # Constructors
 
-## make
+## Tag
 
 **Signature**
 
 ```ts
-export declare const make: <Rpcs extends Rpc.Any, ER>(
-  group: RpcGroup.RpcGroup<Rpcs>,
+export declare const Tag: <Self>() => <const Id extends string, Rpcs extends Rpc.Any, ER>(
+  id: Id,
   options: {
-    readonly runtime: Atom.AtomRuntime<RpcClient.Protocol | Rpc.MiddlewareClient<Rpcs> | Rpc.Context<Rpcs>, ER>
+    readonly group: RpcGroup.RpcGroup<Rpcs>
+    readonly protocol: Layer.Layer<
+      RpcClient.Protocol | Rpc.MiddlewareClient<NoInfer<Rpcs>> | Rpc.Context<NoInfer<Rpcs>>,
+      ER
+    >
     readonly spanPrefix?: string | undefined
     readonly spanAttributes?: Record<string, unknown> | undefined
     readonly generateRequestId?: (() => RequestId) | undefined
     readonly disableTracing?: boolean | undefined
   }
-) => AtomRpcClient<Rpcs, ER>
+) => AtomRpcClient<Self, Id, Rpcs, ER>
 ```
 
 Added in v1.0.0
@@ -47,8 +51,12 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface AtomRpcClient<Rpcs extends Rpc.Any, E> {
-  readonly client: Atom.Atom<Result.Result<RpcClient.RpcClient.Flat<Rpcs, RpcClientError>, E>>
+export interface AtomRpcClient<Self, Id extends string, Rpcs extends Rpc.Any, E>
+  extends Context.Tag<Self, RpcClient.RpcClient.Flat<Rpcs, RpcClientError>> {
+  new (_: never): Context.TagClassShape<Id, RpcClient.RpcClient.Flat<Rpcs, RpcClientError>>
+
+  readonly layer: Layer.Layer<Self, E>
+  readonly runtime: Atom.AtomRuntime<Self, E>
 
   readonly mutation: <Tag extends Rpc.Tag<Rpcs>>(
     arg: Tag
@@ -64,7 +72,10 @@ export interface AtomRpcClient<Rpcs extends Rpc.Any, E> {
       : Atom.AtomResultFn<
           {
             readonly payload: Rpc.PayloadConstructor<Rpc.ExtractTag<Rpcs, Tag>>
-            readonly reactivityKeys?: ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+            readonly reactivityKeys?:
+              | ReadonlyArray<unknown>
+              | ReadonlyRecord<string, ReadonlyArray<unknown>>
+              | undefined
             readonly headers?: Headers.Input | undefined
           },
           _Success["Type"],
@@ -77,7 +88,7 @@ export interface AtomRpcClient<Rpcs extends Rpc.Any, E> {
     payload: Rpc.PayloadConstructor<Rpc.ExtractTag<Rpcs, Tag>>,
     options?: {
       readonly headers?: Headers.Input | undefined
-      readonly reactivityKeys?: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+      readonly reactivityKeys?: ReadonlyArray<unknown> | undefined
       readonly timeToLive?: Duration.DurationInput | undefined
     }
   ) => Rpc.ExtractTag<Rpcs, Tag> extends Rpc.Rpc<
