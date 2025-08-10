@@ -1,5 +1,11 @@
 # @effect-rx/rx-vue
 
+## 0.1.12
+
+### Patch Changes
+
+- [`c8432f9`](https://github.com/tim-smart/effect-atom/commit/c8432f97ef772e7ffd8cb330d7b6fecf9ff2e6d0) Thanks [@tim-smart](https://github.com/tim-smart)! - expose AtomHttpApi export
+
 ## 0.1.11
 
 ### Patch Changes
