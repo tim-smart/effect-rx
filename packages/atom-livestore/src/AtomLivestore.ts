@@ -10,64 +10,69 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import { constUndefined } from "effect/Function"
 import * as Layer from "effect/Layer"
+import type { Mutable } from "effect/Types"
 
 /**
  * @since 1.0.0
- * @category Store
+ * @category Models
  */
-export interface StoreService {
-  readonly _: unique symbol
+export interface AtomLiveStore<Self, Id extends string, S extends LiveStoreSchema, Context = {}>
+  extends Context.Tag<Self, Store<S, Context>>
+{
+  new(
+    _: never
+  ): Context.TagClassShape<Id, Store<S, Context>>
+
+  readonly layer: Layer.Layer<Self>
+  readonly runtime: Atom.AtomRuntime<Self>
+
+  /**
+   * A Atom that allows you to access the Store. It will emit a `Result` that
+   * contains the Store or an error if it could not be created.
+   */
+  readonly store: Atom.Atom<Result.Result<Store<S, Context>>>
+  /**
+   * A Atom that allows you to access the Store. It will emit the Store or
+   * `undefined` if has not been created yet.
+   */
+  readonly storeUnsafe: Atom.Atom<Store<S, Context> | undefined>
+  /**
+   * Creates a Atom that allows you to resolve a LiveQueryDef. It embeds the loading
+   * of the Store and will emit a `Result` that contains the result of the query
+   */
+  readonly makeQuery: <A>(query: LiveQueryDef<A>) => Atom.Atom<Result.Result<A>>
+  /**
+   * Creates a Atom that allows you to resolve a LiveQueryDef. If the Store has
+   * not been created yet, it will return `undefined`.
+   */
+  readonly makeQueryUnsafe: <A>(query: LiveQueryDef<A>) => Atom.Atom<A | undefined>
+  /**
+   * A Atom.Writable that allows you to commit an event to the Store.
+   */
+  readonly commit: Atom.Writable<void, {}>
+}
+
+declare global {
+  interface ErrorConstructor {
+    stackTraceLimit: number
+  }
 }
 
 /**
  * @since 1.0.0
  * @category Constructors
  */
-export const make = <S extends LiveStoreSchema, Context = {}>(
+export const Tag = <Self>() =>
+<const Id extends string, S extends LiveStoreSchema, Context = {}>(
+  id: Id,
   options: CreateStoreOptions<S, Context> & {
     readonly otelOptions?: Partial<OtelOptions> | undefined
   }
-): {
-  /**
-   * A context tag for the Store.
-   */
-  readonly StoreService: Context.Tag<StoreService, Store<S, Context>>
-  /**
-   * The Layer that builds the Store
-   */
-  readonly layer: Layer.Layer<StoreService>
-  /**
-   * A Atom.runtime that contains the Store.
-   */
-  readonly runtimeAtom: Atom.AtomRuntime<StoreService, never>
-  /**
-   * A Atom that allows you to access the Store. It will emit a `Result` that
-   * contains the Store or an error if it could not be created.
-   */
-  readonly storeAtom: Atom.Atom<Result.Result<Store<S, Context>>>
-  /**
-   * A Atom that allows you to access the Store. It will emit the Store or
-   * `undefined` if has not been created yet.
-   */
-  readonly storeAtomUnsafe: Atom.Atom<Store<S, Context> | undefined>
-  /**
-   * Creates a Atom that allows you to resolve a LiveQueryDef. It embeds the loading
-   * of the Store and will emit a `Result` that contains the result of the query
-   */
-  readonly makeQueryAtom: <A>(query: LiveQueryDef<A>) => Atom.Atom<Result.Result<A>>
-  /**
-   * Creates a Atom that allows you to resolve a LiveQueryDef. If the Store has
-   * not been created yet, it will return `undefined`.
-   */
-  readonly makeQueryAtomUnsafe: <A>(query: LiveQueryDef<A>) => Atom.Atom<A | undefined>
-  /**
-   * A Atom.Writable that allows you to commit an event to the Store.
-   */
-  readonly commitAtom: Atom.Writable<void, {}>
-} => {
-  const StoreService = Context.GenericTag<StoreService, Store<S, Context>>("@effect-atom/atom-livestore/StoreService")
-  const layer = Layer.scoped(
-    StoreService,
+): AtomLiveStore<Self, Id, S, Context> => {
+  const self: Mutable<AtomLiveStore<Self, Id, S, Context>> = Context.Tag(id)<Self, Store<S, Context>>() as any
+
+  self.layer = Layer.scoped(
+    self,
     createStore(options).pipe(
       provideOtel({
         parentSpanContext: options?.otelOptions?.rootSpanContext,
@@ -76,15 +81,15 @@ export const make = <S extends LiveStoreSchema, Context = {}>(
       Effect.orDie
     )
   )
-  const runtimeAtom = Atom.runtime(layer)
-  const storeAtom = runtimeAtom.atom(StoreService)
-  const storeAtomUnsafe = Atom.readable((get) => {
-    const result = get(storeAtom)
+  self.runtime = Atom.runtime(self.layer)
+  self.store = self.runtime.atom(self)
+  self.storeUnsafe = Atom.readable((get) => {
+    const result = get(self.store)
     return Result.getOrElse(result, constUndefined)
   })
-  const makeQueryAtom = <A>(query: LiveQueryDef<A>) =>
+  self.makeQuery = <A>(query: LiveQueryDef<A>) =>
     Atom.readable((get) => {
-      const store = get(storeAtom)
+      const store = get(self.store)
       return Result.map(store, (store) => {
         const result = store.query(query)
         get.addFinalizer(
@@ -97,9 +102,9 @@ export const make = <S extends LiveStoreSchema, Context = {}>(
         return result
       })
     })
-  const makeQueryAtomUnsafe = <A>(query: LiveQueryDef<A>) =>
+  self.makeQueryUnsafe = <A>(query: LiveQueryDef<A>) =>
     Atom.readable((get) => {
-      const store = get(storeAtomUnsafe)
+      const store = get(self.storeUnsafe)
       if (store === undefined) {
         return undefined
       }
@@ -112,19 +117,10 @@ export const make = <S extends LiveStoreSchema, Context = {}>(
       )
       return store.query(query)
     })
-  const commitAtom = Atom.writable((get) => {
-    get(storeAtomUnsafe)
+  self.commit = Atom.writable((get) => {
+    get(self.storeUnsafe)
   }, (ctx, value: {}) => {
-    ctx.get(storeAtomUnsafe)?.commit(value)
+    ctx.get(self.storeUnsafe)?.commit(value)
   })
-  return {
-    StoreService,
-    layer,
-    runtimeAtom,
-    storeAtom,
-    storeAtomUnsafe,
-    makeQueryAtom,
-    makeQueryAtomUnsafe,
-    commitAtom
-  } as const
+  return self as AtomLiveStore<Self, Id, S, Context>
 }
