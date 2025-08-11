@@ -935,7 +935,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface AtomRuntime<R, ER> extends Atom<Result.Result<Runtime.Runtime<R>, ER>> {
+export interface AtomRuntime<R, ER = never> extends Atom<Result.Result<Runtime.Runtime<R>, ER>> {
   readonly factory: RuntimeFactory
 
   readonly layer: Atom<Layer.Layer<R, ER>>
