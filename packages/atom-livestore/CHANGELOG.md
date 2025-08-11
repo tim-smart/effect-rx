@@ -1,5 +1,14 @@
 # @effect-rx/rx-livestore
 
+## 0.1.10
+
+### Patch Changes
+
+- [#313](https://github.com/tim-smart/effect-atom/pull/313) [`c3c0050`](https://github.com/tim-smart/effect-atom/commit/c3c0050a98fc6750c6dd9931eb02b18a3ebe601f) Thanks [@tim-smart](https://github.com/tim-smart)! - change livestore package to align with rpc/httpapi
+
+- Updated dependencies [[`c3c0050`](https://github.com/tim-smart/effect-atom/commit/c3c0050a98fc6750c6dd9931eb02b18a3ebe601f)]:
+  - @effect-atom/atom@0.1.12
+
 ## 0.1.9
 
 ### Patch Changes
