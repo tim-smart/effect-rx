@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.14
+
+### Patch Changes
+
+- [`89d9b56`](https://github.com/tim-smart/effect-atom/commit/89d9b56f8e53dc5d5173d2814744c2f4c5ee64a7) Thanks [@tim-smart](https://github.com/tim-smart)! - ensure failures affect Result.all
+
 ## 0.1.13
 
 ### Patch Changes
