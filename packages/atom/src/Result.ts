@@ -11,7 +11,7 @@ import * as Hash from "effect/Hash"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
 import type { Predicate, Refinement } from "effect/Predicate"
-import { hasProperty } from "effect/Predicate"
+import { hasProperty, isIterable } from "effect/Predicate"
 import * as Schema_ from "effect/Schema"
 import type * as Types from "effect/Types"
 
@@ -503,6 +503,51 @@ export const matchWithWaiting: {
       return options.onSuccess(self)
   }
 })
+
+/**
+ * Combines multiple results into a single result. Also works with non-result
+ * values.
+ *
+ * @since 1.0.0
+ * @category combinators
+ */
+export const all = <const Arg extends Iterable<any> | Record<string, any>>(
+  results: Arg
+): Result<
+  [Arg] extends [ReadonlyArray<any>] ? {
+      -readonly [K in keyof Arg]: [Arg[K]] extends [Result<infer _A, infer _E>] ? _A : Arg[K]
+    }
+    : [Arg] extends [Iterable<infer _A>] ? _A extends Result<infer _AA, infer _E> ? _AA : _A
+    : [Arg] extends [Record<string, any>] ? {
+        -readonly [K in keyof Arg]: [Arg[K]] extends [Result<infer _A, infer _E>] ? _A : Arg[K]
+      }
+    : never,
+  [Arg] extends [ReadonlyArray<any>] ? Result.Failure<Arg[number]>
+    : [Arg] extends [Iterable<infer _A>] ? Result.Failure<_A>
+    : [Arg] extends [Record<string, any>] ? Result.Failure<Arg[keyof Arg]>
+    : never
+> => {
+  const isIter = isIterable(results)
+  const entries = isIter
+    ? Array.from(results, (result, i) => [i, result] as const)
+    : Object.entries(results)
+  const successes: any = isIter ? [] : {}
+  let waiting = false
+  for (let i = 0; i < entries.length; i++) {
+    const [key, result] = entries[i]
+    if (!isResult(result)) {
+      successes[key] = result
+      continue
+    }
+    const val = value(result)
+    if (Option.isNone(val)) return result as any
+    successes[key] = val.value
+    if (result.waiting) {
+      waiting = true
+    }
+  }
+  return success(successes, { waiting }) as any
+}
 
 /**
  * @since 1.0.0

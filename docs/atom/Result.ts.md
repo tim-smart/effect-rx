@@ -29,6 +29,7 @@ Added in v1.0.0
   - [getOrThrow](#getorthrow)
   - [value](#value)
 - [combinators](#combinators)
+  - [all](#all)
   - [map](#map)
   - [match](#match)
   - [matchWithError](#matchwitherror)
@@ -291,6 +292,38 @@ export declare const value: <A, E>(self: Result<A, E>) => Option.Option<A>
 Added in v1.0.0
 
 # combinators
+
+## all
+
+Combines multiple results into a single result. Also works with non-result
+values.
+
+**Signature**
+
+```ts
+export declare const all: <const Arg extends Iterable<any> | Record<string, any>>(
+  results: Arg
+) => Result<
+  [Arg] extends [ReadonlyArray<any>]
+    ? { -readonly [K in keyof Arg]: [Arg[K]] extends [Result<infer _A, infer _E>] ? _A : Arg[K] }
+    : [Arg] extends [Iterable<infer _A>]
+      ? _A extends Result<infer _AA, infer _E>
+        ? _AA
+        : _A
+      : [Arg] extends [Record<string, any>]
+        ? { -readonly [K in keyof Arg]: [Arg[K]] extends [Result<infer _A, infer _E>] ? _A : Arg[K] }
+        : never,
+  [Arg] extends [ReadonlyArray<any>]
+    ? Result.Failure<Arg[number]>
+    : [Arg] extends [Iterable<infer _A>]
+      ? Result.Failure<_A>
+      : [Arg] extends [Record<string, any>]
+        ? Result.Failure<Arg[keyof Arg]>
+        : never
+>
+```
+
+Added in v1.0.0
 
 ## map
 
