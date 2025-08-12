@@ -538,10 +538,10 @@ export const all = <const Arg extends Iterable<any> | Record<string, any>>(
     if (!isResult(result)) {
       successes[key] = result
       continue
+    } else if (!isSuccess(result)) {
+      return result as any
     }
-    const val = value(result)
-    if (Option.isNone(val)) return result as any
-    successes[key] = val.value
+    successes[key] = result.value
     if (result.waiting) {
       waiting = true
     }
