@@ -1602,8 +1602,8 @@ export const optimisticFn: {
   const transition = state<Result.Result<W, unknown>>(Result.initial())
   return fn((arg: OW, get) => {
     let value = options.reducer(get(self), arg)
-    if (Result.isResult(value) && !value.waiting) {
-      value = Result.waiting(value)
+    if (Result.isResult(value)) {
+      value = Result.waiting(value, { touch: true })
     }
     get.set(transition, Result.success(value, { waiting: true }))
     get.set(self, transition)

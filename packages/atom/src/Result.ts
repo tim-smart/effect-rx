@@ -288,12 +288,28 @@ export const failWithPrevious = <A, E>(
  * @since 1.0.0
  * @category constructors
  */
-export const waiting = <R extends Result<any, any>>(self: R): R => {
+export const waiting = <R extends Result<any, any>>(self: R, options?: {
+  readonly touch?: boolean | undefined
+}): R => {
   if (self.waiting) {
-    return self
+    return options?.touch ? touch(self) : self
   }
   const result = Object.assign(Object.create(ResultProto), self)
   result.waiting = true
+  if (options?.touch && isSuccess(result)) {
+    ;(result as any).timestamp = Date.now()
+  }
+  return result
+}
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const touch = <A extends Result<any, any>>(result: A): A => {
+  if (isSuccess(result)) {
+    return success(result.value, { waiting: result.waiting }) as A
+  }
   return result
 }
 

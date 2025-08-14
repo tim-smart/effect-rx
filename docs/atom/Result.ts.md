@@ -35,6 +35,7 @@ Added in v1.0.0
   - [matchWithError](#matchwitherror)
   - [matchWithWaiting](#matchwithwaiting)
   - [toExit](#toexit)
+  - [touch](#touch)
 - [constructors](#constructors)
   - [fail](#fail)
   - [failWithPrevious](#failwithprevious)
@@ -424,6 +425,16 @@ export declare const toExit: <A, E>(self: Result<A, E>) => Exit.Exit<A, E | Caus
 
 Added in v1.0.0
 
+## touch
+
+**Signature**
+
+```ts
+export declare const touch: <A extends Result<any, any>>(result: A) => A
+```
+
+Added in v1.0.0
+
 # constructors
 
 ## fail
@@ -548,7 +559,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const waiting: <R extends Result<any, any>>(self: R) => R
+export declare const waiting: <R extends Result<any, any>>(
+  self: R,
+  options?: { readonly touch?: boolean | undefined }
+) => R
 ```
 
 Added in v1.0.0
