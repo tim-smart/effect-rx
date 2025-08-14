@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.15
+
+### Patch Changes
+
+- [`b63ddea`](https://github.com/tim-smart/effect-atom/commit/b63ddea77f7cad5e822667dcb999f121581e5dcc) Thanks [@tim-smart](https://github.com/tim-smart)! - update timestamp of results during optimisic updates
+
 ## 0.1.14
 
 ### Patch Changes

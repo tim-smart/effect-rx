@@ -1,6 +1,6 @@
 {
   "name": "@effect-atom/atom-livestore",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "effect-atom bindings to livestore",
   "type": "module",
   "publishConfig": {
