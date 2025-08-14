@@ -1,5 +1,14 @@
 # @effect-rx/rx-vue
 
+## 0.1.16
+
+### Patch Changes
+
+- [`b63ddea`](https://github.com/tim-smart/effect-atom/commit/b63ddea77f7cad5e822667dcb999f121581e5dcc) Thanks [@tim-smart](https://github.com/tim-smart)! - update timestamp of results during optimisic updates
+
+- Updated dependencies [[`b63ddea`](https://github.com/tim-smart/effect-atom/commit/b63ddea77f7cad5e822667dcb999f121581e5dcc)]:
+  - @effect-atom/atom@0.1.15
+
 ## 0.1.15
 
 ### Patch Changes
