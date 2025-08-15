@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Atom, AtomRpc, useAtomValue } from '@effect-atom/atom-vue';
-import { Effect, Schema} from 'effect';
-import { onUnmounted, ref } from 'vue'
+import { Atom, AtomRpc, useAtomValue } from "@effect-atom/atom-vue"
+import { Effect, Schema } from "effect"
+import { onUnmounted, ref } from "vue"
 import { Rpc, RpcGroup, RpcTest } from "@effect/rpc"
 
 defineProps<{ msg: string }>()
@@ -11,41 +11,45 @@ const count = ref(0)
 const req = ref({ echo: "initial" })
 
 class Rpcs extends RpcGroup.make(
-  Rpc.make("Get", { payload: { echo: Schema.String }, success: Schema.Struct({ echo: Schema.String, at: Schema.Date })}),
-  Rpc.make("Set", { payload: { echo: Schema.String  } })
+  Rpc.make("Get", {
+    payload: { echo: Schema.String },
+    success: Schema.Struct({ echo: Schema.String, at: Schema.Date }),
+  }),
+  Rpc.make("Set", { payload: { echo: Schema.String } }),
 ) {}
 
 class TestClient extends AtomRpc.Tag<TestClient>()("TestClient", {
-  group: Rpcs, 
+  group: Rpcs,
   makeEffect: RpcTest.makeClient(Rpcs, { flatten: true }),
-  protocol: Rpcs.toLayer({ 
-    Get: req => Effect.succeed({ echo: req.echo, at: new Date() }),
-    Set: () => Effect.void
-  })
+  protocol: Rpcs.toLayer({
+    Get: (req) => Effect.succeed({ echo: req.echo, at: new Date() }),
+    Set: () => Effect.void,
+  }),
 }) {}
 
 const result = useAtomValue(() => {
   console.log("Computing Atom:", req.value)
-  return Atom.refreshOnWindowFocus(
-    TestClient.query("Get", req.value)
-  )
+  return Atom.refreshOnWindowFocus(TestClient.query("Get", req.value))
 })
 
 const intervalEnabled = ref(false)
 
-const interval = setInterval(() => intervalEnabled.value && (req.value = { echo: `Hello World ${new Date().toLocaleTimeString()}` }), 5_000)
+const interval = setInterval(
+  () =>
+    intervalEnabled.value &&
+    (req.value = { echo: `Hello World ${new Date().toLocaleTimeString()}` }),
+  5_000,
+)
 onUnmounted(() => clearInterval(interval))
 </script>
 
 <template>
   <h1>{{ msg }}</h1>
 
-  <div v-if="result._tag === 'Initial'">
-    Initial    
-  </div>
+  <div v-if="result._tag === 'Initial'">Initial</div>
   <div v-else-if="result._tag === 'Failure'">
     <div v-if="result.waiting">Waiting...</div>
-    Failure..   {{  result.cause }} 
+    Failure.. {{ result.cause }}
   </div>
   <div v-else>
     <div v-if="result.waiting">Waiting...</div>
@@ -53,7 +57,7 @@ onUnmounted(() => clearInterval(interval))
   </div>
 
   <button @click="intervalEnabled = !intervalEnabled">
-    Toggle interval {{ !intervalEnabled ? 'ON' : 'OFF' }}
+    Toggle interval {{ !intervalEnabled ? "ON" : "OFF" }}
   </button>
 
   <div class="card">
