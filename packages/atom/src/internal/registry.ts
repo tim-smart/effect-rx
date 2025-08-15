@@ -477,16 +477,23 @@ function childrenAreActive(children: Array<Node<any>>): boolean {
   if (children.length === 0) {
     return false
   }
-  for (let i = 0, len = children.length; i < len; i++) {
-    const child = children[i]
-    if (!child.atom.lazy || child.listeners.length > 0) {
-      return true
+  let current: Array<Node<any>> | undefined = children
+  let stack: Array<Array<Node<any>>> | undefined
+  let stackIndex = 0
+  while (current !== undefined) {
+    for (let i = 0, len = current.length; i < len; i++) {
+      const child = current[i]
+      if (!child.atom.lazy || child.listeners.length > 0) {
+        return true
+      } else if (child.children.length > 0) {
+        if (stack === undefined) {
+          stack = [child.children]
+        } else {
+          stack.push(child.children)
+        }
+      }
     }
-  }
-  for (let i = 0, len = children.length; i < len; i++) {
-    if (childrenAreActive(children[i].children)) {
-      return true
-    }
+    current = stack?.[stackIndex++]
   }
   return false
 }
