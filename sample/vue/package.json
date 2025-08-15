@@ -1,0 +1,28 @@
+{
+  "name": "vue",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tim-smart/effect-atom.git"
+  },
+  "homepage": "https://github.com/tim-smart/effect-atom",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.7.0",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.0",
+    "vue-tsc": "^3.0.5",
+    "@effect-atom/atom-vue": "workspace:*",
+    "@effect-atom/atom": "workspace:*",
+    "@effect/rpc": "^0.68.4",
+    "effect": "^3.17.7",
+    "vue": "^3.5.18"
+  }
+}

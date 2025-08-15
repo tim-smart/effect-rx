@@ -26,18 +26,21 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const Tag: <Self>() => <const Id extends string, Rpcs extends Rpc.Any, ER>(
+export declare const Tag: <Self>() => <
+  const Id extends string,
+  Rpcs extends Rpc.Any,
+  ER,
+  RM = RpcClient.Protocol | Rpc.MiddlewareClient<NoInfer<Rpcs>> | Rpc.Context<NoInfer<Rpcs>>
+>(
   id: Id,
   options: {
     readonly group: RpcGroup.RpcGroup<Rpcs>
-    readonly protocol: Layer.Layer<
-      RpcClient.Protocol | Rpc.MiddlewareClient<NoInfer<Rpcs>> | Rpc.Context<NoInfer<Rpcs>>,
-      ER
-    >
+    readonly protocol: Layer.Layer<Exclude<NoInfer<RM>, Scope>, ER>
     readonly spanPrefix?: string | undefined
     readonly spanAttributes?: Record<string, unknown> | undefined
     readonly generateRequestId?: (() => RequestId) | undefined
     readonly disableTracing?: boolean | undefined
+    readonly makeEffect?: Effect.Effect<RpcClient.RpcClient.Flat<Rpcs, RpcClientError>, never, RM> | undefined
   }
 ) => AtomRpcClient<Self, Id, Rpcs, ER>
 ```

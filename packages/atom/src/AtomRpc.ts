@@ -18,6 +18,7 @@ import { pipe } from "effect/Function"
 import * as Hash from "effect/Hash"
 import * as Layer from "effect/Layer"
 import type { ReadonlyRecord } from "effect/Record"
+import type { Scope } from "effect/Scope"
 import * as Stream from "effect/Stream"
 import type { Mutable, NoInfer } from "effect/Types"
 import * as Atom from "./Atom.js"
@@ -101,20 +102,21 @@ declare global {
  * @category Constructors
  */
 export const Tag = <Self>() =>
-<const Id extends string, Rpcs extends Rpc.Any, ER>(
+<
+  const Id extends string,
+  Rpcs extends Rpc.Any,
+  ER,
+  RM = RpcClient.Protocol | Rpc.MiddlewareClient<NoInfer<Rpcs>> | Rpc.Context<NoInfer<Rpcs>>
+>(
   id: Id,
   options: {
     readonly group: RpcGroup.RpcGroup<Rpcs>
-    readonly protocol: Layer.Layer<
-      | RpcClient.Protocol
-      | Rpc.MiddlewareClient<NoInfer<Rpcs>>
-      | Rpc.Context<NoInfer<Rpcs>>,
-      ER
-    >
+    readonly protocol: Layer.Layer<Exclude<NoInfer<RM>, Scope>, ER>
     readonly spanPrefix?: string | undefined
     readonly spanAttributes?: Record<string, unknown> | undefined
     readonly generateRequestId?: (() => RequestId) | undefined
     readonly disableTracing?: boolean | undefined
+    readonly makeEffect?: Effect.Effect<RpcClient.RpcClient.Flat<Rpcs, RpcClientError>, never, RM> | undefined
   }
 ): AtomRpcClient<Self, Id, Rpcs, ER> => {
   const self: Mutable<AtomRpcClient<Self, Id, Rpcs, ER>> = Context.Tag(id)<
@@ -124,11 +126,12 @@ export const Tag = <Self>() =>
 
   self.layer = Layer.scoped(
     self,
-    RpcClient.make(options.group, {
-      ...options,
-      flatten: true
-    })
-  ).pipe(Layer.provide(options.protocol)) as Layer.Layer<Self, ER>
+    options.makeEffect ??
+      RpcClient.make(options.group, {
+        ...options,
+        flatten: true
+      }) as Effect.Effect<RpcClient.RpcClient.Flat<Rpcs, RpcClientError>, never, RM>
+  ).pipe(Layer.provide(options.protocol))
   self.runtime = Atom.runtime(self.layer)
 
   self.mutation = Atom.family(<Tag extends Rpc.Tag<Rpcs>>(tag: Tag) =>
