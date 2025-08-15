@@ -1,5 +1,14 @@
 # @effect-rx/rx-react
 
+## 0.1.14
+
+### Patch Changes
+
+- [`20e8078`](https://github.com/tim-smart/effect-atom/commit/20e80785d3d7df3eb269366396d47761155441ec) Thanks [@tim-smart](https://github.com/tim-smart)! - optimize internal active children check
+
+- Updated dependencies [[`20e8078`](https://github.com/tim-smart/effect-atom/commit/20e80785d3d7df3eb269366396d47761155441ec)]:
+  - @effect-atom/atom@0.1.16
+
 ## 0.1.13
 
 ### Patch Changes
