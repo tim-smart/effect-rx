@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.17
+
+### Patch Changes
+
+- [#303](https://github.com/tim-smart/effect-atom/pull/303) [`1874554`](https://github.com/tim-smart/effect-atom/commit/1874554f2f5985da7636f837f75c3a0227285fdb) Thanks [@patroza](https://github.com/patroza)! - support custom RpcClient constructors in AtomRpc.Tag
+
 ## 0.1.16
 
 ### Patch Changes
