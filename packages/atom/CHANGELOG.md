@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.16
+
+### Patch Changes
+
+- [`20e8078`](https://github.com/tim-smart/effect-atom/commit/20e80785d3d7df3eb269366396d47761155441ec) Thanks [@tim-smart](https://github.com/tim-smart)! - optimize internal active children check
+
 ## 0.1.15
 
 ### Patch Changes
