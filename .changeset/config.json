@@ -9,5 +9,5 @@
   "access": "restricted",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["sample/**/*"]
+  "ignore": []
 }
