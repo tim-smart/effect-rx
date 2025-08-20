@@ -24,7 +24,7 @@ import * as Layer from "effect/Layer"
 import * as MutableHashMap from "effect/MutableHashMap"
 import * as Option from "effect/Option"
 import { type Pipeable, pipeArguments } from "effect/Pipeable"
-import { hasProperty } from "effect/Predicate"
+import { hasProperty, isObject } from "effect/Predicate"
 import type { ReadonlyRecord } from "effect/Record"
 import * as Runtime from "effect/Runtime"
 import * as Schema from "effect/Schema"
@@ -421,31 +421,31 @@ const makeRead: {
     | A,
   options?: { readonly initialValue?: unknown }
 ) => {
-  if (typeof arg === "function") {
+  if (typeof arg === "function" && !Effect.isEffect(arg) && !(Stream.StreamTypeId in arg)) {
     const create = arg as (get: Context) => any
     return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
       const value = create(get)
-      if (typeof value === "object" && value !== null) {
+      if (isObject(value)) {
         if (isDataType(value)) {
           return value
         } else if (Effect.EffectTypeId in value) {
           return effect(get, value as any, options, providedRuntime)
         } else if (Stream.StreamTypeId in value) {
-          return stream(get, value, options, providedRuntime)
+          return stream(get, value as any, options, providedRuntime)
         }
       }
       return value
     }
-  } else if (typeof arg === "object" && arg !== null) {
+  } else if (isObject(arg)) {
     if (isDataType(arg)) {
       return state(arg)
     } else if (Effect.EffectTypeId in arg) {
       return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
-        return effect(get, arg, options, providedRuntime)
+        return effect(get, arg as any, options, providedRuntime)
       }
     } else if (Stream.StreamTypeId in arg) {
       return function(get: Context, providedRuntime?: Runtime.Runtime<any>) {
-        return stream(get, arg, options, providedRuntime)
+        return stream(get, arg as any, options, providedRuntime)
       }
     }
   }

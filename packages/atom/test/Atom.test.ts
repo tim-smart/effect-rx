@@ -141,6 +141,14 @@ describe("Atom", () => {
     expect(result.value).toEqual(true)
   })
 
+  it("runtime direct tag", async () => {
+    const counter = counterRuntime.atom(Counter)
+    const r = Registry.make()
+    const result = r.get(counter)
+    assert(Result.isSuccess(result))
+    assert(Effect.isEffect(result.value.get))
+  })
+
   it("effect initial", async () => {
     const count = Atom.make(
       Effect.succeed(1).pipe(Effect.delay(100)),
