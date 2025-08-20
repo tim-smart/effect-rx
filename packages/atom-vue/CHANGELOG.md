@@ -1,5 +1,14 @@
 # @effect-rx/rx-vue
 
+## 0.1.18
+
+### Patch Changes
+
+- [`c31b2fe`](https://github.com/tim-smart/effect-atom/commit/c31b2fed20d74dfda13c297880045ec5088bb02c) Thanks [@tim-smart](https://github.com/tim-smart)! - support effects that are also functions in Atom.make
+
+- Updated dependencies [[`c31b2fe`](https://github.com/tim-smart/effect-atom/commit/c31b2fed20d74dfda13c297880045ec5088bb02c)]:
+  - @effect-atom/atom@0.1.18
+
 ## 0.1.17
 
 ### Patch Changes
