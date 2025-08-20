@@ -82,7 +82,7 @@ export const Tag = <Self>() =>
     )
   )
   self.runtime = Atom.runtime(self.layer)
-  self.store = self.runtime.atom(() => self)
+  self.store = self.runtime.atom(Effect.contextWith(Context.get(self)) as any)
   self.storeUnsafe = Atom.readable((get) => {
     const result = get(self.store)
     return Result.getOrElse(result, constUndefined)
