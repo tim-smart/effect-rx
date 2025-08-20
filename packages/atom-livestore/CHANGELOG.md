@@ -1,5 +1,16 @@
 # @effect-rx/rx-livestore
 
+## 0.1.16
+
+### Patch Changes
+
+- [`c31b2fe`](https://github.com/tim-smart/effect-atom/commit/c31b2fed20d74dfda13c297880045ec5088bb02c) Thanks [@tim-smart](https://github.com/tim-smart)! - support effects that are also functions in Atom.make
+
+- [`f57a5c9`](https://github.com/tim-smart/effect-atom/commit/f57a5c96a2c15b7b2bdb6590f2e5fdfebe184b19) Thanks [@tim-smart](https://github.com/tim-smart)! - make .store atom an explicit Effect
+
+- Updated dependencies [[`c31b2fe`](https://github.com/tim-smart/effect-atom/commit/c31b2fed20d74dfda13c297880045ec5088bb02c)]:
+  - @effect-atom/atom@0.1.18
+
 ## 0.1.15
 
 ### Patch Changes
