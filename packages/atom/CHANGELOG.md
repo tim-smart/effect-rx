@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.19
+
+### Patch Changes
+
+- [`4952a36`](https://github.com/tim-smart/effect-atom/commit/4952a3695e12393b705869e139f64074fd917d49) Thanks [@tim-smart](https://github.com/tim-smart)! - infinite ttl becomes keepAlive
+
 ## 0.1.18
 
 ### Patch Changes
