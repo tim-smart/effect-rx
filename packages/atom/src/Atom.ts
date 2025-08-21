@@ -1353,12 +1353,15 @@ export const setIdleTTL: {
 } = dual<
   (duration: Duration.DurationInput) => <A extends Atom<any>>(self: A) => A,
   <A extends Atom<any>>(self: A, duration: Duration.DurationInput) => A
->(2, (self, duration) =>
-  Object.assign(Object.create(Object.getPrototypeOf(self)), {
+>(2, (self, durationInput) => {
+  const duration = Duration.decode(durationInput)
+  const isFinite = Duration.isFinite(duration)
+  return Object.assign(Object.create(Object.getPrototypeOf(self)), {
     ...self,
-    keepAlive: false,
-    idleTTL: Duration.toMillis(duration)
-  }))
+    keepAlive: !isFinite,
+    idleTTL: isFinite ? Duration.toMillis(duration) : undefined
+  })
+})
 
 /**
  * @since 1.0.0
