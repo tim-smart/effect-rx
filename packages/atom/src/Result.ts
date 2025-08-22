@@ -110,6 +110,12 @@ const ResultProto = {
 
 /**
  * @since 1.0.0
+ * @category refinements
+ */
+export const isWaiting = <A, E>(result: Result<A, E>): boolean => result.waiting
+
+/**
+ * @since 1.0.0
  * @category models
  */
 export interface Initial<A, E = never> extends Result.Proto<A, E> {
