@@ -1,5 +1,11 @@
 # @effect-rx/rx
 
+## 0.1.20
+
+### Patch Changes
+
+- [#328](https://github.com/tim-smart/effect-atom/pull/328) [`8fbee24`](https://github.com/tim-smart/effect-atom/commit/8fbee247e400a19870a9eaa0db4ef2cf1cce3bd0) Thanks [@ethanniser](https://github.com/ethanniser)! - add `isWaiting` refinement
+
 ## 0.1.19
 
 ### Patch Changes
